@@ -108,6 +108,35 @@ export interface TripContent {
 }
 
 /* --------------------------------------------------------------------------
+ * Profiles + trip listing DTOs
+ * ------------------------------------------------------------------------ */
+
+/** A child profile under the account (model context section 4). */
+export interface ChildProfile {
+  id: string;
+  name: string;
+  avatar?: string;
+  age?: number;
+  /** Render mode/age band the kid view selects variants by. */
+  mode: ProfileMode;
+}
+
+export type TripStatus = "planning" | "ready" | "complete";
+
+/** A trip as it appears on the trips home (cards). */
+export interface TripSummary {
+  id: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+  timezone: string;
+  tier: Tier;
+  status: TripStatus;
+  cover?: string;
+  day_count: number;
+}
+
+/* --------------------------------------------------------------------------
  * Demo endpoint DTOs (POST /demo/generate-day)
  * ------------------------------------------------------------------------ */
 
