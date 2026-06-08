@@ -137,6 +137,43 @@ export interface TripSummary {
 }
 
 /* --------------------------------------------------------------------------
+ * Journal (notes + star ratings, per profile/day)
+ * ------------------------------------------------------------------------ */
+
+export interface JournalEntry {
+  id: string;
+  trip_id: string;
+  profile_id: string;
+  day_id: string;
+  note?: string;
+  /** 1-5 stars, or undefined when only a note was left. */
+  stars?: number;
+  created_at: string;
+}
+
+/** Payload to create a journal entry (id + created_at assigned by BE). */
+export interface JournalEntryInput {
+  trip_id: string;
+  profile_id: string;
+  day_id: string;
+  note?: string;
+  stars?: number;
+}
+
+/* --------------------------------------------------------------------------
+ * BYO-AI connector status
+ * ------------------------------------------------------------------------ */
+
+export type ConnectorStatus = "not_connected" | "connected" | "error";
+
+export interface Connector {
+  status: ConnectorStatus;
+  /** Provider label when connected, e.g. "Claude", "ChatGPT", "Gemini". */
+  provider?: string;
+  last_synced_at?: string;
+}
+
+/* --------------------------------------------------------------------------
  * Demo endpoint DTOs (POST /demo/generate-day)
  * ------------------------------------------------------------------------ */
 

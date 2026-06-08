@@ -19,6 +19,8 @@ export { IconButton } from "@/vendor/yaycay-ds/components/buttons/IconButton";
 export { Input } from "@/vendor/yaycay-ds/components/forms/Input";
 export type { InputProps } from "@/vendor/yaycay-ds/components/forms/Input";
 
+export { Select } from "@/vendor/yaycay-ds/components/forms/Select";
+
 export {
   Card,
   CardMedia,

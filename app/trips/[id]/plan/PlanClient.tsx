@@ -1,0 +1,89 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { listTrips } from "@/lib/api/trips";
+import { entitlementsFor } from "@/lib/entitlements";
+import type { Tier } from "@/lib/contract-mock/types";
+import { Button, Card, CardBody, Badge, Banner } from "@/components/ds";
+
+/** BYO-AI connector status screen (mock - real MCP connect lives in BE). */
+function ByoConnector() {
+  return (
+    <Card>
+      <CardBody title="Bring your own AI">
+        <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
+          <Badge tone="coral" dot>
+            Not connected
+          </Badge>
+        </div>
+        <p style={{ margin: 0 }}>
+          Connect your own ChatGPT, Claude or Gemini to plan this trip. Your AI talks to Yaycay
+          through a secure connector - we never see your subscription.
+        </p>
+        <ol style={{ margin: 0, paddingLeft: "var(--space-5)", color: "var(--text-body)" }}>
+          <li>Open your AI assistant&apos;s connector settings.</li>
+          <li>Add the Yaycay connector and approve access to this trip.</li>
+          <li>Come back here - we&apos;ll show it as connected.</li>
+        </ol>
+        <Button variant="primary" disabled>
+          Connect (coming soon)
+        </Button>
+      </CardBody>
+    </Card>
+  );
+}
+
+/** Use-our-AI planning chat placeholder (streaming lands with the live BE). */
+function OurAiChat() {
+  return (
+    <Card>
+      <CardBody title="Plan with Yaycay">
+        <p style={{ margin: 0 }}>
+          Chat with Yaycay to build and tweak your trip. Streaming planning chat arrives with the
+          live planner.
+        </p>
+        <Button variant="cta" disabled>
+          Start planning (coming soon)
+        </Button>
+      </CardBody>
+    </Card>
+  );
+}
+
+export function PlanClient({ tripId }: { tripId: string }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["trips"],
+    queryFn: ({ signal }) => listTrips(signal),
+  });
+
+  if (isLoading) return <p>Loading the planner...</p>;
+
+  const trip = data?.find((t) => t.id === tripId);
+  const tier: Tier = trip?.tier ?? "ours";
+  const ent = entitlementsFor(tier);
+
+  return (
+    <div className="yc-stack" data-testid="plan">
+      <header className="yc-stack" style={{ gap: "var(--space-2)" }}>
+        <h1 style={{ margin: 0 }}>Plan {trip ? trip.destination : "your trip"}</h1>
+        <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
+          Build the trip your way.
+        </p>
+      </header>
+
+      {isError ? (
+        <Banner tone="danger">We couldn&apos;t load the planner. Give it another go?</Banner>
+      ) : null}
+
+      {ent.canUseByoConnector ? <ByoConnector /> : null}
+      {ent.canUseOurAi ? <OurAiChat /> : null}
+      {!ent.canUseByoConnector && !ent.canUseOurAi ? (
+        <Card variant="soft">
+          <CardBody>
+            <p style={{ margin: 0 }}>Planning unlocks with a full holiday.</p>
+          </CardBody>
+        </Card>
+      ) : null}
+    </div>
+  );
+}

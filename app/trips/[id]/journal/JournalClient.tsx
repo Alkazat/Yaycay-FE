@@ -1,0 +1,161 @@
+"use client";
+
+import { useState, type ChangeEvent } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getTrip, listProfiles } from "@/lib/api/trips";
+import { listJournal, addJournalEntry } from "@/lib/api/journal";
+import { averageStars } from "@/lib/journal";
+import { formatHumanDate } from "@/lib/format";
+import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
+import { StarRating } from "@/components/journal/StarRating";
+import { Button, Card, CardBody, Select, Badge } from "@/components/ds";
+
+export function JournalClient({ tripId }: { tripId: string }) {
+  const queryClient = useQueryClient();
+
+  const tripQuery = useQuery({ queryKey: ["trip", tripId], queryFn: ({ signal }) => getTrip(tripId, signal) });
+  const profilesQuery = useQuery({ queryKey: ["profiles"], queryFn: ({ signal }) => listProfiles(signal) });
+
+  const profiles = profilesQuery.data ?? [];
+  const trip = tripQuery.data;
+
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const profileId = activeProfileId ?? profiles[0]?.id ?? null;
+
+  const [dayId, setDayId] = useState<string>("");
+  const [stars, setStars] = useState(0);
+  const [note, setNote] = useState("");
+
+  const journalQuery = useQuery({
+    queryKey: ["journal", tripId, profileId],
+    queryFn: ({ signal }) => listJournal(tripId, profileId ?? undefined, signal),
+    enabled: !!profileId,
+  });
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      addJournalEntry({
+        trip_id: tripId,
+        profile_id: profileId!,
+        day_id: dayId || trip?.days[0]?.id || "",
+        note,
+        stars: stars || undefined,
+      }),
+    onSuccess: () => {
+      setNote("");
+      setStars(0);
+      queryClient.invalidateQueries({ queryKey: ["journal", tripId, profileId] });
+    },
+  });
+
+  if (tripQuery.isLoading) return <p>Loading the journal...</p>;
+  if (!trip) {
+    return (
+      <Card variant="soft">
+        <CardBody>
+          <p style={{ margin: 0, color: "var(--coral-500)", fontWeight: 700 }}>
+            We couldn&apos;t open this journal. Give it another go?
+          </p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  const dayLabel = (id: string) => trip.days.find((d) => d.id === id)?.label ?? id;
+  const entries = journalQuery.data ?? [];
+  const avg = averageStars(entries.map((e) => e.stars));
+  const canSave = !!profileId && (note.trim().length > 0 || stars > 0) && !mutation.isPending;
+
+  return (
+    <div className="yc-stack" data-testid="journal">
+      <header className="yc-stack" style={{ gap: "var(--space-2)" }}>
+        <h1 style={{ margin: 0 }}>Journal - {trip.trip.destination}</h1>
+        <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
+          Capture the yay. Notes and stars, day by day.
+        </p>
+      </header>
+
+      {profiles.length > 0 ? (
+        <ProfileSwitcher profiles={profiles} activeId={profileId} onSelect={setActiveProfileId} />
+      ) : null}
+
+      <Card>
+        <CardBody title="Add a memory">
+          <Select
+            label="Which day?"
+            value={dayId || trip.days[0]?.id || ""}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setDayId(e.target.value)}
+            options={trip.days.map((d) => ({ value: d.id, label: `${d.label} (${formatHumanDate(d.date)})` }))}
+          />
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--royal-700)" }}>
+              How was it?
+            </span>
+            <StarRating value={stars} onChange={setStars} label="Star rating" />
+          </div>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--royal-700)" }}>
+              A note
+            </span>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              placeholder="What made today special?"
+              style={{
+                fontFamily: "var(--font-body)",
+                fontWeight: 600,
+                fontSize: "var(--fs-base)",
+                color: "var(--ink)",
+                background: "#fff",
+                border: "2.5px solid var(--sand-300)",
+                borderRadius: "var(--radius-md)",
+                padding: "10px 16px",
+                resize: "vertical",
+                boxShadow: "inset 0 2px 4px rgba(7,61,114,.06)",
+              }}
+            />
+          </label>
+
+          <Button variant="cta" onClick={() => mutation.mutate()} disabled={!canSave}>
+            {mutation.isPending ? "Saving..." : "Save memory"}
+          </Button>
+          {mutation.isError ? (
+            <p style={{ margin: 0, color: "var(--coral-500)", fontWeight: 700 }}>
+              Hmm, that didn&apos;t save. Give it another go?
+            </p>
+          ) : null}
+        </CardBody>
+      </Card>
+
+      <section className="yc-stack">
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+          <h2 style={{ margin: 0 }}>Memories</h2>
+          {avg != null ? <Badge tone="sun">{avg} avg stars</Badge> : null}
+        </div>
+
+        {entries.length === 0 ? (
+          <Card variant="soft">
+            <CardBody>
+              <p style={{ margin: 0 }}>No memories yet - add the first one above.</p>
+            </CardBody>
+          </Card>
+        ) : (
+          entries.map((e) => (
+            <Card key={e.id} variant="soft">
+              <CardBody>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-3)" }}>
+                  <Badge tone="aqua">{dayLabel(e.day_id)}</Badge>
+                  {e.stars ? <StarRating value={e.stars} readOnly /> : null}
+                </div>
+                {e.note ? <p style={{ margin: "var(--space-2) 0 0" }}>{e.note}</p> : null}
+              </CardBody>
+            </Card>
+          ))
+        )}
+      </section>
+    </div>
+  );
+}
