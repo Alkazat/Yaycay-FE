@@ -7,11 +7,5 @@ export default async function TripPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return (
-    <main className="yc-shell">
-      <div className="yc-container">
-        <TripView tripId={id} />
-      </div>
-    </main>
-  );
+  return <TripView tripId={id} />;
 }

@@ -7,11 +7,5 @@ export const metadata: Metadata = {
 
 /** /account - plan, data-keep, settings. */
 export default function AccountPage() {
-  return (
-    <main className="yc-shell">
-      <div className="yc-container">
-        <AccountClient />
-      </div>
-    </main>
-  );
+  return <AccountClient />;
 }

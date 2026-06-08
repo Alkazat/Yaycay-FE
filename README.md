@@ -46,11 +46,16 @@ Then open `/demo` to build a sample day.
 
 ```
 app/                      App Router routes
+  (app)/                  Signed-in routes, wrapped in the AppShell nav
+    layout.tsx            Persistent shell (top nav + mobile tab bar)
+    trips/ profiles/ account/
   demo/                   /demo - free one-day render + countdown + signup CTA
   auth/                   /auth - placeholder (magic link + 2FA in Phase 1)
-  api/demo/generate-day/  MOCK route handler (active until NEXT_PUBLIC_API_BASE is set)
+  checkout/mock/          MOCK Stripe Checkout landing (redirect target)
+  api/                    MOCK route handlers (active until NEXT_PUBLIC_API_BASE is set)
 components/
   ds.ts                   Single import surface for the design system
+  shell/AppShell.tsx      Persistent app chrome + responsive navigation
   Countdown.tsx           "Sleeps to go" countdown to the holiday start
   renderer/               The TripContent renderer (kind routing + variant select)
 lib/

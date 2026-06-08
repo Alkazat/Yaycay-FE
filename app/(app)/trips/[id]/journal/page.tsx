@@ -7,11 +7,5 @@ export default async function JournalPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return (
-    <main className="yc-shell">
-      <div className="yc-container">
-        <JournalClient tripId={id} />
-      </div>
-    </main>
-  );
+  return <JournalClient tripId={id} />;
 }
