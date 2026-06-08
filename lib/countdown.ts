@@ -55,7 +55,9 @@ function timezoneOffsetMinutes(timezone: string, epochMs: number): number {
   try {
     const dtf = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
-      hour12: false,
+      // h23 forces a 0-23 hour: some ICU builds render midnight as "24" under
+      // the default hour cycle, which would skew the offset by a full day.
+      hourCycle: "h23",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -69,7 +71,7 @@ function timezoneOffsetMinutes(timezone: string, epochMs: number): number {
       get("year"),
       get("month") - 1,
       get("day"),
-      get("hour"),
+      get("hour") % 24,
       get("minute"),
       get("second"),
     );
