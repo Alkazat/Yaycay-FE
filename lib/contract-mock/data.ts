@@ -7,10 +7,17 @@
  * See ./README.md.
  */
 import type {
+  AccountSummary,
   ChildProfile,
   TripContent,
   TripSummary,
 } from "./types";
+
+export const MOCK_ACCOUNT: AccountSummary = {
+  email: "family@example.com",
+  secondary_email: "backup@example.com",
+  tier: "ours",
+};
 
 export const MOCK_PROFILES: ChildProfile[] = [
   { id: "p_lenny", name: "Lenny", age: 5, mode: "little" },
@@ -27,6 +34,9 @@ export const MOCK_TRIPS: TripSummary[] = [
     tier: "ours",
     status: "ready",
     day_count: 3,
+    // 12 months after the holiday ends, unless a keep-token is bought.
+    retention_expires_at: "2027-06-28",
+    data_kept: false,
   },
 ];
 

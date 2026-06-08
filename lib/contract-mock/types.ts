@@ -134,6 +134,40 @@ export interface TripSummary {
   status: TripStatus;
   cover?: string;
   day_count: number;
+  /** When trip data is scheduled for deletion (12 months post-holiday). */
+  retention_expires_at?: string;
+  /** True once a data-keep token has been bought for this trip. */
+  data_kept?: boolean;
+}
+
+/* --------------------------------------------------------------------------
+ * Account + billing
+ * ------------------------------------------------------------------------ */
+
+export interface AccountSummary {
+  email: string;
+  /** Secondary email required for password reset / recovery. */
+  secondary_email?: string;
+  tier: Tier;
+}
+
+/** Catalogue product the FE can open a Checkout session for. */
+export type ProductId =
+  | "price_holiday_byo"
+  | "price_holiday_ai"
+  | "price_datakeep_annual"
+  | "price_destination_addon"
+  | "price_photobook";
+
+export interface CheckoutRequest {
+  product: ProductId;
+  /** Optional trip the purchase applies to (e.g. a data-keep token). */
+  trip_id?: string;
+}
+
+export interface CheckoutResponse {
+  /** Stripe Checkout URL to redirect to (BE creates the session). */
+  url: string;
 }
 
 /* --------------------------------------------------------------------------
