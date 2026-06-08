@@ -1,0 +1,61 @@
+<!-- @dsCard group="Components" viewport="700x440" name="Cards, Stats & Progress" subtitle="Outlined trip card, stat tiles & progress meters." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; padding: 24px; background: var(--cream-100); }
+  .wrap { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: 16px; }
+  .scene-deco { position:absolute; inset:0; overflow:hidden; }
+  .cloud { position:absolute; background:var(--cream-50); border-radius:999px; opacity:.92; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="../../_ds_bundle.js"></script>
+  <script type="text/babel">
+    const { Card, CardMedia, CardBody, CardFooter, Stat, ProgressMeter, Badge, IconButton } = window.YaycayDesignSystem_f48296;
+    const Heart = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.7 0-3 .9-4.5 2.5C10.5 3.9 9.2 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/></svg>);
+    const Plane = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>);
+    const List = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>);
+
+    const Scene = () => (
+      <div className="scene-deco" style={{background:"var(--grad-scene)"}}>
+        <div className="cloud" style={{width:90,height:28,top:24,left:24,boxShadow:"34px -10px 0 -4px var(--cream-50)"}}></div>
+        <div className="cloud" style={{width:70,height:22,top:40,right:30}}></div>
+      </div>
+    );
+
+    function Demo() {
+      return (
+        <div className="wrap">
+          <Card interactive style={{width:280}}>
+            <CardMedia height={150} tag={<Badge tone="sun">Beach</Badge>} fav={<IconButton label="Save" size="sm"><Heart/></IconButton>}>
+              <Scene/>
+            </CardMedia>
+            <CardBody title="Sicily with the kids" subtitle="7 days · Jul 12–19" />
+            <CardFooter>
+              <ProgressMeter value={3} max={7} valueText="Day 3 of 7" label="Planned" style={{flex:1}} />
+            </CardFooter>
+          </Card>
+          <div className="col">
+            <div style={{display:"flex",gap:14}}>
+              <Stat icon={<Plane/>} value="12" label="sleeps to go" tone="sun" />
+              <Stat icon={<List/>} value="8" label="things to pack" tone="sky" />
+            </div>
+            <ProgressMeter value={70} label="Trip budget" tone="meadow" valueText="£1,400 / £2,000" />
+            <ProgressMeter value={40} label="Packing list" tone="sun" />
+            <ProgressMeter value={90} label="Countdown" tone="aqua" valueText="2 sleeps!" />
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById("root")).render(<Demo/>);
+  </script>
+</body>
+</html>

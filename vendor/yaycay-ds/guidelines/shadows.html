@@ -1,0 +1,27 @@
+<!-- @dsCard group="Spacing" viewport="700x200" name="Pop & ambient shadows" subtitle="Hard 3D pop (pressable) vs soft ambient lift." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 26px 22px; background: var(--cream-100); font-family: var(--font-body); }
+  .row { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .box { width: 92px; height: 64px; border-radius: var(--radius-lg); display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 13px; }
+  .pop { color: #fff; box-shadow: var(--gloss-top); }
+  .amb { background: var(--surface-card); border: 2px solid var(--sand-200); color: var(--royal-700); }
+  .cap { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="item"><div class="box pop" style="background:var(--sky-500);box-shadow:var(--pop-sky),var(--gloss-top)">pop-sky</div><span class="cap">pressable</span></div>
+    <div class="item"><div class="box pop" style="background:var(--sun-400);color:var(--royal-800);box-shadow:var(--pop-sun),var(--gloss-top)">pop-sun</div><span class="cap">CTA</span></div>
+    <div class="item"><div class="box pop" style="background:var(--coral-400);box-shadow:var(--pop-coral),var(--gloss-top)">pop-coral</div><span class="cap">hot</span></div>
+    <div class="item"><div class="box amb" style="box-shadow:var(--shadow-sm)">sm</div><span class="cap">ambient</span></div>
+    <div class="item"><div class="box amb" style="box-shadow:var(--shadow-md)">md</div><span class="cap">card</span></div>
+    <div class="item"><div class="box amb" style="box-shadow:var(--shadow-lg)">lg</div><span class="cap">float</span></div>
+  </div>
+</body>
+</html>

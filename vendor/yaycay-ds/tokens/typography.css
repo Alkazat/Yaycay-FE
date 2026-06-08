@@ -1,0 +1,69 @@
+/* ============================================================
+   YAYCAY · TYPOGRAPHY
+   Display = Fredoka (bubbly, rounded, box-art lettering)
+   Body/UI = Nunito (rounded terminals, warm & legible)
+   ============================================================ */
+:root {
+  /* families */
+  --font-display: "Fredoka", "Baloo 2", system-ui, sans-serif;
+  --font-body:    "Nunito", system-ui, -apple-system, sans-serif;
+
+  /* weights */
+  --fw-regular:  400; /* @kind font */
+  --fw-medium:   500; /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+  --fw-bold:     700; /* @kind font */
+  --fw-black:    800; /* @kind font */
+
+  /* fluid display scale (clamped for responsive heroes) */
+  --fs-hero:    clamp(3rem, 6vw, 5.5rem); /* @kind font */
+  --fs-display: clamp(2.25rem, 4vw, 3.75rem); /* @kind font */
+  --fs-h1:      2.5rem;   /* @kind font */
+  --fs-h2:      2rem;     /* @kind font */
+  --fs-h3:      1.5rem;   /* @kind font */
+  --fs-h4:      1.25rem;  /* @kind font */
+  --fs-lg:      1.125rem; /* @kind font */
+  --fs-base:    1rem;     /* @kind font */
+  --fs-sm:      0.875rem; /* @kind font */
+  --fs-xs:      0.75rem;  /* @kind font */
+
+  /* line-heights */
+  --lh-tight:   1.05;  /* @kind other */
+  --lh-snug:    1.2;   /* @kind other */
+  --lh-normal:  1.5;   /* @kind other */
+  --lh-relaxed: 1.65;  /* @kind other */
+
+  /* letter-spacing */
+  --ls-tight:  -0.01em; /* @kind other */
+  --ls-normal: 0;       /* @kind other */
+  --ls-wide:   0.04em;  /* @kind other */
+  --ls-caps:   0.08em;  /* @kind other */
+}
+
+/* ---- type helpers (optional, opt-in classes) ---- */
+.yc-hero {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-hero);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+}
+.yc-display {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+}
+.yc-h1 { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-h1); line-height: var(--lh-snug); }
+.yc-h2 { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-h2); line-height: var(--lh-snug); }
+.yc-h3 { font-family: var(--font-display); font-weight: var(--fw-medium);   font-size: var(--fs-h3); line-height: var(--lh-snug); }
+.yc-eyebrow {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+.yc-body  { font-family: var(--font-body); font-weight: var(--fw-regular);  font-size: var(--fs-base); line-height: var(--lh-normal); }
+.yc-lead  { font-family: var(--font-body); font-weight: var(--fw-semibold); font-size: var(--fs-lg);   line-height: var(--lh-relaxed); }
+.yc-small { font-family: var(--font-body); font-weight: var(--fw-semibold); font-size: var(--fs-sm);   line-height: var(--lh-normal); }

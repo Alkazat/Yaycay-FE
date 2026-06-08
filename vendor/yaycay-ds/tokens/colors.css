@@ -1,0 +1,108 @@
+/* ============================================================
+   YAYCAY · COLORS
+   Sampled straight off the box-art logo. Bright, glossy,
+   adventurous — early-2000s game packaging energy.
+   ============================================================ */
+:root {
+  /* ---- SKY (primary brand blue) ---- */
+  --sky-50:  #eaf6fd;
+  --sky-100: #cfeafa;
+  --sky-200: #a4d7f4;
+  --sky-300: #6fbeec;
+  --sky-400: #45a8e2;
+  --sky-500: #2a96d8;  /* core */
+  --sky-600: #1f7ec0;
+  --sky-700: #1a68a0;
+
+  /* ---- ROYAL (deep ink blue — outlines, extrudes, text) ---- */
+  --royal-300: #2c6db0;
+  --royal-400: #135a99;
+  --royal-500: #0a4c8b;  /* core outline */
+  --royal-600: #073d72;
+  --royal-700: #052e58;
+  --royal-800: #04223f;  /* near-black ink */
+
+  /* ---- SUNSHINE (golden CTA / sun) ---- */
+  --sun-50:  #fff6e0;
+  --sun-100: #ffe9b3;
+  --sun-200: #ffd778;
+  --sun-300: #ffc23f;
+  --sun-400: #f7aa15;  /* core */
+  --sun-500: #e8930a;
+  --sun-600: #c8760b;
+
+  /* ---- AQUA (teal water accent) ---- */
+  --aqua-100: #d2f5f8;
+  --aqua-200: #9be8ee;
+  --aqua-300: #5dd6e0;
+  --aqua-400: #2bc3d0;  /* core */
+  --aqua-500: #1ba3b0;
+  --aqua-600: #16838e;
+
+  /* ---- MEADOW (extended green — outdoors / "go" ) ---- */
+  --meadow-300: #7fd08a;
+  --meadow-400: #46b25e;
+  --meadow-500: #339a4c;
+  --meadow-600: #277b3c;
+
+  /* ---- CORAL (extended hot accent — alerts / tickets) ---- */
+  --coral-300: #ff9b7a;
+  --coral-400: #ff6f4d;
+  --coral-500: #ed5435;
+  --coral-600: #cc3f24;
+
+  /* ---- CREAM / PAPER (warm off-white surfaces) ---- */
+  --cream-50:  #fefcf6;
+  --cream-100: #fbf7ec;  /* core paper */
+  --cream-200: #f5eedb;
+  --cream-300: #ebe2c9;
+
+  /* ---- WARM NEUTRALS (cream-tinted grays) ---- */
+  --sand-100: #f2eee6;
+  --sand-200: #e3ddd0;
+  --sand-300: #c8c0ae;
+  --sand-400: #9a9384;
+  --sand-500: #6f695d;
+  --sand-600: #4a463d;
+  --ink:      #1c2733;  /* warm near-black text */
+  --white:    #ffffff;
+
+  /* ============================================================
+     SEMANTIC ALIASES — use these in product code
+     ============================================================ */
+  --brand-primary:      var(--sky-500);
+  --brand-primary-deep: var(--royal-500);
+  --brand-cta:          var(--sun-400);
+  --brand-accent:       var(--aqua-400);
+  --brand-ink:          var(--royal-700);
+
+  /* text */
+  --text-strong:   var(--royal-800);
+  --text-body:     var(--ink);
+  --text-muted:    var(--sand-500);
+  --text-on-brand: var(--cream-100);
+  --text-on-cta:   var(--royal-800);
+  --text-link:     var(--sky-600);
+
+  /* surfaces */
+  --surface-page:    var(--cream-100);
+  --surface-card:    var(--white);
+  --surface-sunk:    var(--cream-200);
+  --surface-brand:   var(--sky-500);
+  --surface-ink:     var(--royal-700);
+  --surface-overlay: rgba(4, 34, 63, 0.55);
+
+  /* lines & outlines */
+  --line-soft:   var(--sand-200);
+  --line-strong: var(--royal-500);
+  --outline-ink: var(--royal-600);
+
+  /* states */
+  --state-success: var(--meadow-400);
+  --state-warning: var(--sun-400);
+  --state-danger:  var(--coral-500);
+  --state-info:    var(--sky-500);
+
+  /* focus ring */
+  --focus-ring: var(--sun-300);
+}

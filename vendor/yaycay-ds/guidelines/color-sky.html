@@ -1,0 +1,29 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Sky — primary" subtitle="Core brand blue. Buttons, links, brand fields." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--cream-100); font-family: var(--font-body); }
+  .ramp { display: flex; gap: 0; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-md); }
+  .sw { flex: 1; height: 104px; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; box-sizing: border-box; }
+  .sw b { font-family: var(--font-display); font-weight: 600; font-size: 13px; }
+  .sw span { font-size: 11px; font-weight: 700; opacity: .85; letter-spacing: .02em; }
+  .dark { color: #fff; } .light { color: var(--royal-800); }
+  .core { outline: 3px solid var(--royal-600); outline-offset: -3px; }
+</style>
+</head>
+<body>
+  <div class="ramp">
+    <div class="sw light" style="background:var(--sky-50)"><b>50</b><span>#EAF6FD</span></div>
+    <div class="sw light" style="background:var(--sky-100)"><b>100</b><span>#CFEAFA</span></div>
+    <div class="sw light" style="background:var(--sky-200)"><b>200</b><span>#A4D7F4</span></div>
+    <div class="sw light" style="background:var(--sky-300)"><b>300</b><span>#6FBEEC</span></div>
+    <div class="sw dark" style="background:var(--sky-400)"><b>400</b><span>#45A8E2</span></div>
+    <div class="sw dark core" style="background:var(--sky-500)"><b>500 ·core</b><span>#2A96D8</span></div>
+    <div class="sw dark" style="background:var(--sky-600)"><b>600</b><span>#1F7EC0</span></div>
+    <div class="sw dark" style="background:var(--sky-700)"><b>700</b><span>#1A68A0</span></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,9 @@
+vendor
+.next
+node_modules
+public/sw.js
+public/workbox-*.js
+playwright-report
+test-results
+pnpm-lock.yaml
+package-lock.json

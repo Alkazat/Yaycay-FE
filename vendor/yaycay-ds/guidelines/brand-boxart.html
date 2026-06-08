@@ -1,0 +1,45 @@
+<!-- @dsCard group="Brand" viewport="700x230" name="Box-art lettering" subtitle="The signature 3D outlined headline. Hero moments only." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 0; }
+  .scene {
+    height: 230px; display: grid; place-items: center;
+    background: var(--grad-scene);
+    position: relative; overflow: hidden;
+  }
+  .cloud {
+    position: absolute; background: var(--cream-50);
+    border-radius: var(--radius-pill); opacity: .9;
+  }
+  .c1 { width: 150px; height: 46px; top: 30px; left: 60px; box-shadow: 50px -14px 0 -6px var(--cream-50); }
+  .c2 { width: 110px; height: 36px; top: 46px; right: 70px; }
+  .boxart {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 92px;
+    line-height: 1;
+    color: var(--cream-50);
+    -webkit-text-stroke: 7px var(--royal-600);
+    paint-order: stroke fill;
+    text-shadow:
+      1px 1px 0 var(--royal-700), 2px 2px 0 var(--royal-700),
+      3px 3px 0 var(--royal-700), 4px 4px 0 var(--royal-700),
+      5px 5px 0 var(--royal-700), 6px 6px 0 var(--royal-700),
+      7px 9px 10px rgba(4,34,63,.4);
+    position: relative;
+    transform: rotate(-3deg);
+  }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="boxart">Yay!</div>
+  </div>
+</body>
+</html>

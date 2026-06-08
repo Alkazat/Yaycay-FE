@@ -1,0 +1,440 @@
+<!-- @dsCard group="App" viewport="1280x900" name="Yaycay app — trip planner" subtitle="Home dashboard, day-by-day planner, packing, budget & new-trip flow" -->
+<!-- Composed from sibling sources: data.js + shared/AppShell/TripsHome/TripPlanner/NewTripSheet .jsx -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yaycay — trip planner</title>
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--cream-100); }
+  #root { min-height: 100vh; }
+  @keyframes ycpop { from { opacity:0; transform: translateY(14px) scale(.96); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="../../_ds_bundle.js"></script>
+  <script src="data.js"></script>
+  <script type="text/babel">
+    const { Button, IconButton, Input, Select, Checkbox, Switch, Badge, Tag, Avatar, AvatarGroup, Card, CardMedia, CardBody, CardFooter, Stat, ProgressMeter, Tabs, Banner } = window.YaycayDesignSystem_f48296;
+
+/* ===== shared.jsx ===== */
+// Shared bits for the Yaycay app kit: brand scene tiles, icons, app chrome.
+const SCENE_GRAD = {
+  sunset: "var(--grad-sunset)",
+  meadow: "linear-gradient(180deg,#8fd8e8 0%,#bfe6a8 55%,#7fd08a 100%)",
+  sky: "var(--grad-sky)",
+  aqua: "var(--grad-aqua)",
+};
+
+function Scene({ variant = "sky", height = 150, children, round = 0, style }) {
+  return (
+    <div style={{
+      position: "relative", height, width: "100%", overflow: "hidden",
+      background: SCENE_GRAD[variant] || SCENE_GRAD.sky, borderRadius: round, ...style,
+    }}>
+      <div style={{ position: "absolute", width: 86, height: 26, top: 20, left: 22, background: "var(--cream-50)", borderRadius: 999, opacity: .92, boxShadow: "32px -9px 0 -4px var(--cream-50)" }} />
+      <div style={{ position: "absolute", width: 58, height: 18, top: 38, right: 26, background: "var(--cream-50)", borderRadius: 999, opacity: .85 }} />
+      {variant === "sunset" && (
+        <div style={{ position: "absolute", width: 60, height: 60, bottom: -22, left: "50%", transform: "translateX(-50%)", background: "radial-gradient(circle, #fff3c4 0%, #ffd778 60%, transparent 72%)", borderRadius: 999 }} />
+      )}
+      {children}
+    </div>
+  );
+}
+
+// Inline Lucide-style icons (stroke 2.5 to match the brand)
+const I = {
+  plane: "M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z",
+  bed: "M3 7v11M3 12h18v6M21 12V9a2 2 0 0 0-2-2h-7v5M7 11h.01",
+  food: "M4 3v7a3 3 0 0 0 6 0V3M7 3v18M17 3c-1.5 0-3 1.5-3 5s1.5 4 3 4 3-1 3-4-1.5-5-3-5ZM17 16v5",
+  play: "M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z|9 22h6",
+  calendar: "M3 5h18v16H3zM3 9h18M8 3v4M16 3v4",
+  bag: "M5 8h14l-1 12H6L5 8ZM9 8V6a3 3 0 0 1 6 0v2",
+  coin: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4",
+  home: "M3 11l9-8 9 8M5 10v10h14V10",
+  compass: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM15.5 8.5l-2 5-5 2 2-5 5-2Z",
+  plus: "M12 5v14M5 12h14",
+  search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-3.5-3.5",
+  bell: "M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
+  check: "M5 13l4 4L19 7",
+  chevL: "M15 6l-6 6 6 6",
+  star: "M12 3l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9 6.7 19.2l1-5.8L3.5 9.2l5.9-.9z",
+  map: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14",
+  share: "M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13",
+};
+
+function Icon({ name, size = 22, stroke = 2.5, fill = "none", style }) {
+  const paths = (I[name] || "").split("|");
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill={fill} stroke="currentColor"
+      strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", ...style }}>
+      {paths.map((d, i) => <path key={i} d={d} />)}
+    </svg>
+  );
+}
+
+const KIND_ICON = { travel: "plane", stay: "bed", food: "food", play: "play" };
+const KIND_TONE = { travel: "sky", stay: "aqua", food: "sun", play: "meadow" };
+
+
+/* ===== AppShell.jsx ===== */
+// App chrome: left rail + top bar. Children render in the content area.
+function NavItem({ icon, label, active, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: 12, width: "100%",
+      padding: "11px 14px", borderRadius: "var(--radius-md)", cursor: "pointer",
+      border: "2.5px solid " + (active ? "var(--royal-600)" : "transparent"),
+      background: active ? "var(--sky-500)" : "transparent",
+      color: active ? "#fff" : "var(--royal-600)",
+      boxShadow: active ? "0 4px 0 var(--royal-600), var(--gloss-top)" : "none",
+      fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15,
+      transition: "all .15s var(--ease-bounce)",
+    }}>
+      <Icon name={icon} size={20} />
+      {label}
+    </button>
+  );
+}
+
+function AppShell({ nav = "home", onNav, children }) {
+  const D = window.YC_DATA;
+  return (
+    <div style={{ display: "flex", minHeight: "100%", background: "var(--cream-100)", fontFamily: "var(--font-body)" }}>
+      {/* left rail */}
+      <aside style={{
+        width: 248, flex: "none", background: "var(--cream-50)",
+        borderRight: "2.5px solid var(--sand-200)", padding: 20,
+        display: "flex", flexDirection: "column", gap: 24, position: "sticky", top: 0, alignSelf: "flex-start", height: "100vh",
+      }}>
+        <img src="../../assets/brand/yaycay-logo-transparent.png" alt="Yaycay" style={{ width: 140, marginLeft: 4 }} />
+        <nav style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <NavItem icon="home" label="Home" active={nav === "home"} onClick={() => onNav && onNav("home")} />
+          <NavItem icon="compass" label="Explore" active={nav === "explore"} onClick={() => onNav && onNav("explore")} />
+          <NavItem icon="map" label="My trips" active={nav === "trips"} onClick={() => onNav && onNav("trips")} />
+          <NavItem icon="coin" label="Budgets" active={nav === "budget"} onClick={() => onNav && onNav("budget")} />
+        </nav>
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 10, padding: 10, background: "var(--cream-200)", borderRadius: "var(--radius-lg)" }}>
+          <Avatar name={D.user.name} tone="sky" size={38} />
+          <div style={{ lineHeight: 1.2 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--royal-800)", fontSize: 14 }}>{D.user.name}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>Family plan</div>
+          </div>
+        </div>
+      </aside>
+
+      {/* main column */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <header style={{
+          display: "flex", alignItems: "center", gap: 16, padding: "16px 28px",
+          borderBottom: "2.5px solid var(--sand-200)", background: "var(--cream-50)",
+          position: "sticky", top: 0, zIndex: 5,
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10, flex: 1, maxWidth: 420,
+            background: "#fff", border: "2.5px solid var(--sand-300)", borderRadius: "var(--radius-pill)",
+            padding: "9px 16px", color: "var(--sand-400)",
+          }}>
+            <Icon name="search" size={18} />
+            <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap" }}>Search trips &amp; places…</span>
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+            <IconButton label="Notifications" variant="secondary"><Icon name="bell" size={18} /></IconButton>
+            <Button variant="cta" icon={<Icon name="plus" size={18} />} onClick={() => onNav && onNav("new")}>Start a trip</Button>
+          </div>
+        </header>
+        <main style={{ padding: "28px 28px 48px", flex: 1 }}>{children}</main>
+      </div>
+    </div>
+  );
+}
+
+
+/* ===== TripsHome.jsx ===== */
+// Home dashboard: greeting, next-trip countdown hero, trip card grid.
+function TripCard({ trip, onOpen }) {
+  const crew = trip.crew;
+  return (
+    <Card interactive onClick={() => onOpen(trip)} style={{ width: "100%" }}>
+      <CardMedia height={150}
+        tag={<Badge tone={trip.scene === "sunset" ? "sun" : trip.scene === "meadow" ? "meadow" : "sky"}>{trip.tag}</Badge>}
+        fav={<Badge tone="ink">{trip.sleeps} sleeps</Badge>}>
+        <Scene variant={trip.scene} height={150} />
+      </CardMedia>
+      <CardBody title={trip.title} subtitle={`${trip.where} · ${trip.dates}`}>
+        <div style={{ marginTop: 8 }}>
+          <ProgressMeter value={trip.planned} max={trip.days} tone="sky"
+            label="Day plan" valueText={`${trip.planned} of ${trip.days} days`} />
+        </div>
+      </CardBody>
+      <CardFooter>
+        <AvatarGroup>
+          {crew.map((c, i) => <Avatar key={i} name={c.name} tone={c.tone} size={34} />)}
+        </AvatarGroup>
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--sky-600)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+          Open <Icon name="chevL" size={16} style={{ transform: "scaleX(-1)" }} />
+        </span>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function TripsHome({ onOpen }) {
+  const D = window.YC_DATA;
+  const next = D.trips[0];
+  return (
+    <div style={{ maxWidth: 1040, margin: "0 auto", display: "flex", flexDirection: "column", gap: 28 }}>
+      <div>
+        <div className="yc-eyebrow" style={{ color: "var(--sky-600)" }}>For families making memories</div>
+        <h1 style={{ fontSize: 38, margin: "4px 0 0" }}>Hey Jo — let's plan the next adventure</h1>
+      </div>
+
+      {/* countdown hero */}
+      <div style={{
+        position: "relative", overflow: "hidden", borderRadius: "var(--radius-2xl)",
+        border: "3px solid var(--royal-600)", boxShadow: "var(--card-lift)",
+      }}>
+        <Scene variant="sunset" height={234} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, padding: "0 38px" }}>
+          <div style={{ color: "#fff", textShadow: "0 2px 8px rgba(4,34,63,.35)", flex: "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="yc-eyebrow">Next up · {next.where}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 30, lineHeight: 1.1 }}>{next.title}</div>
+            <span style={{ alignSelf: "flex-start", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", background: "rgba(4,34,63,.28)", padding: "5px 13px", borderRadius: "var(--radius-pill)" }}>{next.dates}</span>
+          </div>
+          <div style={{
+            background: "var(--cream-50)", border: "3px solid var(--royal-600)", borderRadius: "var(--radius-xl)",
+            padding: "16px 22px", textAlign: "center", boxShadow: "0 6px 0 var(--royal-700)", flex: "none",
+          }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 48, lineHeight: 1, color: "var(--royal-800)" }}>{next.sleeps}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, color: "var(--sun-500)", letterSpacing: ".04em", whiteSpace: "nowrap" }}>SLEEPS TO GO</div>
+            <div style={{ marginTop: 12 }}>
+              <Button variant="primary" size="sm" onClick={() => onOpen(next)}>Open plan</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h2 style={{ margin: 0, fontSize: 26 }}>Your trips</h2>
+        <Tag icon={<Icon name="plus" size={16} />} onClick={() => {}}>New trip</Tag>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 22 }}>
+        {D.trips.map((t) => <TripCard key={t.id} trip={t} onOpen={onOpen} />)}
+      </div>
+    </div>
+  );
+}
+
+
+/* ===== TripPlanner.jsx ===== */
+// Single-trip planner: header, tabs, day-by-day plan, packing & budget views.
+function PlanItem({ item }) {
+  const tone = KIND_TONE[item.kind] || "sky";
+  const toneColor = { sky: "var(--sky-500)", sun: "var(--sun-400)", aqua: "var(--aqua-400)", meadow: "var(--meadow-400)" }[tone];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", background: "#fff", border: "2.5px solid var(--sand-200)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)" }}>
+      <span style={{ width: 42, height: 42, flex: "none", borderRadius: "var(--radius-md)", background: toneColor, color: tone === "sun" ? "var(--royal-800)" : "#fff", display: "grid", placeItems: "center", boxShadow: "var(--gloss-top)" }}>
+        <Icon name={KIND_ICON[item.kind]} size={20} />
+      </span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--royal-800)", fontSize: 16 }}>{item.title}</div>
+        <div style={{ fontWeight: 800, color: "var(--text-muted)", fontSize: 13 }}>{item.time}</div>
+      </div>
+      <IconButton label="Edit" variant="ghost" size="sm"><Icon name="chevL" size={18} style={{ transform: "scaleX(-1)" }} /></IconButton>
+    </div>
+  );
+}
+
+function DayPlan() {
+  const D = window.YC_DATA;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      {D.plan.map((day, di) => (
+        <div key={di}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <Badge tone={di === 0 ? "sky" : "soft"}>{`Day ${di + 1}`}</Badge>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--royal-800)", fontSize: 18 }}>{day.label}</span>
+            <span style={{ fontWeight: 800, color: "var(--text-muted)", fontSize: 13 }}>{day.day}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingLeft: 6, borderLeft: "3px dashed var(--sand-300)", marginLeft: 8 }}>
+            <div style={{ paddingLeft: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+              {day.items.map((it, ii) => <PlanItem key={ii} item={it} />)}
+              <button style={{ alignSelf: "flex-start", marginLeft: 0, display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", border: "2.5px dashed var(--sky-300)", color: "var(--sky-600)", fontFamily: "var(--font-display)", fontWeight: 600, padding: "9px 16px", borderRadius: "var(--radius-pill)", cursor: "pointer" }}>
+                <Icon name="plus" size={16} /> Add to this day
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Packing() {
+  const D = window.YC_DATA;
+  const [checked, setChecked] = React.useState({});
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      {D.packing.map((grp, gi) => (
+        <Card key={gi} variant="soft">
+          <CardBody title={grp.group}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 6 }}>
+              {grp.items.map((it, ii) => {
+                const key = gi + "-" + ii;
+                return <Checkbox key={ii} label={it} checked={!!checked[key]} onChange={() => setChecked((c) => ({ ...c, [key]: !c[key] }))} />;
+              })}
+            </div>
+          </CardBody>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function Budget({ trip }) {
+  const rows = [
+    { label: "Flights", tone: "sky", spent: 640 },
+    { label: "Stay", tone: "aqua", spent: 520 },
+    { label: "Food & treats", tone: "sun", spent: 180 },
+    { label: "Days out", tone: "meadow", spent: 60 },
+  ];
+  return (
+    <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", gap: 18 }}>
+      <Card variant="soft">
+        <CardBody>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 18, color: "var(--royal-800)" }}>Trip budget</span>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 22, color: "var(--sky-600)" }}>£{trip.budget.spent} <span style={{ color: "var(--text-muted)", fontSize: 15 }}>/ £{trip.budget.total}</span></span>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <ProgressMeter value={trip.budget.spent} max={trip.budget.total} tone="meadow" showValue={false} />
+          </div>
+        </CardBody>
+      </Card>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {rows.map((r, i) => (
+          <ProgressMeter key={i} value={r.spent} max={trip.budget.total} tone={r.tone} label={r.label} valueText={`£${r.spent}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TripPlanner({ trip, onBack }) {
+  const [tab, setTab] = React.useState("plan");
+  return (
+    <div style={{ maxWidth: 880, margin: "0 auto", display: "flex", flexDirection: "column", gap: 22 }}>
+      <button onClick={onBack} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, background: "transparent", border: "none", color: "var(--sky-600)", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, cursor: "pointer" }}>
+        <Icon name="chevL" size={18} /> All trips
+      </button>
+
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: "var(--radius-2xl)", border: "3px solid var(--royal-600)", boxShadow: "var(--card-lift)" }}>
+        <Scene variant={trip.scene} height={184} />
+        <div style={{ position: "absolute", left: 30, right: 30, bottom: 20, color: "#fff", textShadow: "0 2px 8px rgba(4,34,63,.35)", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="yc-eyebrow">{trip.where}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 32, lineHeight: 1.08 }}>{trip.title}</div>
+          <span style={{ alignSelf: "flex-start", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", background: "rgba(4,34,63,.28)", padding: "5px 13px", borderRadius: "var(--radius-pill)" }}>{trip.dates}</span>
+        </div>
+        <div style={{ position: "absolute", right: 24, top: 20, display: "flex", gap: 10 }}>
+          <IconButton label="Share" variant="secondary"><Icon name="share" size={18} /></IconButton>
+          <Badge tone="ink">{trip.sleeps} sleeps to go</Badge>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <Tabs value={tab} onChange={setTab} tabs={[
+          { value: "plan", label: "Day plan", icon: <Icon name="calendar" size={16} /> },
+          { value: "pack", label: "Packing", icon: <Icon name="bag" size={16} /> },
+          { value: "budget", label: "Budget", icon: <Icon name="coin" size={16} /> },
+        ]} />
+        <Button variant="cta" icon={<Icon name="plus" size={18} />}>Add a day</Button>
+      </div>
+
+      {tab === "plan" && <DayPlan />}
+      {tab === "pack" && <Packing />}
+      {tab === "budget" && <Budget trip={trip} />}
+    </div>
+  );
+}
+
+
+/* ===== NewTripSheet.jsx ===== */
+// "Start a trip" modal sheet.
+function NewTripSheet({ onClose, onCreate }) {
+  const [name, setName] = React.useState("");
+  const [pace, setPace] = React.useState("relaxed");
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--surface-overlay)", backdropFilter: "blur(3px)", display: "grid", placeItems: "center", zIndex: 50, padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 480, maxWidth: "100%", background: "var(--cream-100)", border: "3px solid var(--royal-600)", borderRadius: "var(--radius-2xl)", boxShadow: "var(--shadow-xl)", overflow: "hidden" }}>
+        <div style={{ position: "relative" }}>
+          <Scene variant="sky" height={108} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, paddingLeft: 24 }}>
+            <div style={{ color: "#fff", textShadow: "0 2px 8px rgba(4,34,63,.35)" }}>
+              <div className="yc-eyebrow">New adventure</div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 26, lineHeight: 1, whiteSpace: "nowrap" }}>Start a trip</div>
+            </div>
+          </div>
+          <div style={{ position: "absolute", right: 14, top: 14 }}>
+            <IconButton label="Close" variant="secondary" size="sm" onClick={onClose}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </IconButton>
+          </div>
+        </div>
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <Input label="Where are you off to?" placeholder="e.g. Sicily, Italy" value={name} onChange={(e) => setName(e.target.value)} icon={<Icon name="map" size={18} />} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <Input label="From" placeholder="Jul 12" />
+            <Input label="To" placeholder="Jul 19" />
+          </div>
+          <Select label="Who's coming?" options={["Just us two", "Family of 4", "Big group"]} defaultValue="Family of 4" />
+          <div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 14, color: "var(--royal-700)", marginBottom: 8 }}>Trip pace</div>
+            <div style={{ display: "flex", gap: 18 }}>
+              <Checkbox radio name="pace" label="Relaxed" checked={pace === "relaxed"} onChange={() => setPace("relaxed")} />
+              <Checkbox radio name="pace" label="Action-packed" checked={pace === "action"} onChange={() => setPace("action")} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+            <Button variant="secondary" onClick={onClose}>Maybe later</Button>
+            <Button variant="cta" block icon={<Icon name="plane" size={18} />} onClick={() => onCreate(name || "New trip")}>Create trip</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+function App(){
+  const [nav,setNav] = React.useState("home");
+  const [trip,setTrip] = React.useState(null);
+  const [sheet,setSheet] = React.useState(false);
+  const [toast,setToast] = React.useState(null);
+  React.useEffect(()=>{ if(toast){ const t=setTimeout(()=>setToast(null),3200); return ()=>clearTimeout(t);} },[toast]);
+  const handleNav = (n)=>{ if(n==="new"){ setSheet(true); } else { setNav(n); setTrip(null); } };
+  return (
+    <React.Fragment>
+      <AppShell nav={trip? "trips": nav} onNav={handleNav}>
+        {trip ? <TripPlanner trip={trip} onBack={()=>setTrip(null)} /> : <TripsHome onOpen={(t)=>setTrip(t)} />}
+      </AppShell>
+      {sheet && <NewTripSheet onClose={()=>setSheet(false)} onCreate={(name)=>{ setSheet(false); setToast(name); }} />}
+      {toast && (
+        <div style={{position:"fixed",right:24,bottom:24,zIndex:60,width:340,animation:"ycpop .3s var(--ease-bounce)"}}>
+          <Banner tone="success" title="Trip created!" onClose={()=>setToast(null)}>{toast} is ready — let's plan it.</Banner>
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>

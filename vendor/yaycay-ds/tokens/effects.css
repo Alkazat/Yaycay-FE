@@ -1,0 +1,61 @@
+/* ============================================================
+   YAYCAY · EFFECTS — radii, borders, shadows, gradients
+   The "box-art" look: thick royal outlines, chunky 3D "pop"
+   shadows, glossy top highlights, sky & sunset gradients.
+   ============================================================ */
+:root {
+  /* ---- corner radii (bubbly, generous) ---- */
+  --radius-xs:   6px;
+  --radius-sm:   10px;
+  --radius-md:   16px;
+  --radius-lg:   22px;
+  --radius-xl:   30px;
+  --radius-2xl:  42px;
+  --radius-pill: 999px;
+  --radius-blob: 46% 54% 52% 48% / 48% 46% 54% 52%; /* soft cloud blob */
+
+  /* ---- outlines (the signature thick ink stroke) ---- */
+  --border-hair:   1px solid var(--line-soft);
+  --border-ink:    2.5px solid var(--royal-500);
+  --border-ink-bold: 4px solid var(--royal-600);
+  --stroke-w:      2.5px; /* @kind spacing */
+
+  /* ---- 3D "POP" shadows — hard offset, makes things look pressable ---- */
+  --pop-sky:    0 5px 0 var(--royal-500);
+  --pop-sky-sm: 0 3px 0 var(--royal-500);
+  --pop-sun:    0 5px 0 var(--sun-600);
+  --pop-aqua:   0 5px 0 var(--aqua-600);
+  --pop-coral:  0 5px 0 var(--coral-600);
+  --pop-ink:    0 5px 0 var(--royal-700);
+
+  /* ---- soft ambient shadows (cards, floats) ---- */
+  --shadow-sm:  0 2px 6px rgba(7, 61, 114, 0.10);
+  --shadow-md:  0 8px 20px rgba(7, 61, 114, 0.14);
+  --shadow-lg:  0 18px 40px rgba(7, 61, 114, 0.18);
+  --shadow-xl:  0 28px 64px rgba(7, 61, 114, 0.22);
+
+  /* combined: thick outline card with both pop + ambient lift */
+  --card-lift:  0 10px 24px rgba(7, 61, 114, 0.16);
+
+  /* ---- glossy inner highlight (top sheen on buttons/badges) ---- */
+  --gloss-top:    inset 0 2px 0 rgba(255, 255, 255, 0.55); /* @kind shadow */
+  --gloss-strong: inset 0 3px 0 rgba(255, 255, 255, 0.7), inset 0 -3px 6px rgba(7, 61, 114, 0.18); /* @kind shadow */
+
+  /* focus ring (sunshine halo) */
+  --ring-focus: 0 0 0 3px var(--cream-100), 0 0 0 6px var(--sun-300);
+
+  /* ---- signature gradients ---- */
+  --grad-sky:    linear-gradient(180deg, #6fbeec 0%, #2a96d8 55%, #1f7ec0 100%); /* @kind color */
+  --grad-sunset: linear-gradient(180deg, #ffd778 0%, #f7aa15 60%, #e8930a 100%); /* @kind color */
+  --grad-aqua:   linear-gradient(180deg, #5dd6e0 0%, #2bc3d0 100%); /* @kind color */
+  --grad-paper:  linear-gradient(180deg, #fefcf6 0%, #f5eedb 100%); /* @kind color */
+  /* hero scene: sky fading to sunset horizon (the badge backdrop) */
+  --grad-scene:  linear-gradient(180deg, #6fbeec 0%, #45a8e2 42%, #ffd778 78%, #f7aa15 100%); /* @kind color */
+
+  /* motion */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1); /* @kind other */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1); /* @kind other */
+  --dur-fast:    120ms; /* @kind other */
+  --dur-base:    220ms; /* @kind other */
+  --dur-slow:    420ms; /* @kind other */
+}

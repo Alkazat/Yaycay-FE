@@ -1,0 +1,58 @@
+/* App-level styles layered on top of the Yaycay design system tokens.
+   The DS provides every colour, type, spacing, radius and shadow token via
+   the vendored styles.css (imported in layout.tsx); use those tokens here -
+   never hard-code brand colours. */
+
+:root {
+  /* Respect iOS safe-area insets app-wide (touch hard-rule). */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* One scroll context per view - the page itself scrolls; no nested traps. */
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--surface-page);
+}
+
+/* Decorative sky -> sunset scene band used behind hero zones. */
+.yc-scene-band {
+  background: var(--grad-scene);
+}
+
+/* App shell: a single centered column, safe-area aware. */
+.yc-shell {
+  min-height: 100dvh;
+  padding:
+    calc(var(--safe-top) + var(--space-6)) calc(var(--safe-right) + var(--gutter))
+    calc(var(--safe-bottom) + var(--space-12)) calc(var(--safe-left) + var(--gutter));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.yc-container {
+  width: 100%;
+  max-width: var(--container-md);
+}
+
+.yc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

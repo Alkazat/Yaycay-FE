@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Royal — ink" subtitle="The signature outline & headline ink." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--cream-100); font-family: var(--font-body); }
+  .ramp { display: flex; gap: 0; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-md); }
+  .sw { flex: 1; height: 104px; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; box-sizing: border-box; }
+  .sw b { font-family: var(--font-display); font-weight: 600; font-size: 13px; }
+  .sw span { font-size: 11px; font-weight: 700; opacity: .85; letter-spacing: .02em; }
+  .dark { color: #fff; } .light { color: var(--royal-800); }
+  .core { outline: 3px solid var(--royal-700); outline-offset: -3px; }
+</style>
+</head>
+<body>
+  <div class="ramp">
+    <div class="sw dark" style="background:var(--royal-300)"><b>300</b><span>#2C6DB0</span></div>
+    <div class="sw dark" style="background:var(--royal-400)"><b>400</b><span>#135A99</span></div>
+    <div class="sw dark core" style="background:var(--royal-500)"><b>500 ·core</b><span>#0A4C8B</span></div>
+    <div class="sw dark" style="background:var(--royal-600)"><b>600</b><span>#073D72</span></div>
+    <div class="sw dark" style="background:var(--royal-700)"><b>700</b><span>#052E58</span></div>
+    <div class="sw dark" style="background:var(--royal-800)"><b>800</b><span>#04223F</span></div>
+  </div>
+</body>
+</html>

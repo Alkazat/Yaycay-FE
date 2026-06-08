@@ -1,0 +1,38 @@
+<!-- @dsCard group="Marketing" viewport="380x680" name="Social ad — story" subtitle="9:16 story / reel creative with floating trip card." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; display: grid; place-items: center; background: var(--cream-200); padding: 18px; }
+  .ad { width: 340px; height: 604px; position: relative; overflow: hidden; background: var(--grad-scene); border: 4px solid var(--royal-600); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+  .cloud { position: absolute; background: var(--cream-50); border-radius: 999px; opacity: .9; }
+  .logo { position: absolute; top: 26px; left: 50%; transform: translateX(-50%); width: 116px; filter: drop-shadow(0 4px 8px rgba(4,34,63,.3)); }
+  .headline { position: absolute; top: 130px; left: 0; right: 0; text-align: center; font-family: var(--font-display); font-weight: 600; font-size: 46px; line-height: 1; color: var(--cream-50); -webkit-text-stroke: 5px var(--royal-600); paint-order: stroke fill; text-shadow: 1px 1px 0 var(--royal-700),2px 2px 0 var(--royal-700),3px 3px 0 var(--royal-700),4px 5px 8px rgba(4,34,63,.4); }
+  .card { position: absolute; top: 286px; left: 50%; transform: translateX(-50%) rotate(-3deg); width: 224px; background: #fff; border: 3px solid var(--royal-600); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .card .scene { height: 96px; background: var(--grad-sunset); position: relative; }
+  .card .scene .b { position: absolute; top: 9px; left: 9px; background: var(--sun-400); color: var(--royal-800); border: 2px solid var(--sun-600); font-family: var(--font-display); font-weight: 600; font-size: 11px; padding: 3px 9px; border-radius: 999px; box-shadow: var(--gloss-top); }
+  .card .b2 { position: absolute; top: 9px; right: 9px; background: var(--royal-700); color: var(--cream-100); border: 2px solid var(--royal-800); font-family: var(--font-display); font-weight: 600; font-size: 11px; padding: 3px 9px; border-radius: 999px; }
+  .card .cb { padding: 11px 13px; }
+  .card .cb b { font-family: var(--font-display); font-weight: 600; color: var(--royal-800); font-size: 15px; }
+  .card .cb span { display: block; color: var(--text-muted); font-weight: 800; font-size: 11px; margin-top: 2px; }
+  .cta { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); background: var(--sun-400); color: var(--royal-800); font-family: var(--font-display); font-weight: 600; font-size: 18px; padding: 13px 28px; border: 3px solid var(--sun-600); border-radius: var(--radius-pill); box-shadow: 0 6px 0 var(--sun-600), var(--gloss-top); white-space: nowrap; }
+</style>
+</head>
+<body>
+  <div class="ad">
+    <div class="cloud" style="width:96px;height:28px;top:92px;left:30px;box-shadow:38px -10px 0 -4px var(--cream-50)"></div>
+    <img class="logo" src="../assets/brand/yaycay-logo-transparent.png" alt="Yaycay" />
+    <div class="headline">12<br />sleeps<br />to go!</div>
+    <div class="card">
+      <div class="scene">
+        <span class="b">Beach</span>
+        <span class="b2">Sicily</span>
+      </div>
+      <div class="cb"><b>Sicily with the kids</b><span>7 days · Jul 12 – 19</span></div>
+    </div>
+    <div class="cta">Plan yours free →</div>
+  </div>
+</body>
+</html>

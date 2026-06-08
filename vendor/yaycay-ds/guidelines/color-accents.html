@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Aqua & Meadow — accents" subtitle="Supporting accents: water + outdoors." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--cream-100); font-family: var(--font-body); }
+  .ramp { display: flex; gap: 0; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-md); }
+  .sw { flex: 1; height: 104px; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; box-sizing: border-box; }
+  .sw b { font-family: var(--font-display); font-weight: 600; font-size: 13px; }
+  .sw span { font-size: 11px; font-weight: 700; opacity: .85; letter-spacing: .02em; }
+  .dark { color: #fff; } .light { color: var(--royal-800); }
+  .core { outline: 3px solid var(--royal-700); outline-offset: -3px; }
+</style>
+</head>
+<body>
+  <div class="ramp">
+    <div class="sw light" style="background:var(--aqua-200)"><b>aqua 200</b><span>#9BE8EE</span></div>
+    <div class="sw light core" style="background:var(--aqua-400)"><b>aqua 400</b><span>#2BC3D0</span></div>
+    <div class="sw dark" style="background:var(--aqua-600)"><b>aqua 600</b><span>#16838E</span></div>
+    <div class="sw light" style="background:var(--meadow-300)"><b>meadow 300</b><span>#7FD08A</span></div>
+    <div class="sw dark core" style="background:var(--meadow-400)"><b>meadow 400</b><span>#46B25E</span></div>
+    <div class="sw dark" style="background:var(--meadow-600)"><b>meadow 600</b><span>#277B3C</span></div>
+  </div>
+</body>
+</html>

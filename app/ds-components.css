@@ -1,0 +1,405 @@
+/* ============================================================
+   Yaycay DS - component CSS, hoisted to the global sheet.
+
+   The vendored DS components self-inject their CSS on the client via an
+   `ensure()` helper that no-ops on the server, which would flash unstyled
+   content on first SSR paint. Mirroring the CSS here (verbatim from the
+   vendored sources) means styles are present in the initial HTML; the
+   client-side `ensure()` then finds matching rules already applied and the
+   duplicate is harmless. Keep in sync with vendor/yaycay-ds/components/* for
+   any component used in server-rendered markup.
+   ============================================================ */
+
+/* --- Button (vendor/yaycay-ds/components/buttons/Button.jsx) --- */
+.yc-btn {
+  --_pop: var(--pop-sky);
+  --_bg: var(--sky-500);
+  --_fg: #fff;
+  --_bd: var(--royal-600);
+  font-family: var(--font-display);
+  font-weight: 600;
+  border: 2.5px solid var(--_bd);
+  background: var(--_bg);
+  color: var(--_fg);
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--_pop), var(--gloss-top);
+  transition:
+    transform var(--dur-fast) var(--ease-bounce),
+    box-shadow var(--dur-fast) var(--ease-bounce),
+    filter var(--dur-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.yc-btn:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.06) brightness(1.03);
+}
+.yc-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--_bd), var(--gloss-top);
+}
+.yc-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--_pop), var(--gloss-top), var(--ring-focus);
+}
+.yc-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: grayscale(0.3);
+  box-shadow: 0 3px 0 var(--_bd);
+}
+.yc-btn--sm {
+  font-size: var(--fs-sm);
+  padding: 0 16px;
+  min-height: var(--control-sm);
+}
+.yc-btn--md {
+  font-size: var(--fs-base);
+  padding: 0 22px;
+  min-height: var(--control-md);
+}
+.yc-btn--lg {
+  font-size: var(--fs-lg);
+  padding: 0 30px;
+  min-height: var(--control-lg);
+}
+.yc-btn--block {
+  display: flex;
+  width: 100%;
+}
+.yc-btn--primary {
+  --_bg: var(--sky-500);
+  --_bd: var(--royal-600);
+  --_pop: var(--pop-sky);
+  --_fg: #fff;
+}
+.yc-btn--cta {
+  --_bg: var(--sun-400);
+  --_bd: var(--sun-600);
+  --_pop: var(--pop-sun);
+  --_fg: var(--royal-800);
+}
+.yc-btn--accent {
+  --_bg: var(--aqua-400);
+  --_bd: var(--aqua-600);
+  --_pop: var(--pop-aqua);
+  --_fg: var(--royal-800);
+}
+.yc-btn--danger {
+  --_bg: var(--coral-400);
+  --_bd: var(--coral-600);
+  --_pop: var(--pop-coral);
+  --_fg: #fff;
+}
+.yc-btn--secondary {
+  --_bg: #fff;
+  --_bd: var(--royal-500);
+  --_pop: 0 5px 0 var(--sand-300);
+  --_fg: var(--royal-700);
+}
+.yc-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--royal-600);
+}
+.yc-btn--ghost:hover {
+  background: var(--sky-50);
+  transform: translateY(-1px);
+}
+.yc-btn--ghost:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.yc-btn .yc-btn__icon {
+  display: inline-flex;
+}
+.yc-btn .yc-btn__icon svg {
+  display: block;
+  width: 1.15em;
+  height: 1.15em;
+}
+
+/* --- Input (vendor/yaycay-ds/components/forms/Input.jsx) --- */
+.yc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body);
+}
+.yc-field__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--royal-700);
+}
+.yc-field__hint {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.yc-field__hint--err {
+  color: var(--coral-500);
+}
+.yc-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.yc-input-wrap__icon {
+  position: absolute;
+  left: 14px;
+  display: inline-flex;
+  color: var(--sand-400);
+  pointer-events: none;
+}
+.yc-input-wrap__icon svg {
+  width: 18px;
+  height: 18px;
+}
+.yc-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--ink);
+  background: #fff;
+  border: 2.5px solid var(--sand-300);
+  border-radius: var(--radius-md);
+  min-height: var(--control-md);
+  padding: 8px 16px;
+  box-shadow: inset 0 2px 4px rgba(7, 61, 114, 0.06);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.yc-input::placeholder {
+  color: var(--sand-400);
+  font-weight: 600;
+}
+.yc-input--with-icon {
+  padding-left: 42px;
+}
+.yc-input:hover {
+  border-color: var(--sky-300);
+}
+.yc-input:focus {
+  outline: none;
+  border-color: var(--sky-500);
+  box-shadow: var(--ring-focus);
+}
+.yc-input--err {
+  border-color: var(--coral-400);
+}
+.yc-input--err:focus {
+  box-shadow: 0 0 0 3px var(--cream-100), 0 0 0 6px var(--coral-300);
+}
+.yc-input[disabled] {
+  background: var(--cream-200);
+  color: var(--sand-400);
+  cursor: not-allowed;
+}
+
+/* --- Card (vendor/yaycay-ds/components/surfaces/Card.jsx) --- */
+.yc-card {
+  background: var(--surface-card);
+  border: 2.5px solid var(--royal-500);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--card-lift);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-body);
+}
+.yc-card--flat {
+  box-shadow: var(--shadow-sm);
+}
+.yc-card--soft {
+  border-color: var(--sand-200);
+  box-shadow: var(--shadow-md);
+}
+.yc-card--interactive {
+  cursor: pointer;
+  transition:
+    transform var(--dur-base) var(--ease-bounce),
+    box-shadow var(--dur-base) var(--ease-bounce);
+}
+.yc-card--interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.yc-card--interactive:active {
+  transform: translateY(-1px);
+}
+.yc-card__media {
+  position: relative;
+  display: block;
+  background: var(--grad-scene);
+}
+.yc-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.yc-card__media-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+.yc-card__media-fav {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.yc-card__body {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.yc-card__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-h4);
+  color: var(--royal-800);
+  margin: 0;
+}
+.yc-card__sub {
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  margin: 0;
+}
+.yc-card__footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 2px dashed var(--sand-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* --- Badge (vendor/yaycay-ds/components/display/Badge.jsx) --- */
+.yc-badge {
+  --_bg: var(--sky-500);
+  --_fg: #fff;
+  --_bd: var(--royal-600);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-xs);
+  line-height: 1;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--_bg);
+  color: var(--_fg);
+  border: 2px solid var(--_bd);
+  box-shadow: var(--gloss-top);
+  white-space: nowrap;
+}
+.yc-badge svg {
+  width: 13px;
+  height: 13px;
+}
+.yc-badge--sky {
+  --_bg: var(--sky-500);
+  --_bd: var(--royal-600);
+  --_fg: #fff;
+}
+.yc-badge--sun {
+  --_bg: var(--sun-400);
+  --_bd: var(--sun-600);
+  --_fg: var(--royal-800);
+}
+.yc-badge--aqua {
+  --_bg: var(--aqua-400);
+  --_bd: var(--aqua-600);
+  --_fg: var(--royal-800);
+}
+.yc-badge--meadow {
+  --_bg: var(--meadow-400);
+  --_bd: var(--meadow-600);
+  --_fg: #fff;
+}
+.yc-badge--coral {
+  --_bg: var(--coral-400);
+  --_bd: var(--coral-600);
+  --_fg: #fff;
+}
+.yc-badge--ink {
+  --_bg: var(--royal-700);
+  --_bd: var(--royal-800);
+  --_fg: var(--cream-100);
+}
+.yc-badge--soft {
+  --_bg: var(--sky-50);
+  --_bd: var(--sky-200);
+  --_fg: var(--royal-600);
+  box-shadow: none;
+}
+.yc-badge--dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* --- ProgressMeter (vendor/yaycay-ds/components/surfaces/ProgressMeter.jsx) --- */
+.yc-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body);
+}
+.yc-progress__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.yc-progress__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--royal-700);
+}
+.yc-progress__val {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--sky-600);
+}
+.yc-progress__track {
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--cream-300);
+  border: 2.5px solid var(--royal-600);
+  overflow: hidden;
+  box-shadow: inset 0 2px 3px rgba(7, 61, 114, 0.18);
+}
+.yc-progress__fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--grad-sky);
+  box-shadow: var(--gloss-top);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.yc-progress--sun .yc-progress__fill {
+  background: var(--grad-sunset);
+}
+.yc-progress--meadow .yc-progress__fill {
+  background: linear-gradient(180deg, #7fd08a, #46b25e);
+}
+.yc-progress--aqua .yc-progress__fill {
+  background: var(--grad-aqua);
+}

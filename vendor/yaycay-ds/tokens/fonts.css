@@ -1,0 +1,26 @@
+/* Yaycay webfonts — variable woff2, shipped with the system */
+
+/* Fredoka — display / bubbly headline face (300–700) */
+@font-face {
+  font-family: "Fredoka";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../assets/fonts/Fredoka-Variable.woff2") format("woff2");
+}
+
+/* Nunito — body / UI face (200–1000) */
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url("../assets/fonts/Nunito-Variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: italic;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url("../assets/fonts/Nunito-Italic-Variable.woff2") format("woff2");
+}

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Corner radii" subtitle="Bubbly & generous — nothing sharp." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px 22px; background: var(--cream-100); font-family: var(--font-body); }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .box { width: 84px; height: 84px; background: var(--surface-card); border: 2.5px solid var(--royal-500); box-shadow: var(--shadow-sm); }
+  .item b { font-family: var(--font-display); font-size: 13px; color: var(--royal-700); font-weight: 600; }
+  .item span { font-size: 10px; font-weight: 700; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="item"><div class="box" style="border-radius:var(--radius-xs)"></div><b>xs</b><span>6px</span></div>
+    <div class="item"><div class="box" style="border-radius:var(--radius-sm)"></div><b>sm</b><span>10px</span></div>
+    <div class="item"><div class="box" style="border-radius:var(--radius-md)"></div><b>md</b><span>16px</span></div>
+    <div class="item"><div class="box" style="border-radius:var(--radius-lg)"></div><b>lg</b><span>22px</span></div>
+    <div class="item"><div class="box" style="border-radius:var(--radius-xl)"></div><b>xl</b><span>30px</span></div>
+    <div class="item"><div class="box" style="border-radius:var(--radius-2xl)"></div><b>2xl</b><span>42px</span></div>
+    <div class="item"><div class="box" style="border-radius:var(--radius-pill)"></div><b>pill</b><span>999</span></div>
+    <div class="item"><div class="box" style="border-radius:var(--radius-blob)"></div><b>blob</b><span>cloud</span></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!-- @dsCard group="Colors" viewport="700x190" name="Semantic & state" subtitle="Text, surface and state aliases in use." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--cream-100); font-family: var(--font-body); display: flex; gap: 14px; }
+  .col { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .lbl { font-family: var(--font-display); font-weight: 600; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+  .chip { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
+  .dot { width: 22px; height: 22px; border-radius: var(--radius-pill); border: 2.5px solid var(--royal-600); flex: none; }
+  .state { padding: 7px 12px; border-radius: var(--radius-pill); font-weight: 800; font-size: 12px; color: #fff; box-shadow: var(--gloss-top); }
+  .surf { padding: 12px; border-radius: var(--radius-md); font-weight: 700; font-size: 12px; }
+</style>
+</head>
+<body>
+  <div class="col">
+    <span class="lbl">Text</span>
+    <div class="chip" style="color:var(--text-strong)"><span class="dot" style="background:var(--text-strong)"></span>strong</div>
+    <div class="chip" style="color:var(--text-body)"><span class="dot" style="background:var(--text-body)"></span>body</div>
+    <div class="chip" style="color:var(--text-muted)"><span class="dot" style="background:var(--text-muted)"></span>muted</div>
+    <div class="chip" style="color:var(--text-link)"><span class="dot" style="background:var(--text-link)"></span>link</div>
+  </div>
+  <div class="col">
+    <span class="lbl">Surface</span>
+    <div class="surf" style="background:var(--surface-card);border:2.5px solid var(--line-strong);color:var(--text-strong)">card</div>
+    <div class="surf" style="background:var(--surface-sunk);color:var(--text-body)">sunk</div>
+    <div class="surf" style="background:var(--surface-brand);color:#fff">brand</div>
+    <div class="surf" style="background:var(--surface-ink);color:var(--cream-100)">ink</div>
+  </div>
+  <div class="col">
+    <span class="lbl">State</span>
+    <div class="state" style="background:var(--state-success)">success</div>
+    <div class="state" style="background:var(--state-warning);color:var(--royal-800)">warning</div>
+    <div class="state" style="background:var(--state-danger)">danger</div>
+    <div class="state" style="background:var(--state-info)">info</div>
+  </div>
+</body>
+</html>

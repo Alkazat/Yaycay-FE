@@ -1,0 +1,28 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Sunshine — CTA" subtitle="The "go" colour. Primary call-to-action." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--cream-100); font-family: var(--font-body); }
+  .ramp { display: flex; gap: 0; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-md); }
+  .sw { flex: 1; height: 104px; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; box-sizing: border-box; }
+  .sw b { font-family: var(--font-display); font-weight: 600; font-size: 13px; }
+  .sw span { font-size: 11px; font-weight: 700; opacity: .85; letter-spacing: .02em; }
+  .dark { color: #fff; } .light { color: var(--royal-800); }
+  .core { outline: 3px solid var(--royal-700); outline-offset: -3px; }
+</style>
+</head>
+<body>
+  <div class="ramp">
+    <div class="sw light" style="background:var(--sun-50)"><b>50</b><span>#FFF6E0</span></div>
+    <div class="sw light" style="background:var(--sun-100)"><b>100</b><span>#FFE9B3</span></div>
+    <div class="sw light" style="background:var(--sun-200)"><b>200</b><span>#FFD778</span></div>
+    <div class="sw light" style="background:var(--sun-300)"><b>300</b><span>#FFC23F</span></div>
+    <div class="sw light core" style="background:var(--sun-400)"><b>400 ·core</b><span>#F7AA15</span></div>
+    <div class="sw dark" style="background:var(--sun-500)"><b>500</b><span>#E8930A</span></div>
+    <div class="sw dark" style="background:var(--sun-600)"><b>600</b><span>#C8760B</span></div>
+  </div>
+</body>
+</html>
