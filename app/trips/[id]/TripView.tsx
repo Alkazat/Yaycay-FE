@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getTrip, listProfiles } from "@/lib/api/trips";
 import type { RenderView } from "@/lib/render/routeByKind";
@@ -60,6 +61,22 @@ export function TripView({ tripId }: { tripId: string }) {
         <div>
           <Countdown startDate={trip.trip.start_date} timezone={trip.trip.timezone} />
         </div>
+        <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+          <Link
+            href={`/trips/${tripId}/plan`}
+            className="yc-btn yc-btn--secondary yc-btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            Plan
+          </Link>
+          <Link
+            href={`/trips/${tripId}/journal`}
+            className="yc-btn yc-btn--secondary yc-btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            Journal
+          </Link>
+        </nav>
       </header>
 
       <Tabs
