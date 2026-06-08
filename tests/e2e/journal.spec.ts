@@ -1,16 +1,20 @@
 import { test, expect } from "@playwright/test";
 
 /** Journal: add a memory and see it appear; plan route shows by tier. */
-test("adds a journal memory", async ({ page }) => {
+test("adds a journal memory", async ({ page }, testInfo) => {
   await page.goto("/trips/t_sg/journal");
   await expect(page.getByTestId("journal")).toBeVisible();
 
-  // Rate it and write a note.
+  // Unique per project so the shared mock store can't cross-contaminate runs.
+  const note = `Memory ${testInfo.project.name} ${Date.now()}`;
+
   await page.getByRole("radio", { name: /4 stars/i }).click();
-  await page.getByPlaceholder(/what made today special/i).fill("Playwright was here.");
+  await page.getByPlaceholder(/what made today special/i).fill(note);
   await page.getByRole("button", { name: /save memory/i }).click();
 
-  await expect(page.getByText(/playwright was here/i)).toBeVisible();
+  // The saved entry shows in the memories list (scoped, so the textarea value
+  // is not matched; first() tolerates the accumulating mock store).
+  await expect(page.getByTestId("journal-entries").getByText(note).first()).toBeVisible();
 });
 
 test("plan route shows the our-AI planner for the full tier", async ({ page }) => {

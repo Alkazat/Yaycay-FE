@@ -130,7 +130,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
         </CardBody>
       </Card>
 
-      <section className="yc-stack">
+      <section className="yc-stack" data-testid="journal-entries">
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
           <h2 style={{ margin: 0 }}>Memories</h2>
           {avg != null ? <Badge tone="sun">{avg} avg stars</Badge> : null}
