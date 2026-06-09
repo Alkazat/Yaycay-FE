@@ -7,6 +7,7 @@ import { getTrip, listProfiles } from "@/lib/api/trips";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
+import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import { Countdown } from "@/components/Countdown";
 import { Tabs, Card, CardBody, Badge } from "@/components/ds";
 import { formatDateRange } from "@/lib/format";
@@ -23,7 +24,7 @@ export function TripView({ tripId }: { tripId: string }) {
 
   const [view, setView] = useState<RenderView>("kid");
   const [activeDayId, setActiveDayId] = useState<string | null>(null);
-  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const { activeProfileId, setActiveProfileId } = useActiveProfile();
 
   const trip = tripQuery.data;
   const profiles = profilesQuery.data ?? [];

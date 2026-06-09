@@ -7,6 +7,7 @@ import { listJournal, addJournalEntry } from "@/lib/api/journal";
 import { averageStars } from "@/lib/journal";
 import { formatHumanDate } from "@/lib/format";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
+import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import { StarRating } from "@/components/journal/StarRating";
 import { Button, Card, CardBody, Select, Badge } from "@/components/ds";
 
@@ -19,7 +20,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
   const profiles = profilesQuery.data ?? [];
   const trip = tripQuery.data;
 
-  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const { activeProfileId, setActiveProfileId } = useActiveProfile();
   const profileId = activeProfileId ?? profiles[0]?.id ?? null;
 
   const [dayId, setDayId] = useState<string>("");
