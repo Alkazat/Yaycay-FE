@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listProfiles } from "@/lib/api/trips";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
+import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import { Card, CardBody } from "@/components/ds";
 
 export function ProfilesClient() {
@@ -11,7 +11,7 @@ export function ProfilesClient() {
     queryKey: ["profiles"],
     queryFn: ({ signal }) => listProfiles(signal),
   });
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const { activeProfileId, setActiveProfileId } = useActiveProfile();
 
   return (
     <div className="yc-stack">
@@ -34,7 +34,11 @@ export function ProfilesClient() {
       ) : null}
 
       {data ? (
-        <ProfileSwitcher profiles={data} activeId={activeId ?? data[0]?.id ?? null} onSelect={setActiveId} />
+        <ProfileSwitcher
+          profiles={data}
+          activeId={activeProfileId ?? data[0]?.id ?? null}
+          onSelect={setActiveProfileId}
+        />
       ) : null}
 
       <Card variant="soft">

@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/shell/AppShell";
+import { ActiveProfileProvider } from "@/components/profile/ActiveProfileProvider";
 
 /** Shared chrome for the signed-in app routes (trips, profiles, account). */
 export default function AppLayout({ children }: { children: ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <ActiveProfileProvider>
+      <AppShell>{children}</AppShell>
+    </ActiveProfileProvider>
+  );
 }
