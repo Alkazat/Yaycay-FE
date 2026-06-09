@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { generateDemoDay } from "@/lib/api/demo";
+import { captureSignup } from "@/lib/api/signup";
 import type { DemoGenerateDayResponse } from "@/lib/contract-mock/types";
 import { PREFILL_EMAIL_PARAM } from "@/lib/constants";
 import { Button, Card, CardBody, Input } from "@/components/ds";
@@ -21,6 +22,7 @@ function defaultDates(): { start: string; end: string } {
 }
 
 export function DemoClient() {
+  const router = useRouter();
   const defaults = defaultDates();
   const [destination, setDestination] = useState("Singapore");
   const [startDate, setStartDate] = useState(defaults.start);
@@ -29,6 +31,14 @@ export function DemoClient() {
 
   const mutation = useMutation<DemoGenerateDayResponse, Error>({
     mutationFn: () => generateDemoDay({ destination, start_date: startDate, end_date: endDate }),
+  });
+
+  // Capture the account/email (Brevo-synced by BE), then hand off to /auth.
+  const signup = useMutation({
+    mutationFn: () => captureSignup({ email, consent: true }),
+    onSuccess: () => {
+      router.push(`/auth?${PREFILL_EMAIL_PARAM}=${encodeURIComponent(email)}`);
+    },
   });
 
   const onSubmit = (e: FormEvent) => {
@@ -126,14 +136,20 @@ export function DemoClient() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
               />
-              <Link
-                href={`/auth?${PREFILL_EMAIL_PARAM}=${encodeURIComponent(email)}`}
-                className="yc-btn yc-btn--primary yc-btn--lg yc-btn--block"
-                style={{ textDecoration: "none" }}
-                aria-disabled={email.length === 0}
+              <Button
+                variant="primary"
+                size="lg"
+                block
+                onClick={() => signup.mutate()}
+                disabled={email.length === 0 || signup.isPending}
               >
-                Create my account
-              </Link>
+                {signup.isPending ? "Saving..." : "Create my account"}
+              </Button>
+              {signup.isError ? (
+                <p style={{ margin: 0, color: "var(--coral-500)", fontWeight: 700 }}>
+                  Hmm, that didn&apos;t save. Give it another go?
+                </p>
+              ) : null}
             </CardBody>
           </Card>
         </div>

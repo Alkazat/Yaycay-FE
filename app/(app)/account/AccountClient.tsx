@@ -62,7 +62,7 @@ export function AccountClient() {
 
   const checkout = useMutation({
     mutationFn: (trip: TripSummary) =>
-      createCheckoutSession({ product: "price_datakeep_annual", trip_id: trip.id }),
+      createCheckoutSession({ price_id: "price_datakeep_annual", trip_id: trip.id }),
     onSuccess: ({ url }) => {
       window.location.href = url;
     },

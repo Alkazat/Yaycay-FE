@@ -1,31 +1,33 @@
-import { env, hasLiveApi } from "@/lib/env";
+import { endpointUrl, SERVED } from "@/lib/api/http";
 import type {
   ChildProfile,
   TripContent,
   TripSummary,
 } from "@/lib/contract-mock/types";
 
-function apiUrl(path: string): string {
-  // Live BE serves these paths directly; the in-repo mock prefixes /api.
-  return hasLiveApi() ? `${env.apiBase.replace(/\/$/, "")}${path}` : `/api${path}`;
-}
-
-async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(apiUrl(path), { signal });
-  if (!res.ok) throw new Error(`Request failed (${res.status}) for ${path}`);
+async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Request failed (${res.status}) for ${url}`);
   return (await res.json()) as T;
 }
 
 export async function listTrips(signal?: AbortSignal): Promise<TripSummary[]> {
-  const data = await getJson<{ trips: TripSummary[] }>("/trips", signal);
+  const data = await getJson<{ trips: TripSummary[] }>(
+    endpointUrl("/trips", SERVED.listTrips),
+    signal,
+  );
   return data.trips;
 }
 
 export async function getTrip(id: string, signal?: AbortSignal): Promise<TripContent> {
-  return getJson<TripContent>(`/trips/${id}`, signal);
+  return getJson<TripContent>(endpointUrl(`/trips/${id}`, SERVED.getTrip), signal);
 }
 
 export async function listProfiles(signal?: AbortSignal): Promise<ChildProfile[]> {
-  const data = await getJson<{ profiles: ChildProfile[] }>("/profiles", signal);
+  // Deferred on BE - stays on the mock until GET /profiles ships.
+  const data = await getJson<{ profiles: ChildProfile[] }>(
+    endpointUrl("/profiles", SERVED.profiles),
+    signal,
+  );
   return data.profiles;
 }

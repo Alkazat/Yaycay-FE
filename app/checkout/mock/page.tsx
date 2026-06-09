@@ -11,7 +11,7 @@ export default async function MockCheckoutPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const product = Array.isArray(params.product) ? params.product[0] : params.product;
+  const product = Array.isArray(params.price_id) ? params.price_id[0] : params.price_id;
 
   return (
     <main className="yc-shell">

@@ -6,10 +6,13 @@ import { Card, CardBody, CardFooter, Badge } from "@/components/ds";
 import { Countdown } from "@/components/Countdown";
 import { formatDateRange } from "@/lib/format";
 
-const STATUS_TONE: Record<TripSummary["status"], "sun" | "meadow" | "aqua"> = {
+const STATUS_TONE: Record<TripSummary["status"], "sun" | "meadow" | "aqua" | "sky" | "soft"> = {
+  draft: "soft",
   planning: "sun",
   ready: "meadow",
+  holidaying: "sky",
   complete: "aqua",
+  archived: "soft",
 };
 
 const TIER_LABEL: Record<TripSummary["tier"], string> = {
