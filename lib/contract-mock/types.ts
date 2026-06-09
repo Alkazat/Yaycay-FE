@@ -108,6 +108,106 @@ export interface TripContent {
 }
 
 /* --------------------------------------------------------------------------
+ * Profiles + trip listing DTOs
+ * ------------------------------------------------------------------------ */
+
+/** A child profile under the account (model context section 4). */
+export interface ChildProfile {
+  id: string;
+  name: string;
+  avatar?: string;
+  age?: number;
+  /** Render mode/age band the kid view selects variants by. */
+  mode: ProfileMode;
+}
+
+export type TripStatus = "planning" | "ready" | "complete";
+
+/** A trip as it appears on the trips home (cards). */
+export interface TripSummary {
+  id: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+  timezone: string;
+  tier: Tier;
+  status: TripStatus;
+  cover?: string;
+  day_count: number;
+  /** When trip data is scheduled for deletion (12 months post-holiday). */
+  retention_expires_at?: string;
+  /** True once a data-keep token has been bought for this trip. */
+  data_kept?: boolean;
+}
+
+/* --------------------------------------------------------------------------
+ * Account + billing
+ * ------------------------------------------------------------------------ */
+
+export interface AccountSummary {
+  email: string;
+  /** Secondary email required for password reset / recovery. */
+  secondary_email?: string;
+  tier: Tier;
+}
+
+/** Catalogue product the FE can open a Checkout session for. */
+export type ProductId =
+  | "price_holiday_byo"
+  | "price_holiday_ai"
+  | "price_datakeep_annual"
+  | "price_destination_addon"
+  | "price_photobook";
+
+export interface CheckoutRequest {
+  product: ProductId;
+  /** Optional trip the purchase applies to (e.g. a data-keep token). */
+  trip_id?: string;
+}
+
+export interface CheckoutResponse {
+  /** Stripe Checkout URL to redirect to (BE creates the session). */
+  url: string;
+}
+
+/* --------------------------------------------------------------------------
+ * Journal (notes + star ratings, per profile/day)
+ * ------------------------------------------------------------------------ */
+
+export interface JournalEntry {
+  id: string;
+  trip_id: string;
+  profile_id: string;
+  day_id: string;
+  note?: string;
+  /** 1-5 stars, or undefined when only a note was left. */
+  stars?: number;
+  created_at: string;
+}
+
+/** Payload to create a journal entry (id + created_at assigned by BE). */
+export interface JournalEntryInput {
+  trip_id: string;
+  profile_id: string;
+  day_id: string;
+  note?: string;
+  stars?: number;
+}
+
+/* --------------------------------------------------------------------------
+ * BYO-AI connector status
+ * ------------------------------------------------------------------------ */
+
+export type ConnectorStatus = "not_connected" | "connected" | "error";
+
+export interface Connector {
+  status: ConnectorStatus;
+  /** Provider label when connected, e.g. "Claude", "ChatGPT", "Gemini". */
+  provider?: string;
+  last_synced_at?: string;
+}
+
+/* --------------------------------------------------------------------------
  * Demo endpoint DTOs (POST /demo/generate-day)
  * ------------------------------------------------------------------------ */
 
