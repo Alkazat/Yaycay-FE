@@ -7,11 +7,5 @@ export default async function PlanPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return (
-    <main className="yc-shell">
-      <div className="yc-container">
-        <PlanClient tripId={id} />
-      </div>
-    </main>
-  );
+  return <PlanClient tripId={id} />;
 }

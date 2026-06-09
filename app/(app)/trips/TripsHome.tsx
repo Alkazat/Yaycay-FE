@@ -14,27 +14,11 @@ export function TripsHome() {
 
   return (
     <div className="yc-stack">
-      <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
+      <header>
         <h1 style={{ margin: 0 }}>Your trips</h1>
         <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
           For families making memories.
         </p>
-        <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
-          <Link
-            href="/profiles"
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            style={{ textDecoration: "none" }}
-          >
-            Explorers
-          </Link>
-          <Link
-            href="/account"
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            style={{ textDecoration: "none" }}
-          >
-            Account
-          </Link>
-        </nav>
       </header>
 
       {isLoading ? <p>Loading your adventures...</p> : null}

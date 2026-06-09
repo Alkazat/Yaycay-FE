@@ -56,3 +56,110 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ============================================================
+   App shell - persistent chrome for the in-app routes.
+   Top brand bar + desktop nav; a fixed bottom tab bar on phones.
+   ============================================================ */
+.yc-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: calc(var(--safe-top) + var(--space-3)) calc(var(--safe-right) + var(--gutter))
+    var(--space-3) calc(var(--safe-left) + var(--gutter));
+  background: var(--surface-card);
+  border-bottom: 2.5px solid var(--royal-500);
+}
+.yc-appbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-h4);
+  color: var(--royal-700);
+  text-decoration: none;
+}
+.yc-appbar__brand img {
+  height: 36px;
+  width: auto;
+}
+.yc-appnav {
+  display: flex;
+  gap: var(--space-2);
+}
+.yc-appnav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--control-md);
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--royal-600);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.yc-appnav__link:hover {
+  background: var(--sky-50);
+  text-decoration: none;
+}
+.yc-appnav__link--active {
+  background: var(--sky-500);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--royal-600), var(--gloss-top);
+}
+.yc-appnav__link--active:hover {
+  background: var(--sky-500);
+}
+
+/* Mobile bottom tab bar. */
+.yc-tabbar {
+  display: none;
+}
+@media (max-width: 640px) {
+  .yc-appnav {
+    display: none;
+  }
+  .yc-tabbar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    justify-content: space-around;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-2) calc(var(--safe-bottom) + var(--space-2));
+    background: var(--surface-card);
+    border-top: 2.5px solid var(--royal-500);
+  }
+  .yc-tabbar__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 64px;
+    min-height: 44px;
+    border-radius: var(--radius-md);
+    color: var(--royal-600);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--fs-xs);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .yc-tabbar__link--active {
+    color: var(--sky-600);
+  }
+  /* Leave room above the fixed tab bar. */
+  .yc-shell {
+    padding-bottom: calc(var(--safe-bottom) + 84px);
+  }
+}
