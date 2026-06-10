@@ -4,11 +4,11 @@
  * ============================================================================
  * These mirror the canonical content model in 00-MODEL-CONTEXT.md (section 5)
  * and the FE handoff. They exist ONLY so the app builds and runs before the
- * real `@yaycay/contracts` package is published.
+ * real `@alkazat/contracts` package is published.
  *
  * WHEN THE REAL CONTRACT LANDS:
- *   1. `npm i @yaycay/contracts@^0.1.0`
- *   2. Replace imports of `@/lib/contract-mock/types` with `@yaycay/contracts`.
+ *   1. `npm i @alkazat/contracts@^0.4.0` (GitHub Packages; see ./README.md).
+ *   2. Replace imports of `@/lib/contract-mock/types` with `@alkazat/contracts`.
  *   3. Delete this directory.
  *
  * Do NOT add fields here that are not in the documented model. A genuine gap is
@@ -121,7 +121,15 @@ export interface ChildProfile {
   mode: ProfileMode;
 }
 
-export type TripStatus = "planning" | "ready" | "complete";
+// Full lifecycle enum per the published contract (v0.4). The FE only drives the
+// middle of this range, but BE can return any value, so render defensively.
+export type TripStatus =
+  | "draft"
+  | "planning"
+  | "ready"
+  | "holidaying"
+  | "complete"
+  | "archived";
 
 /** A trip as it appears on the trips home (cards). */
 export interface TripSummary {
@@ -159,8 +167,12 @@ export type ProductId =
   | "price_destination_addon"
   | "price_photobook";
 
+/**
+ * Body for `POST /checkout/session` (the canonical path - not `/checkout`).
+ * BE creates the Stripe Checkout session and returns its hosted URL.
+ */
 export interface CheckoutRequest {
-  product: ProductId;
+  price_id: ProductId;
   /** Optional trip the purchase applies to (e.g. a data-keep token). */
   trip_id?: string;
 }
@@ -205,6 +217,20 @@ export interface Connector {
   /** Provider label when connected, e.g. "Claude", "ChatGPT", "Gemini". */
   provider?: string;
   last_synced_at?: string;
+}
+
+/* --------------------------------------------------------------------------
+ * Signup capture (POST /signup/capture) - account + email, synced to Brevo
+ * ------------------------------------------------------------------------ */
+
+export interface SignupCaptureRequest {
+  email: string;
+  /** Marketing consent state captured at signup. */
+  consent?: boolean;
+}
+
+export interface SignupCaptureResponse {
+  ok: boolean;
 }
 
 /* --------------------------------------------------------------------------

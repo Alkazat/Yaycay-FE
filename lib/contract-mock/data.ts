@@ -1,6 +1,6 @@
 /**
  * MOCK sample data - TEMPORARY. Stands in for BE-served trips/profiles until
- * `@yaycay/contracts` and the live API exist. Lets the trips home, trip view,
+ * `@alkazat/contracts` and the live API exist. Lets the trips home, trip view,
  * renderer and profile switching be built and tested now.
  *
  * Swap target: live BE endpoints (list trips, get trip, list profiles).

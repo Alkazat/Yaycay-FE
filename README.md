@@ -6,7 +6,7 @@ The customer-facing PWA: the free demo, the two paid planning modes (use-our-AI
 chat and BYO-AI), and the in-trip "holidaying" experience, on web, phone and
 iPad from one codebase.
 
-This thread is a **consumer** of the back-end contract (`@yaycay/contracts`).
+This thread is a **consumer** of the back-end contract (`@alkazat/contracts`).
 It never invents endpoints or content fields; a genuine gap is a PR against
 `Yaycay-BE`. Read `00-MODEL-CONTEXT.md` and `01-FRONTEND-HANDOFF.md` for the
 shared architecture.
@@ -59,7 +59,7 @@ components/
   Countdown.tsx           "Sleeps to go" countdown to the holiday start
   renderer/               The TripContent renderer (kind routing + variant select)
 lib/
-  contract-mock/          TEMPORARY stand-in for @yaycay/contracts (see its README)
+  contract-mock/          TEMPORARY stand-in for @alkazat/contracts (see its README)
   render/                 Pure renderer logic (unit-tested)
   countdown.ts            Pure countdown math (unit-tested)
   entitlements.ts         Tier gating (unit-tested)
@@ -83,7 +83,7 @@ that barrel - app code does not change.
 
 ## Contract status
 
-The real `@yaycay/contracts` package is **not yet published**. Until it is, the
+The real `@alkazat/contracts` package is **not yet published**. Until it is, the
 app uses the in-repo mock in `lib/contract-mock` and serves
 `POST /demo/generate-day` from a local route handler. Set `NEXT_PUBLIC_API_BASE`
 to point at the live BE; the API client prefers it automatically. See

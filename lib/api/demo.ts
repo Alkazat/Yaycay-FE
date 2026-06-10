@@ -1,4 +1,4 @@
-import { env, hasLiveApi } from "@/lib/env";
+import { endpointUrl, SERVED } from "@/lib/api/http";
 import type {
   DemoGenerateDayRequest,
   DemoGenerateDayResponse,
@@ -17,11 +17,7 @@ export async function generateDemoDay(
   req: DemoGenerateDayRequest,
   init?: { signal?: AbortSignal },
 ): Promise<DemoGenerateDayResponse> {
-  // Live BE exposes `/demo/generate-day`; the in-repo mock is a Next route
-  // handler at `/api/demo/generate-day`.
-  const url = hasLiveApi()
-    ? `${env.apiBase.replace(/\/$/, "")}/demo/generate-day`
-    : "/api/demo/generate-day";
+  const url = endpointUrl("/demo/generate-day", SERVED.demoGenerateDay);
 
   const res = await fetch(url, {
     method: "POST",

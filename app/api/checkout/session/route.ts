@@ -13,11 +13,11 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  if (!body.product) {
-    return NextResponse.json({ error: "product is required" }, { status: 422 });
+  if (!body.price_id) {
+    return NextResponse.json({ error: "price_id is required" }, { status: 422 });
   }
 
-  const params = new URLSearchParams({ product: body.product });
+  const params = new URLSearchParams({ price_id: body.price_id });
   if (body.trip_id) params.set("trip_id", body.trip_id);
   return NextResponse.json({ url: `/checkout/mock?${params.toString()}` });
 }
