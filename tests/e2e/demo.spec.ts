@@ -24,8 +24,11 @@ test("demo builds a day and shows the countdown", async ({ page }) => {
   await expect(page.getByTestId("trip-day")).toBeVisible();
   await expect(page.getByText(/sleeps to go|sleep to go|adventure has begun/i)).toBeVisible();
 
-  // Signup CTA hands off to /auth.
-  await expect(page.getByRole("link", { name: /create my account/i })).toBeVisible();
+  // Signup: enter email, capture it, then hand off to /auth with it prefilled.
+  await page.getByLabel(/your email/i).fill("family@example.com");
+  await page.getByRole("button", { name: /create my account/i }).click();
+  await expect(page).toHaveURL(/\/auth\?/);
+  await expect(page.getByText(/family@example\.com/i)).toBeVisible();
 });
 
 test("home links into the demo", async ({ page }) => {

@@ -1,6 +1,6 @@
 # contract-mock (temporary)
 
-This directory is a **stand-in for `@yaycay/contracts`**, which is owned and
+This directory is a **stand-in for `@alkazat/contracts`**, which is owned and
 published by the BE thread (`Yaycay-BE`) and was not yet available when the FE
 scaffold was built.
 
@@ -15,11 +15,22 @@ It contains:
 
 ## When the real contract is published
 
-1. `npm i @yaycay/contracts@^0.1.0` (pin the version).
-2. Replace every import of `@/lib/contract-mock/types` with `@yaycay/contracts`.
-3. Point `lib/api/demo.ts` at the live endpoint by setting `NEXT_PUBLIC_API_BASE`
-   (the client already prefers it over the local mock route when present).
-4. Delete this directory.
+The package is **`@alkazat/contracts`** on GitHub Packages (registry already
+mapped in the repo `.npmrc`). Per `Yaycay-BE/docs/CONTRACT-STATUS.md` the latest
+is **v0.4**, but only some endpoints are served yet (see the `SERVED` map in
+`lib/api/http.ts`).
+
+1. Provide a `read:packages` token: locally `export NODE_AUTH_TOKEN=ghp_xxx`; in
+   CI add a `PACKAGES_TOKEN` secret and write the auth line before `npm ci`.
+2. `npm i @alkazat/contracts@^0.4.0` and pin it.
+3. Replace imports of `@/lib/contract-mock/types` with `@alkazat/contracts`
+   **for the served endpoints**; keep the mock types for the still-deferred ones
+   until their handler ships.
+4. Set `NEXT_PUBLIC_API_BASE` to the BE host (staging:
+   `https://staging.api.yaycay.ai`). The client (`lib/api/http.ts`) routes only
+   `SERVED` endpoints to the live API and keeps the rest on the mock.
+5. As each deferred endpoint ships, flip its flag in `SERVED` and delete its mock
+   route + types. When all are live, delete this directory.
 
 ## Rules (from the model context)
 
