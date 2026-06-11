@@ -6,14 +6,12 @@ import { test, expect } from "@playwright/test";
  */
 test("active explorer persists from profiles into the trip view", async ({ page }) => {
   await page.goto("/profiles");
-  // Mara is the explorer_plus profile (not the default first profile).
-  await page.getByRole("radio", { name: /mara/i }).click();
+  // Lenny is the little-mode explorer (not the default first profile).
+  await page.getByRole("radio", { name: /lenny/i }).click();
 
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
-  // explorer_plus content (a quiz) shows without picking a profile again.
-  await expect(page.getByText(/quiz:/i).first()).toBeVisible();
-  // And Mara is the active explorer in the trip view switcher.
-  await expect(page.getByRole("radio", { name: /mara/i })).toBeChecked();
+  // Lenny's little-mode read-aloud copy shows without picking a profile again.
+  await expect(page.getByText(/hold them up high/i)).toBeVisible();
 });

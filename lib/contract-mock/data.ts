@@ -20,8 +20,16 @@ export const MOCK_ACCOUNT: AccountSummary = {
 };
 
 export const MOCK_PROFILES: ChildProfile[] = [
-  { id: "p_lenny", name: "Lenny", age: 5, mode: "little" },
-  { id: "p_mara", name: "Mara", age: 9, mode: "explorer_plus" },
+  { id: "p_savy", name: "Savy", age: 13, mode: "standard" },
+  { id: "p_tay", name: "Tay", age: 9, mode: "standard" },
+  {
+    id: "p_lenny",
+    name: "Lenny",
+    age: 4,
+    mode: "little",
+    allergies: ["nuts", "legumes"],
+    anaphylaxis: true,
+  },
 ];
 
 export const MOCK_TRIPS: TripSummary[] = [
@@ -56,6 +64,9 @@ const SINGAPORE_TRIP: TripContent = {
       date: "2026-06-26",
       label: "Arrival",
       summary: "Land, settle in, and dip your toes in the day with an easy first afternoon.",
+      did_you_know: "Singapore is one whole country made of one big island and lots of little ones!",
+      weather: "Singapore is HOT and a bit sticky, about 31C. Hat, water, sunscreen!",
+      hotel: "Tonight: Village Hotel Sentosa. We stay here for 4 nights.",
       moments: [
         {
           id: "d1_m1",
@@ -76,6 +87,15 @@ const SINGAPORE_TRIP: TripContent = {
                   quiz: { q: "What do you call sand that is made of tiny shells?", a: "Coral sand." },
                 },
               },
+              facts: [
+                "Sentosa means 'peace and tranquillity' in Malay.",
+                "The beaches here are man-made, brought in grain by grain.",
+              ],
+              challenge: {
+                type: "spot",
+                question: "Spot three different colours of beach umbrella.",
+                answer: "Look along the shoreline, there are usually red, blue and yellow ones!",
+              },
             },
             {
               id: "d1_a2",
@@ -93,6 +113,8 @@ const SINGAPORE_TRIP: TripContent = {
       date: "2026-06-27",
       label: "Explorers",
       summary: "A big day out among gardens, clouds, and very tall trees.",
+      did_you_know: "The Cloud Forest has the tallest indoor waterfall in the world!",
+      weather: "Warm and humid, about 32C. The Cloud Forest inside is cool and misty.",
       moments: [
         {
           id: "d2_m1",
@@ -106,6 +128,12 @@ const SINGAPORE_TRIP: TripContent = {
               kind: "shared",
               title: "Cloud Forest mountain",
               body: "Ride to the top and walk down through the mist and waterfalls together.",
+              facts: ["The waterfall is 35 metres tall, taller than ten giraffes!"],
+              challenge: {
+                type: "quiz",
+                question: "Why is it so misty inside the Cloud Forest?",
+                answer: "Machines spray a cool fog so the mountain plants feel at home.",
+              },
             },
             {
               id: "d2_a2",

@@ -3,13 +3,14 @@
 import type { ProfileMode, TripDay } from "@/lib/contract-mock/types";
 import { activitiesForView, type RenderView } from "@/lib/render/routeByKind";
 import { selectActivityCopy } from "@/lib/render/selectVariant";
+import { ChallengeBlock } from "@/components/renderer/ChallengeBlock";
 import { Badge, Card, CardBody } from "@/components/ds";
 
 interface TripDayRendererProps {
   day: TripDay;
   /** Which surface to fill: the kid view or the grown-ups view. */
   view: RenderView;
-  /** Active child profile mode/age band (kid view only). */
+  /** Active render mode (kid view). Defaults to standard. */
   mode?: ProfileMode;
 }
 
@@ -23,19 +24,42 @@ const SLOT_LABEL: Record<string, string> = {
 /**
  * The core renderer. Walks a day's Moments -> Activities, filters by `kind`
  * for the active `view`, picks the right `variants` block for the active
- * `mode`, and surfaces `safety` notes in the grown-ups view only.
+ * `mode`, and surfaces day facts, typed challenges and `safety` notes.
  *
- * It NEVER mutates trip content - it is a pure read of the contract payload.
+ * Challenges and fact bubbles are kid-view content; the typed challenge is
+ * hidden in `little` mode. Safety notes show fully in the grown-ups view and as
+ * a gentle "ask a grown-up" cue in the kid view. It NEVER mutates trip content.
  */
-export function TripDayRenderer({ day, view, mode }: TripDayRendererProps) {
+export function TripDayRenderer({ day, view, mode = "standard" }: TripDayRendererProps) {
+  const isKid = view === "kid";
+
   return (
     <div className="yc-stack" data-testid="trip-day">
-      <header>
-        <Badge tone="sun">{day.label}</Badge>
-        {day.summary ? (
-          <p style={{ marginTop: "var(--space-3)", color: "var(--text-body)" }}>
-            {day.summary}
-          </p>
+      <header className="yc-stack" style={{ gap: "var(--space-2)" }}>
+        <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+          <Badge tone="sun">{day.label}</Badge>
+          {day.hotel ? <Badge tone="ink">{day.hotel}</Badge> : null}
+        </div>
+        {day.summary ? <p style={{ margin: 0, color: "var(--text-body)" }}>{day.summary}</p> : null}
+
+        {isKid && day.did_you_know ? (
+          <div
+            style={{
+              padding: "var(--space-3)",
+              background: "var(--sun-50)",
+              border: "2.5px solid var(--sun-200)",
+              borderRadius: "var(--radius-md)",
+              fontWeight: 700,
+              color: "var(--royal-700)",
+            }}
+            data-testid="did-you-know"
+          >
+            Did you know? {day.did_you_know}
+          </div>
+        ) : null}
+
+        {day.weather ? (
+          <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>{day.weather}</p>
         ) : null}
       </header>
 
@@ -69,13 +93,32 @@ export function TripDayRenderer({ day, view, mode }: TripDayRendererProps) {
                       </p>
                     ) : null}
 
-                    {copy.fact ? (
+                    {/* Fact bubbles (kid view). */}
+                    {isKid && activity.facts
+                      ? activity.facts.map((fact, i) => (
+                          <p
+                            key={i}
+                            style={{ margin: 0, color: "var(--sky-700)", fontWeight: 700 }}
+                          >
+                            Wow fact: {fact}
+                          </p>
+                        ))
+                      : null}
+
+                    {/* Explorer+ variant fact. */}
+                    {isKid && copy.fact ? (
                       <p style={{ margin: 0, color: "var(--sky-700)", fontWeight: 700 }}>
                         Did you know? {copy.fact}
                       </p>
                     ) : null}
 
-                    {copy.quiz ? (
+                    {/* Typed challenge - kid view, hidden in little mode. */}
+                    {isKid && mode !== "little" && activity.challenge ? (
+                      <ChallengeBlock challenge={activity.challenge} />
+                    ) : null}
+
+                    {/* Explorer+ variant quiz. */}
+                    {isKid && copy.quiz ? (
                       <div
                         style={{
                           marginTop: "var(--space-2)",
@@ -88,16 +131,15 @@ export function TripDayRenderer({ day, view, mode }: TripDayRendererProps) {
                       </div>
                     ) : null}
 
-                    {/* Safety flags surface only in the grown-ups view. */}
+                    {/* Safety: full note for grown-ups, gentle cue for kids. */}
                     {view === "grownups" && activity.safety ? (
-                      <p
-                        style={{
-                          margin: 0,
-                          color: "var(--coral-500)",
-                          fontWeight: 700,
-                        }}
-                      >
+                      <p style={{ margin: 0, color: "var(--coral-500)", fontWeight: 700 }}>
                         Safety: {activity.safety.note}
+                      </p>
+                    ) : null}
+                    {isKid && activity.safety ? (
+                      <p style={{ margin: 0, color: "var(--coral-500)", fontWeight: 700 }}>
+                        Check with a grown-up before you eat here.
                       </p>
                     ) : null}
                   </CardBody>

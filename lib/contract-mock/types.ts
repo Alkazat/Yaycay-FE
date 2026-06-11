@@ -20,7 +20,7 @@
 export type ActivityKind = "kid" | "shared" | "adult";
 
 /** Tagged render variants by the active child profile's mode/age. */
-export type ProfileMode = "little" | "explorer_plus";
+export type ProfileMode = "standard" | "little" | "explorer_plus";
 
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";
@@ -54,6 +54,16 @@ export interface ActivitySafety {
   note: string;
 }
 
+/** Typed challenge attached to an activity. Hidden in `little` mode. */
+export type ChallengeType = "quiz" | "spot" | "photo" | "challenge";
+
+export interface ActivityChallenge {
+  type: ChallengeType;
+  question: string;
+  /** Revealed on demand; never read aloud. */
+  answer: string;
+}
+
 export interface Activity {
   id: string;
   kind: ActivityKind;
@@ -61,6 +71,10 @@ export interface Activity {
   body?: string;
   /** Mode/age-tagged overrides; the renderer picks by active profile. */
   variants?: Partial<Record<ProfileMode, ActivityVariant>>;
+  /** Blue "wow fact" callouts. */
+  facts?: string[];
+  /** Typed challenge (quiz/spot/photo/challenge); hidden in little mode. */
+  challenge?: ActivityChallenge;
   booking?: ActivityBooking;
   /** Dietary / medical flags surfaced in the grown-ups view. */
   safety?: ActivitySafety;
@@ -81,6 +95,12 @@ export interface TripDay {
   date: string;
   label: string;
   summary?: string;
+  /** Yellow "today's journey" intro fact. */
+  did_you_know?: string;
+  /** Short weather note, e.g. "Singapore is HOT! About 32C". */
+  weather?: string;
+  /** Hotel / move badge copy, e.g. "Tonight: Village Hotel Sentosa". */
+  hotel?: string;
   moments: Moment[];
 }
 
@@ -117,8 +137,11 @@ export interface ChildProfile {
   name: string;
   avatar?: string;
   age?: number;
-  /** Render mode/age band the kid view selects variants by. */
+  /** Render mode/age band the kid view selects variants by (default). */
   mode: ProfileMode;
+  /** Dietary/medical flags (sensitive). Surfaced to grown-ups only. */
+  allergies?: string[];
+  anaphylaxis?: boolean;
 }
 
 // Full lifecycle enum per the published contract (v0.4). The FE only drives the
