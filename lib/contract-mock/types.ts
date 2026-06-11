@@ -265,6 +265,10 @@ export interface JournalEntry {
   note?: string;
   /** 1-5 stars, or undefined when only a note was left. */
   stars?: number;
+  /** Mood label, e.g. "happy" | "loved" | "wow" | "tired" | "funny". */
+  mood?: string;
+  /** References to print-grade media (signed-URL flow). */
+  media_ref?: string[];
   created_at: string;
 }
 
@@ -275,6 +279,24 @@ export interface JournalEntryInput {
   day_id: string;
   note?: string;
   stars?: number;
+  mood?: string;
+  media_ref?: string[];
+}
+
+/* --------------------------------------------------------------------------
+ * Media (signed-URL upload for print-grade photos)
+ * ------------------------------------------------------------------------ */
+
+export interface MediaSignRequest {
+  trip_id: string;
+  content_type: string;
+}
+
+export interface MediaSignResponse {
+  /** Where the client PUTs the bytes (Storage signed URL). */
+  upload_url: string;
+  /** The reference stored on the journal entry. */
+  media_ref: string;
 }
 
 /* --------------------------------------------------------------------------

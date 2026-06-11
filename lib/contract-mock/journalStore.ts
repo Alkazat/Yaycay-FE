@@ -34,6 +34,8 @@ export function addJournal(input: JournalEntryInput): JournalEntry {
     day_id: input.day_id,
     note: input.note?.trim() || undefined,
     stars: input.stars == null ? undefined : clampStars(input.stars),
+    mood: input.mood || undefined,
+    media_ref: input.media_ref && input.media_ref.length > 0 ? input.media_ref : undefined,
     created_at: new Date().toISOString(),
   };
   entries.push(entry);
