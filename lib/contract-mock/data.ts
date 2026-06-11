@@ -223,6 +223,28 @@ const SINGAPORE_TRIP: TripContent = {
     essentials: "Passports, EZ-Link cards, sunscreen, refillable water bottles.",
     checklist: ["Confirm allergy cards in English + Mandarin", "Download offline map", "Charge the camera"],
     transport: "MRT covers everything; grab a taxi only for late nights.",
+    phases: [
+      { label: "Village Hotel Sentosa", range: "nights 1-4" },
+      { label: "Mandai Rainforest Resort", range: "night 5" },
+      { label: "Treetops Bukit Timah", range: "nights 6-11" },
+    ],
+    days: [
+      {
+        day_id: "d_1",
+        bookings: ["Airport transfer to Sentosa", "Dinner: Shake Shack Siloso (walk-in)"],
+        costs: ["Transfer ~S$55 / A$60", "Dinner ~S$60 / A$66"],
+        transport: ["Grab from Changi, about 35 min"],
+        tips: ["Land tired, keep day one easy"],
+        allergy: ["Shake Shack: confirm no peanut/soy in sauces before ordering"],
+      },
+      {
+        day_id: "d_2",
+        bookings: ["Gardens by the Bay tickets (Cloud Forest + Flower Dome)"],
+        costs: ["Garden tickets ~S$53 / A$58 for the family"],
+        transport: ["MRT to Bayfront, exit B"],
+        tips: ["Cloud Forest is busiest mid-morning, go early"],
+      },
+    ],
   },
 };
 

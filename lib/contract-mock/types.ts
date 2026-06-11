@@ -130,10 +130,35 @@ export interface TripMeta {
   currency?: string;
 }
 
+export interface GrownupsDay {
+  day_id: string;
+  bookings?: string[];
+  costs?: string[];
+  transport?: string[];
+  tips?: string[];
+  allergy?: string[];
+}
+
 export interface GrownupsGuide {
   essentials?: string;
+  /** Seed labels for the booking checklist (state lives in the checklist API). */
   checklist?: string[];
   transport?: string;
+  /** Accommodation phases, e.g. "Sentosa (nights 1-4)". */
+  phases?: { label: string; range: string }[];
+  /** Per-day logistics cards. */
+  days?: GrownupsDay[];
+}
+
+/* --------------------------------------------------------------------------
+ * Grown-ups booking checklist (persisted ticks)
+ * ------------------------------------------------------------------------ */
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  group: string;
+  done: boolean;
 }
 
 /** The full canonical payload: Holiday -> Days -> Moments -> Activities. */

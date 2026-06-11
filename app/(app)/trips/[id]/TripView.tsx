@@ -12,8 +12,9 @@ import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import { StarBank } from "@/components/stars/StarBank";
 import { GameLauncher } from "@/components/games/GameLauncher";
+import { GrownupsGuide } from "@/components/grownups/GrownupsGuide";
 import { Countdown } from "@/components/Countdown";
-import { Tabs, Card, CardBody, Badge, Banner, ProgressMeter } from "@/components/ds";
+import { Tabs, Card, CardBody, Banner, ProgressMeter } from "@/components/ds";
 import type { ProfileMode, ProgressState } from "@/lib/contract-mock/types";
 import { formatDateRange } from "@/lib/format";
 
@@ -209,29 +210,7 @@ export function TripView({ tripId }: { tripId: string }) {
       ) : null}
 
       {view === "grownups" && trip.grownups ? (
-        <Card variant="soft">
-          <CardBody title="Grown-ups guide">
-            {trip.grownups.essentials ? (
-              <p style={{ margin: 0 }}>
-                <strong>Essentials:</strong> {trip.grownups.essentials}
-              </p>
-            ) : null}
-            {trip.grownups.transport ? (
-              <p style={{ margin: 0 }}>
-                <strong>Getting around:</strong> {trip.grownups.transport}
-              </p>
-            ) : null}
-            {trip.grownups.checklist && trip.grownups.checklist.length > 0 ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
-                {trip.grownups.checklist.map((item) => (
-                  <Badge key={item} tone="soft">
-                    {item}
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
-          </CardBody>
-        </Card>
+        <GrownupsGuide tripId={tripId} guide={trip.grownups} activeDayId={dayId} />
       ) : null}
     </div>
   );
