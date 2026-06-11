@@ -161,6 +161,37 @@ export interface ChecklistItem {
   done: boolean;
 }
 
+/* --------------------------------------------------------------------------
+ * Packing lists (per profile + a shared family list)
+ * ------------------------------------------------------------------------ */
+
+export interface PackingItem {
+  id: string;
+  label: string;
+  note?: string;
+  qty?: number;
+  checked: boolean;
+}
+
+export interface PackingSection {
+  id: string;
+  title: string;
+  items: PackingItem[];
+}
+
+export interface PackingList {
+  /** Profile id, or "family" for the shared list. */
+  id: string;
+  label: string;
+  sections: PackingSection[];
+}
+
+export type PackingAction =
+  | { action: "tick"; list_id: string; item_id: string; checked: boolean }
+  | { action: "add"; list_id: string; section_id: string; label: string; qty?: number }
+  | { action: "delete"; list_id: string; item_id: string }
+  | { action: "reset" };
+
 /** The full canonical payload: Holiday -> Days -> Moments -> Activities. */
 export interface TripContent {
   trip: TripMeta;

@@ -131,6 +131,20 @@ export function TripView({ tripId }: { tripId: string }) {
           >
             Journal
           </Link>
+          <Link
+            href={`/trips/${tripId}/packing`}
+            className="yc-btn yc-btn--secondary yc-btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            Packing
+          </Link>
+          <Link
+            href={`/trips/${tripId}/map`}
+            className="yc-btn yc-btn--secondary yc-btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            Map
+          </Link>
         </nav>
       </header>
 
