@@ -383,6 +383,19 @@ export interface SignupCaptureResponse {
 }
 
 /* --------------------------------------------------------------------------
+ * Auth (second factor)
+ * ------------------------------------------------------------------------ */
+
+export interface TwoFactorVerifyRequest {
+  email: string;
+  code: string;
+}
+
+export interface TwoFactorVerifyResponse {
+  verified: boolean;
+}
+
+/* --------------------------------------------------------------------------
  * Demo endpoint DTOs (POST /demo/generate-day)
  * ------------------------------------------------------------------------ */
 

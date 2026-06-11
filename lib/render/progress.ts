@@ -14,9 +14,11 @@ export interface DayCompletion {
   pct: number;
 }
 
-/** Count tickable activities on a day and how many are done. */
+/** Count tickable (kid-visible) activities on a day and how many are done. */
 export function dayCompletion(day: TripDay, done: ReadonlySet<string>): DayCompletion {
-  const ids = day.moments.flatMap((m) => m.activities.map((a) => a.id));
+  const ids = day.moments.flatMap((m) =>
+    m.activities.filter((a) => a.kind !== "adult").map((a) => a.id),
+  );
   const total = ids.length;
   const ticked = ids.filter((id) => done.has(id)).length;
   return {

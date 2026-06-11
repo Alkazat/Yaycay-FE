@@ -23,6 +23,7 @@ export const SERVED = {
   signupCapture: true,
   listTrips: true,
   getTrip: true,
+  auth2fa: true,
   // Deferred on BE - keep on the mock until their handler ships:
   profiles: false,
   account: false,

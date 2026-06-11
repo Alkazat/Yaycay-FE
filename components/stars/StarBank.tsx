@@ -73,7 +73,7 @@ export function StarBank({ tripId, profile, day }: StarBankProps) {
                 onClick={() => setRevealed(true)}
                 style={{ alignSelf: "flex-start" }}
               >
-                Reveal the answer
+                Show the answer
               </Button>
             ) : claimedChallenge ? (
               <Badge tone="meadow">Already claimed!</Badge>
