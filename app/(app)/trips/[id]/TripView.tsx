@@ -9,7 +9,8 @@ import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import { Countdown } from "@/components/Countdown";
-import { Tabs, Card, CardBody, Badge } from "@/components/ds";
+import { Tabs, Card, CardBody, Badge, Banner } from "@/components/ds";
+import type { ProfileMode } from "@/lib/contract-mock/types";
 import { formatDateRange } from "@/lib/format";
 
 export function TripView({ tripId }: { tripId: string }) {
@@ -24,6 +25,7 @@ export function TripView({ tripId }: { tripId: string }) {
 
   const [view, setView] = useState<RenderView>("kid");
   const [activeDayId, setActiveDayId] = useState<string | null>(null);
+  const [modeOverride, setModeOverride] = useState<ProfileMode | null>(null);
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
 
   const trip = tripQuery.data;
@@ -33,6 +35,10 @@ export function TripView({ tripId }: { tripId: string }) {
   const dayId = activeDayId ?? trip?.days[0]?.id ?? null;
   const profileId = activeProfileId ?? profiles[0]?.id ?? null;
   const activeProfile = profiles.find((p) => p.id === profileId) ?? null;
+  // Render mode follows the active profile's default; a manual toggle overrides
+  // it, which is also how Explorer+ is reached (the prototype orphaned it).
+  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "standard";
+  const anaphylactic = profiles.filter((p) => p.anaphylaxis);
 
   const activeDay = useMemo(
     () => trip?.days.find((d) => d.id === dayId) ?? trip?.days[0],
@@ -93,8 +99,33 @@ export function TripView({ tripId }: { tripId: string }) {
         <ProfileSwitcher
           profiles={profiles}
           activeId={profileId}
-          onSelect={setActiveProfileId}
+          onSelect={(id) => {
+            setActiveProfileId(id);
+            // New explorer, follow their default mode again.
+            setModeOverride(null);
+          }}
         />
+      ) : null}
+
+      {view === "kid" ? (
+        <Tabs
+          value={mode}
+          onChange={(m: string) => setModeOverride(m as ProfileMode)}
+          tabs={[
+            { value: "standard", label: "Explorer" },
+            { value: "little", label: "Little" },
+            { value: "explorer_plus", label: "Explorer+" },
+          ]}
+        />
+      ) : null}
+
+      {view === "grownups" && anaphylactic.length > 0 ? (
+        <Banner tone="danger" title="Allergy protocol">
+          {anaphylactic
+            .map((p) => `${p.name} (${(p.allergies ?? []).join(", ") || "anaphylaxis"})`)
+            .join("; ")}
+          . Carry the EpiPen at all times and confirm every dish with the kitchen.
+        </Banner>
       ) : null}
 
       {/* Day navigation - one scroll context; tabs wrap rather than nest-scroll. */}
@@ -106,9 +137,7 @@ export function TripView({ tripId }: { tripId: string }) {
         />
       </div>
 
-      {activeDay ? (
-        <TripDayRenderer day={activeDay} view={view} mode={activeProfile?.mode} />
-      ) : null}
+      {activeDay ? <TripDayRenderer day={activeDay} view={view} mode={mode} /> : null}
 
       {view === "grownups" && trip.grownups ? (
         <Card variant="soft">

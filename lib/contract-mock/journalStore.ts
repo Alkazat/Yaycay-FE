@@ -12,7 +12,7 @@ const entries: JournalEntry[] = [
   {
     id: "j_seed_1",
     trip_id: "t_sg",
-    profile_id: "p_mara",
+    profile_id: "p_tay",
     day_id: "d_2",
     note: "The Cloud Forest waterfall was HUGE. Best day.",
     stars: 5,
