@@ -101,7 +101,23 @@ export interface TripDay {
   weather?: string;
   /** Hotel / move badge copy, e.g. "Tonight: Village Hotel Sentosa". */
   hotel?: string;
+  /** Per-day star challenge (claimable once per profile per day). */
+  star_challenge?: { question: string; answer: string };
+  /** Per-day mini-game config (the youngest explorers). */
+  game?: GameConfig;
   moments: Moment[];
+}
+
+/** Per-day kid mini-game. */
+export type GameType = "tap" | "colour" | "spot";
+
+export interface GameConfig {
+  type: GameType;
+  theme: string;
+  /** Emoji/sticker set the game uses. */
+  items: string[];
+  /** Tap/spot goal or target count. */
+  goal?: number;
 }
 
 export interface TripMeta {
@@ -146,6 +162,38 @@ export interface ChildProfile {
 
 // Full lifecycle enum per the published contract (v0.4). The FE only drives the
 // middle of this range, but BE can return any value, so render defensively.
+/* --------------------------------------------------------------------------
+ * Per-profile progress (done items, keyed by stable activity id)
+ * ------------------------------------------------------------------------ */
+
+export interface ProgressState {
+  trip_id: string;
+  profile_id: string;
+  /** Stable activity ids that are ticked done. Never keyed by label text. */
+  done: string[];
+}
+
+/* --------------------------------------------------------------------------
+ * Reward economy (stars)
+ * ------------------------------------------------------------------------ */
+
+/** Where a star came from. */
+export type StarSource = "game" | "challenge";
+
+export interface StarsState {
+  trip_id: string;
+  profile_id: string;
+  stars: number;
+  /** Idempotency keys already claimed, e.g. "d_2:challenge". */
+  claims: string[];
+}
+
+export interface StarClaimRequest {
+  profile_id: string;
+  day_id: string;
+  source: StarSource;
+}
+
 export type TripStatus =
   | "draft"
   | "planning"

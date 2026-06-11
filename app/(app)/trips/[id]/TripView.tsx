@@ -2,15 +2,19 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTrip, listProfiles } from "@/lib/api/trips";
+import { getProgress, setActivityDone } from "@/lib/api/progress";
+import { tripProgress } from "@/lib/render/progress";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
+import { StarBank } from "@/components/stars/StarBank";
+import { GameLauncher } from "@/components/games/GameLauncher";
 import { Countdown } from "@/components/Countdown";
-import { Tabs, Card, CardBody, Badge, Banner } from "@/components/ds";
-import type { ProfileMode } from "@/lib/contract-mock/types";
+import { Tabs, Card, CardBody, Badge, Banner, ProgressMeter } from "@/components/ds";
+import type { ProfileMode, ProgressState } from "@/lib/contract-mock/types";
 import { formatDateRange } from "@/lib/format";
 
 export function TripView({ tripId }: { tripId: string }) {
@@ -45,6 +49,40 @@ export function TripView({ tripId }: { tripId: string }) {
     [trip, dayId],
   );
 
+  const queryClient = useQueryClient();
+  const progressKey = ["progress", tripId, profileId] as const;
+  const progressQuery = useQuery({
+    queryKey: progressKey,
+    queryFn: ({ signal }) => getProgress(tripId, profileId!, signal),
+    enabled: !!profileId,
+  });
+  const doneSet = useMemo(
+    () => new Set(progressQuery.data?.done ?? []),
+    [progressQuery.data],
+  );
+
+  const toggle = useMutation({
+    mutationFn: ({ activityId, done }: { activityId: string; done: boolean }) =>
+      setActivityDone(tripId, profileId!, activityId, done),
+    onMutate: async ({ activityId, done }) => {
+      await queryClient.cancelQueries({ queryKey: progressKey });
+      const prev = queryClient.getQueryData<ProgressState>(progressKey);
+      const next = new Set(prev?.done ?? []);
+      if (done) next.add(activityId);
+      else next.delete(activityId);
+      queryClient.setQueryData<ProgressState>(progressKey, {
+        trip_id: tripId,
+        profile_id: profileId ?? "",
+        done: [...next],
+      });
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(progressKey, ctx.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: progressKey }),
+  });
+
   if (tripQuery.isLoading) return <p>Loading your trip...</p>;
   if (tripQuery.isError || !trip) {
     return (
@@ -58,6 +96,8 @@ export function TripView({ tripId }: { tripId: string }) {
     );
   }
 
+  const tp = tripProgress(trip, doneSet);
+
   return (
     <div className="yc-stack" data-testid="trip-view">
       <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
@@ -68,6 +108,13 @@ export function TripView({ tripId }: { tripId: string }) {
         <div>
           <Countdown startDate={trip.trip.start_date} timezone={trip.trip.timezone} />
         </div>
+        <ProgressMeter
+          value={tp.daysComplete}
+          max={Math.max(tp.totalDays, 1)}
+          label="Days explored"
+          valueText={`${tp.daysComplete} / ${tp.totalDays}`}
+          tone="meadow"
+        />
         <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
           <Link
             href={`/trips/${tripId}/plan`}
@@ -107,6 +154,16 @@ export function TripView({ tripId }: { tripId: string }) {
         />
       ) : null}
 
+      {view === "kid" && activeProfile && activeDay ? (
+        <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
+      ) : null}
+
+      {view === "kid" && activeProfile && activeDay?.game ? (
+        <div>
+          <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
+        </div>
+      ) : null}
+
       {view === "kid" ? (
         <Tabs
           value={mode}
@@ -137,7 +194,19 @@ export function TripView({ tripId }: { tripId: string }) {
         />
       </div>
 
-      {activeDay ? <TripDayRenderer day={activeDay} view={view} mode={mode} /> : null}
+      {activeDay ? (
+        <TripDayRenderer
+          day={activeDay}
+          view={view}
+          mode={mode}
+          done={view === "kid" ? doneSet : undefined}
+          onToggleActivity={
+            view === "kid" && profileId
+              ? (activityId, done) => toggle.mutate({ activityId, done })
+              : undefined
+          }
+        />
+      ) : null}
 
       {view === "grownups" && trip.grownups ? (
         <Card variant="soft">

@@ -28,4 +28,10 @@ export const SERVED = {
   account: false,
   journal: false,
   checkout: false,
+  progress: false,
+  stars: false,
+  packing: false,
+  grownups: false,
+  media: false,
+  planChat: false,
 } as const;
