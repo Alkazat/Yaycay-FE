@@ -11,11 +11,13 @@ const DEFAULT_STEPS = [
   "Sprinkling the yay",
 ];
 
-const NATURAL_MS = 7000;
-const ACCEL_MS = 1000;
-const DONE_HOLD_MS = 450;
+const NATURAL_MS = 7000; // steps slip through over ~7s
+const FINISH_MS = 1000; // the last step runs for ~1s once the payload lands
+const DONE_HOLD_MS = 350; // brief "all done" beat before revealing
 
-/** Random, strictly-increasing completion times for `count` steps over `total`. */
+type Phase = "steps" | "orb" | "finishing";
+
+/** Random, increasing completion times for `count` steps over `total`. */
 function randomTimes(count: number, total: number): number[] {
   if (count <= 0) return [];
   const gaps = Array.from({ length: count }, () => 0.4 + Math.random());
@@ -54,14 +56,24 @@ function Dot({ done }: { done: boolean }) {
   );
 }
 
+/** Brand "AI" orb: a glossy pulsing core with a sweeping conic ring (the spin). */
+function AiOrb() {
+  return (
+    <div className="yc-orb-wrap" aria-hidden="true">
+      <span className="yc-orb-ring" />
+      <span className="yc-orb-core" />
+      <span className="yc-orb-spark">&#10022;</span>
+    </div>
+  );
+}
+
 /**
  * Full-screen "we're building it" overlay.
  *
- * Steps 0..n-2 complete at random times over ~7s; the LAST step waits for the
- * response. When `ready` flips true the overlay finishes any remaining steps
- * (including the last) in ~1s, holds briefly on a fully-done list, then calls
- * `onComplete`. So the animation always runs to completion - never cut short -
- * whether the payload arrives early or late.
+ * - Steps 0..n-2 complete at random times over ~7s; the last step waits.
+ * - If the wait runs past ~7s with no payload, it switches to a pulsating AI orb.
+ * - When `ready` lands, the final "Sprinkling the yay" step runs for ~1s, then a
+ *   brief all-done beat, then `onComplete`. So it always runs to completion.
  */
 export function GeneratingOverlay({
   open,
@@ -78,6 +90,7 @@ export function GeneratingOverlay({
 }) {
   const n = steps.length;
   const [doneCount, setDoneCount] = useState(0);
+  const [phase, setPhase] = useState<Phase>("steps");
 
   const readyRef = useRef(ready);
   readyRef.current = ready;
@@ -87,50 +100,47 @@ export function GeneratingOverlay({
   useEffect(() => {
     if (!open) {
       setDoneCount(0);
+      setPhase("steps");
       return;
     }
     setDoneCount(0);
+    setPhase("steps");
 
     const start = Date.now();
-    // Natural completion times for the first n-1 steps; the last waits for ready.
     const natural = randomTimes(Math.max(n - 1, 0), NATURAL_MS);
+    let finishing = false;
+    let intervalId = 0;
+    const timeouts: number[] = [];
 
-    let readyAt: number | null = null;
-    let naturalDoneAtReady = 0;
-    let finished = false;
-    let completeTimer: number | undefined;
+    const finish = () => {
+      if (finishing) return;
+      finishing = true;
+      window.clearInterval(intervalId);
+      setDoneCount(Math.max(n - 1, 0)); // everything but the last
+      setPhase("finishing");
+      // "Sprinkling the yay" runs for ~1s, then done, then reveal.
+      timeouts.push(
+        window.setTimeout(() => {
+          setDoneCount(n);
+          timeouts.push(window.setTimeout(() => onCompleteRef.current(), DONE_HOLD_MS));
+        }, FINISH_MS),
+      );
+    };
 
-    const id = window.setInterval(() => {
+    intervalId = window.setInterval(() => {
+      if (readyRef.current) {
+        finish();
+        return;
+      }
       const elapsed = Date.now() - start;
-
-      if (readyRef.current && readyAt === null) {
-        readyAt = elapsed;
-        naturalDoneAtReady = natural.filter((t) => t <= elapsed).length;
-      }
-
-      let done: number;
-      if (readyAt === null) {
-        // Natural phase: only the first n-1 steps can complete here.
-        done = natural.filter((t) => t <= elapsed).length;
-      } else {
-        // Accelerate everything remaining (incl. the last) over ~1s.
-        const frac = Math.min(1, (elapsed - readyAt) / ACCEL_MS);
-        const remaining = n - naturalDoneAtReady;
-        done = Math.min(n, naturalDoneAtReady + Math.round(frac * remaining));
-      }
-
+      const done = natural.filter((t) => t <= elapsed).length; // first n-1 only
       setDoneCount(done);
-
-      if (done >= n && !finished) {
-        finished = true;
-        window.clearInterval(id);
-        completeTimer = window.setTimeout(() => onCompleteRef.current(), DONE_HOLD_MS);
-      }
+      if (done >= n - 1) setPhase("orb"); // overran ~7s, embrace the AI
     }, 80);
 
     return () => {
-      window.clearInterval(id);
-      if (completeTimer) window.clearTimeout(completeTimer);
+      window.clearInterval(intervalId);
+      timeouts.forEach(window.clearTimeout);
     };
   }, [open, n, steps]);
 
@@ -154,54 +164,82 @@ export function GeneratingOverlay({
           "calc(var(--safe-top) + var(--space-6)) var(--gutter) calc(var(--safe-bottom) + var(--space-6))",
       }}
     >
-      <div className="yc-container yc-stack" style={{ maxWidth: 460, gap: "var(--space-5)" }}>
+      <div className="yc-container yc-stack" style={{ maxWidth: 460, gap: "var(--space-5)", alignItems: "center" }}>
         <h2 style={{ margin: 0, textAlign: "center", fontSize: "var(--fs-h2)", color: "var(--royal-700)" }}>
           {title}
         </h2>
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-          {steps.map((label, i) => {
-            const done = i < doneCount;
-            const waiting = i === doneCount;
-            const soon = i > doneCount;
-            return (
-              <li
-                key={label}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--space-3)",
-                  opacity: soon ? 0.45 : 1,
-                  transition: "opacity var(--dur-base) var(--ease-out)",
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 600,
-                  color: "var(--royal-700)",
-                }}
-              >
-                <Dot done={done} />
-                <span style={{ flex: 1 }}>{label}</span>
-                <span
+
+        {phase === "orb" ? (
+          <div className="yc-stack" style={{ alignItems: "center", gap: "var(--space-4)" }}>
+            <AiOrb />
+            <p style={{ margin: 0, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--royal-700)" }}>
+              Our AI is crafting something special...
+            </p>
+          </div>
+        ) : (
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, width: "100%", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+            {steps.map((label, i) => {
+              const done = i < doneCount;
+              const waiting = i === doneCount;
+              const soon = i > doneCount;
+              return (
+                <li
+                  key={label}
                   style={{
-                    fontSize: "var(--fs-sm)",
-                    fontWeight: 700,
-                    color: done ? "var(--meadow-500)" : waiting ? "var(--sun-600)" : "var(--text-muted)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--space-3)",
+                    opacity: soon ? 0.45 : 1,
+                    transition: "opacity var(--dur-base) var(--ease-out)",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 600,
+                    color: "var(--royal-700)",
                   }}
                 >
-                  {done ? "done" : waiting ? "waiting" : ""}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+                  <Dot done={done} />
+                  <span style={{ flex: 1 }}>{label}</span>
+                  <span
+                    style={{
+                      fontSize: "var(--fs-sm)",
+                      fontWeight: 700,
+                      color: done ? "var(--meadow-500)" : waiting ? "var(--sun-600)" : "var(--text-muted)",
+                    }}
+                  >
+                    {done ? "done" : waiting ? "waiting" : ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       <style>{`
         .yc-gen-pulse { animation: yc-gen-pulse 1s var(--ease-bounce) infinite; }
-        @keyframes yc-gen-pulse {
-          0%, 100% { transform: scale(0.7); opacity: 0.6; }
-          50% { transform: scale(1.15); opacity: 1; }
+        @keyframes yc-gen-pulse { 0%,100%{transform:scale(.7);opacity:.6} 50%{transform:scale(1.15);opacity:1} }
+
+        .yc-orb-wrap { position: relative; width: 150px; height: 150px; display: grid; place-items: center; }
+        .yc-orb-core {
+          width: 112px; height: 112px; border-radius: 50%;
+          background: radial-gradient(circle at 35% 28%, #e7f6fb 0%, var(--aqua-400) 42%, var(--sky-600) 100%);
+          border: 3px solid var(--royal-600);
+          box-shadow: 0 0 42px rgba(43,195,208,.55), var(--gloss-strong);
+          animation: yc-orb-pulse 2.4s var(--ease-bounce) infinite;
         }
+        .yc-orb-ring {
+          position: absolute; inset: 0; border-radius: 50%;
+          background: conic-gradient(from 0deg, transparent 0deg, var(--sun-400) 70deg, transparent 150deg);
+          -webkit-mask: radial-gradient(circle, transparent 60px, #000 62px);
+          mask: radial-gradient(circle, transparent 60px, #000 62px);
+          animation: yc-orb-spin 2s linear infinite;
+        }
+        .yc-orb-spark { position: absolute; color: #fff; font-size: 30px; text-shadow: 0 0 10px rgba(255,255,255,.8); animation: yc-orb-spark 2.4s ease-in-out infinite; }
+        @keyframes yc-orb-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
+        @keyframes yc-orb-spin { to { transform: rotate(360deg); } }
+        @keyframes yc-orb-spark { 0%,100%{transform:scale(.8);opacity:.7} 50%{transform:scale(1.18);opacity:1} }
+
         @media (prefers-reduced-motion: reduce) {
-          .yc-gen-pulse { animation: none; }
+          .yc-gen-pulse, .yc-orb-core, .yc-orb-ring, .yc-orb-spark { animation: none; }
         }
       `}</style>
     </div>
