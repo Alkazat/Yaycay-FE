@@ -10,6 +10,7 @@ import { PREFILL_EMAIL_PARAM } from "@/lib/constants";
 import { Button, Card, CardBody, Input } from "@/components/ds";
 import { Countdown } from "@/components/Countdown";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
+import { GeneratingOverlay } from "@/components/demo/GeneratingOverlay";
 
 /** A sensible default trip date: about a month out. */
 function defaultDate(): string {
@@ -54,6 +55,11 @@ export function DemoClient() {
 
   return (
     <div className="yc-stack">
+      <GeneratingOverlay
+        open={mutation.isPending}
+        title={`Building ${childName.trim() ? `${childName.trim()}'s` : "your"} day...`}
+      />
+
       <header style={{ textAlign: "center" }}>
         <h1 style={{ fontSize: "var(--fs-display)" }}>Your family holiday, in a moment</h1>
         <p style={{ fontSize: "var(--fs-lg)" }}>
