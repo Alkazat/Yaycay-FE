@@ -4,6 +4,7 @@ import type { ProfileMode, TripDay } from "@/lib/contract-mock/types";
 import { activitiesForView, type RenderView } from "@/lib/render/routeByKind";
 import { selectActivityCopy } from "@/lib/render/selectVariant";
 import { ChallengeBlock } from "@/components/renderer/ChallengeBlock";
+import { ReadAloud } from "@/components/renderer/ReadAloud";
 import { dayCompletion } from "@/lib/render/progress";
 import { Badge, Card, CardBody } from "@/components/ds";
 
@@ -124,6 +125,15 @@ export function TripDayRenderer({
                       <p style={{ margin: 0, color: "var(--sky-700)", fontWeight: 700 }}>
                         Did you know? {copy.fact}
                       </p>
+                    ) : null}
+
+                    {/* Read-aloud: name + body + facts, never the answer. */}
+                    {isKid ? (
+                      <ReadAloud
+                        text={[copy.title, copy.body, ...(activity.facts ?? []), copy.fact]
+                          .filter(Boolean)
+                          .join(". ")}
+                      />
                     ) : null}
 
                     {/* Typed challenge - kid view, hidden in little mode. */}

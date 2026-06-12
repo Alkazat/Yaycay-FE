@@ -66,7 +66,8 @@ All roadmap items are built against the mock (one long run):
 - A2 - progress / done model (per-profile, derived completion, ProgressMeter). Done.
 - A6 - grown-ups guide (phases, per-day logistics, persisted checklist). Done.
 - A7 - journal mood + photo upload + export keepsake. Done (photo display awaits BE media).
-- A4 - read-aloud: folded in as a follow-up (TTS) - not yet wired.
+- A4 - read-aloud (TTS) per activity in the kid view (name + body + facts, never
+  the answer). Done.
 - B1, B3, B2 - star bank, star challenges, mini-games. Done.
 - B4 - packing lists (tick/add/delete/reset/print). Done.
 - B5 - map (offline-friendly geo pins). Done. Live tiles a later enhancement.
