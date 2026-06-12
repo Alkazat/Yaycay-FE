@@ -11,50 +11,10 @@ const DEFAULT_STEPS = [
   "Sprinkling the yay",
 ];
 
-const NATURAL_MS = 7000; // steps slip through over ~7s
-const FINISH_MS = 1000; // the last step runs for ~1s once the payload lands
-const DONE_HOLD_MS = 350; // brief "all done" beat before revealing
-
-type Phase = "steps" | "orb" | "finishing";
-
-/** Random, increasing completion times for `count` steps over `total`. */
-function randomTimes(count: number, total: number): number[] {
-  if (count <= 0) return [];
-  const gaps = Array.from({ length: count }, () => 0.4 + Math.random());
-  const sum = gaps.reduce((a, b) => a + b, 0) || 1;
-  let acc = 0;
-  return gaps.map((g) => {
-    acc += g;
-    return (acc / sum) * total;
-  });
-}
-
-function Dot({ done }: { done: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        width: 18,
-        height: 18,
-        flex: "none",
-        display: "inline-grid",
-        placeItems: "center",
-        borderRadius: "var(--radius-pill)",
-        border: "2.5px solid",
-        borderColor: done ? "var(--meadow-500)" : "var(--sun-400)",
-        background: done ? "var(--meadow-400)" : "transparent",
-      }}
-    >
-      {done ? (
-        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 13l4 4L19 7" />
-        </svg>
-      ) : (
-        <span className="yc-gen-pulse" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--sun-400)" }} />
-      )}
-    </span>
-  );
-}
+const SHOW_MS = 1500; // each line is visible for ~1.5s
+const EXIT_MS = 280; // fade-out-up duration (matches the CSS)
+const FINISH_MS = 1000; // final "Sprinkling the yay" holds ~1s once the payload lands
+const DONE_HOLD_MS = 400; // brief beat after the check before revealing
 
 /** Brand "AI" orb: a glossy pulsing core with a sweeping conic ring (the spin). */
 function AiOrb() {
@@ -67,13 +27,19 @@ function AiOrb() {
   );
 }
 
+function Check() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--meadow-500)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
 /**
- * Full-screen "we're building it" overlay.
- *
- * - Steps 0..n-2 complete at random times over ~7s; the last step waits.
- * - If the wait runs past ~7s with no payload, it switches to a pulsating AI orb.
- * - When `ready` lands, the final "Sprinkling the yay" step runs for ~1s, then a
- *   brief all-done beat, then `onComplete`. So it always runs to completion.
+ * Full-screen "we're building it" overlay: a brand AI orb runs the whole time,
+ * with a single step line cycling beneath it (fade-out-up, then fade-in-up).
+ * When `ready` lands it settles on the final step with a check for ~1s, then a
+ * brief beat, then `onComplete`. Always runs to completion.
  */
 export function GeneratingOverlay({
   open,
@@ -89,10 +55,9 @@ export function GeneratingOverlay({
   steps?: string[];
 }) {
   const n = steps.length;
-  const [doneCount, setDoneCount] = useState(0);
-  const [phase, setPhase] = useState<Phase>("steps");
-  // Rolling tick-through used during the orb (long-wait) phase.
-  const [cycle, setCycle] = useState(0);
+  const [idx, setIdx] = useState(0);
+  const [exiting, setExiting] = useState(false);
+  const [finished, setFinished] = useState(false);
 
   const readyRef = useRef(ready);
   readyRef.current = ready;
@@ -101,58 +66,61 @@ export function GeneratingOverlay({
 
   useEffect(() => {
     if (!open) {
-      setDoneCount(0);
-      setPhase("steps");
+      setIdx(0);
+      setExiting(false);
+      setFinished(false);
       return;
     }
-    setDoneCount(0);
-    setPhase("steps");
+    setIdx(0);
+    setExiting(false);
+    setFinished(false);
 
-    const start = Date.now();
-    const natural = randomTimes(Math.max(n - 1, 0), NATURAL_MS);
+    let cancelled = false;
     let finishing = false;
-    let intervalId = 0;
-    const timeouts: number[] = [];
+    const timers: number[] = [];
+    const t = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(fn, ms);
+      timers.push(id);
+      return id;
+    };
 
     const finish = () => {
-      if (finishing) return;
+      if (finishing || cancelled) return;
       finishing = true;
-      window.clearInterval(intervalId);
-      setDoneCount(Math.max(n - 1, 0)); // everything but the last
-      setPhase("finishing");
-      // "Sprinkling the yay" runs for ~1s, then done, then reveal.
-      timeouts.push(
-        window.setTimeout(() => {
-          setDoneCount(n);
-          timeouts.push(window.setTimeout(() => onCompleteRef.current(), DONE_HOLD_MS));
-        }, FINISH_MS),
-      );
+      window.clearInterval(poll);
+      setExiting(false);
+      setIdx(n - 1);
+      setFinished(true);
+      t(() => t(() => onCompleteRef.current(), DONE_HOLD_MS), FINISH_MS);
     };
 
-    intervalId = window.setInterval(() => {
-      if (readyRef.current) {
-        finish();
-        return;
-      }
-      const elapsed = Date.now() - start;
-      const done = natural.filter((t) => t <= elapsed).length; // first n-1 only
-      setDoneCount(done);
-      if (done >= n - 1) setPhase("orb"); // overran ~7s, embrace the AI
-    }, 80);
+    const cycle = () => {
+      if (cancelled || finishing) return;
+      t(() => {
+        if (cancelled || finishing) return;
+        setExiting(true); // fade-out-up the current line
+        t(() => {
+          if (cancelled || finishing) return;
+          setIdx((i) => (i + 1) % n); // swap + fade-in-up (key change)
+          setExiting(false);
+          cycle();
+        }, EXIT_MS);
+      }, SHOW_MS);
+    };
+
+    // Finish promptly whenever the payload is ready (even mid-line).
+    const poll = window.setInterval(() => {
+      if (readyRef.current) finish();
+    }, 150);
+
+    cycle();
 
     return () => {
-      window.clearInterval(intervalId);
-      timeouts.forEach(window.clearTimeout);
+      cancelled = true;
+      window.clearInterval(poll);
+      timers.forEach(window.clearTimeout);
     };
   }, [open, n, steps]);
-
-  // While the AI is thinking (orb phase), tick the list through on a loop.
-  useEffect(() => {
-    if (!open || phase !== "orb") return;
-    setCycle(0);
-    const id = window.setInterval(() => setCycle((c) => (c + 1) % Math.max(n, 1)), 750);
-    return () => window.clearInterval(id);
-  }, [open, phase, n]);
 
   if (!open) return null;
 
@@ -174,83 +142,39 @@ export function GeneratingOverlay({
           "calc(var(--safe-top) + var(--space-6)) var(--gutter) calc(var(--safe-bottom) + var(--space-6))",
       }}
     >
-      <div className="yc-container yc-stack" style={{ maxWidth: 460, gap: "var(--space-5)", alignItems: "center" }}>
+      <div className="yc-stack" style={{ alignItems: "center", gap: "var(--space-6)", maxWidth: 460 }}>
         <h2 style={{ margin: 0, textAlign: "center", fontSize: "var(--fs-h2)", color: "var(--royal-700)" }}>
           {title}
         </h2>
 
-        {phase === "orb" ? (
-          <div className="yc-stack" style={{ alignItems: "center", gap: "var(--space-4)", width: "100%" }}>
-            <AiOrb />
-            <p style={{ margin: 0, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--royal-700)" }}>
-              Our AI is crafting something special...
-            </p>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, width: "100%", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-              {steps.map((label, i) => {
-                const done = i < cycle;
-                const active = i === cycle;
-                return (
-                  <li
-                    key={label}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "var(--space-3)",
-                      opacity: done || active ? 1 : 0.4,
-                      transition: "opacity var(--dur-base) var(--ease-out)",
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 600,
-                      color: active ? "var(--sun-600)" : "var(--royal-700)",
-                    }}
-                  >
-                    <Dot done={done} />
-                    <span>{label}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : (
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, width: "100%", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-            {steps.map((label, i) => {
-              const done = i < doneCount;
-              const waiting = i === doneCount;
-              const soon = i > doneCount;
-              return (
-                <li
-                  key={label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--space-3)",
-                    opacity: soon ? 0.45 : 1,
-                    transition: "opacity var(--dur-base) var(--ease-out)",
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 600,
-                    color: "var(--royal-700)",
-                  }}
-                >
-                  <Dot done={done} />
-                  <span style={{ flex: 1 }}>{label}</span>
-                  <span
-                    style={{
-                      fontSize: "var(--fs-sm)",
-                      fontWeight: 700,
-                      color: done ? "var(--meadow-500)" : waiting ? "var(--sun-600)" : "var(--text-muted)",
-                    }}
-                  >
-                    {done ? "done" : waiting ? "waiting" : ""}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <AiOrb />
+
+        <div style={{ minHeight: 30, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span
+            key={finished ? "done" : idx}
+            className={exiting ? "yc-tick yc-tick-out" : "yc-tick yc-tick-in"}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "var(--space-2)",
+              fontFamily: "var(--font-display)",
+              fontWeight: 600,
+              fontSize: "var(--fs-lg)",
+              color: finished ? "var(--meadow-500)" : "var(--royal-700)",
+            }}
+          >
+            {finished ? <Check /> : null}
+            {steps[finished ? n - 1 : idx]}
+          </span>
+        </div>
       </div>
 
       <style>{`
-        .yc-gen-pulse { animation: yc-gen-pulse 1s var(--ease-bounce) infinite; }
-        @keyframes yc-gen-pulse { 0%,100%{transform:scale(.7);opacity:.6} 50%{transform:scale(1.15);opacity:1} }
+        .yc-tick { animation-duration: ${EXIT_MS}ms; animation-fill-mode: both; animation-timing-function: var(--ease-out); }
+        .yc-tick-in { animation-name: yc-tick-in; }
+        .yc-tick-out { animation-name: yc-tick-out; }
+        @keyframes yc-tick-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        @keyframes yc-tick-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-12px); } }
 
         .yc-orb-wrap { position: relative; width: 150px; height: 150px; display: grid; place-items: center; }
         .yc-orb-core {
@@ -273,7 +197,7 @@ export function GeneratingOverlay({
         @keyframes yc-orb-spark { 0%,100%{transform:scale(.8);opacity:.7} 50%{transform:scale(1.18);opacity:1} }
 
         @media (prefers-reduced-motion: reduce) {
-          .yc-gen-pulse, .yc-orb-core, .yc-orb-ring, .yc-orb-spark { animation: none; }
+          .yc-tick, .yc-orb-core, .yc-orb-ring, .yc-orb-spark { animation: none; }
         }
       `}</style>
     </div>
