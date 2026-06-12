@@ -11,26 +11,30 @@ import { Button, Card, CardBody, Input } from "@/components/ds";
 import { Countdown } from "@/components/Countdown";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 
-/** A sensible default trip window: about a month out, for a week. */
-function defaultDates(): { start: string; end: string } {
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  const start = new Date();
-  start.setDate(start.getDate() + 30);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  return { start: iso(start), end: iso(end) };
+/** A sensible default trip date: about a month out. */
+function defaultDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0, 10);
+}
+
+function localTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
 }
 
 export function DemoClient() {
   const router = useRouter();
-  const defaults = defaultDates();
   const [destination, setDestination] = useState("Singapore");
-  const [startDate, setStartDate] = useState(defaults.start);
-  const [endDate, setEndDate] = useState(defaults.end);
+  const [childName, setChildName] = useState("");
+  const [date, setDate] = useState(defaultDate());
   const [email, setEmail] = useState("");
 
   const mutation = useMutation<DemoGenerateDayResponse, Error>({
-    mutationFn: () => generateDemoDay({ destination, start_date: startDate, end_date: endDate }),
+    mutationFn: () => generateDemoDay({ destination, child: { name: childName }, date }),
   });
 
   // Capture the account/email (Brevo-synced by BE), then hand off to /auth.
@@ -53,7 +57,7 @@ export function DemoClient() {
       <header style={{ textAlign: "center" }}>
         <h1 style={{ fontSize: "var(--fs-display)" }}>Your family holiday, in a moment</h1>
         <p style={{ fontSize: "var(--fs-lg)" }}>
-          Tell us where and when. We will build one day to show you the yay.
+          Tell us where, when, and who. We will build one day to show you the yay.
         </p>
       </header>
 
@@ -67,27 +71,27 @@ export function DemoClient() {
               placeholder="Singapore"
               required
             />
-            <div style={{ display: "flex", gap: "var(--space-4)", flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 160px" }}>
-                <Input
-                  label="Start date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  required
-                />
-              </div>
-              <div style={{ flex: "1 1 160px" }}>
-                <Input
-                  label="End date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <Button type="submit" variant="cta" size="lg" block disabled={mutation.isPending}>
+            <Input
+              label="Who is exploring?"
+              value={childName}
+              onChange={(e) => setChildName(e.target.value)}
+              placeholder="A first name"
+              required
+            />
+            <Input
+              label="When?"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+            <Button
+              type="submit"
+              variant="cta"
+              size="lg"
+              block
+              disabled={mutation.isPending || !destination || !childName}
+            >
               {mutation.isPending ? "Building your day..." : "Build my day"}
             </Button>
           </form>
@@ -107,10 +111,10 @@ export function DemoClient() {
       {result ? (
         <div className="yc-stack" data-testid="demo-result">
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <Countdown startDate={result.trip.start_date} timezone={result.trip.timezone} />
+            <Countdown startDate={date} timezone={localTimezone()} />
           </div>
 
-          <h2 style={{ textAlign: "center" }}>Day 1 in {result.trip.destination}</h2>
+          <h2 style={{ textAlign: "center" }}>Day 1 in {destination}</h2>
 
           {/* The demo shows one explorer's view, with a quiz. */}
           <TripDayRenderer day={result.day} view="kid" mode="explorer_plus" />

@@ -9,7 +9,8 @@ test("demo builds a day and shows the countdown", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: /your family holiday/i })).toBeVisible();
 
-  // The destination defaults are prefilled; just kick the generator.
+  // Destination + date are prefilled; the explorer name is required.
+  await page.getByLabel(/who is exploring/i).fill("Lenny");
   const build = page.getByRole("button", { name: /build my day/i });
   await expect(build).toBeVisible();
 
