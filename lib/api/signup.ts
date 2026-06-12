@@ -1,4 +1,4 @@
-import { endpointUrl, SERVED } from "@/lib/api/http";
+import { apiFetch, SERVED } from "@/lib/api/http";
 import type {
   SignupCaptureRequest,
   SignupCaptureResponse,
@@ -12,10 +12,11 @@ import type {
 export async function captureSignup(
   req: SignupCaptureRequest,
 ): Promise<SignupCaptureResponse> {
-  const res = await fetch(endpointUrl("/signup/capture", SERVED.signupCapture), {
+  const res = await apiFetch("/signup/capture", SERVED.signupCapture, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),
+    livePath: "/signup-capture",
   });
   if (!res.ok) throw new Error(`Signup capture failed (${res.status})`);
   return (await res.json()) as SignupCaptureResponse;
