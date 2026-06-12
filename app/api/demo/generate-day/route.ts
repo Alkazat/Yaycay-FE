@@ -14,14 +14,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { destination, start_date, end_date } = body;
-  if (!destination || !start_date || !end_date) {
+  if (!body.destination || !body.child?.name) {
     return NextResponse.json(
-      { error: "destination, start_date and end_date are required" },
+      { error: "destination and child.name are required" },
       { status: 422 },
     );
   }
 
-  const result = generateDemoDay({ destination, start_date, end_date });
+  const result = generateDemoDay({
+    destination: body.destination,
+    child: body.child,
+    date: body.date,
+  });
   return NextResponse.json(result);
 }

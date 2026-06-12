@@ -399,19 +399,28 @@ export interface TwoFactorVerifyResponse {
  * Demo endpoint DTOs (POST /demo/generate-day)
  * ------------------------------------------------------------------------ */
 
+export interface DemoChildProfile {
+  name: string;
+  age?: number;
+  mode?: "little" | "explorer" | "explorer_plus";
+  interests?: string[];
+  dietary?: string[];
+}
+
 export interface DemoGenerateDayRequest {
   destination: string;
-  start_date: string;
-  end_date: string;
+  child: DemoChildProfile;
+  /** Optional trip date (YYYY-MM-DD). */
+  date?: string;
 }
 
 /**
- * The demo returns one AI-built day plus enough trip meta to drive the
- * countdown (start_date + timezone). The "one AI action" is never advertised.
+ * The demo returns one AI-built day plus a grown-ups teaser. Per the contract
+ * there is NO trip object here; the FE drives the demo countdown from the date
+ * the family entered.
  */
 export interface DemoGenerateDayResponse {
-  trip: TripMeta;
   day: TripDay;
-  /** A short teaser of the grown-ups guide. */
-  grownups_teaser?: string;
+  grownups_teaser: string;
+  generated_by?: "ai" | "fallback";
 }
