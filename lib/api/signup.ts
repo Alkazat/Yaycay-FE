@@ -16,6 +16,7 @@ export async function captureSignup(
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),
+    livePath: "/signup-capture",
   });
   if (!res.ok) throw new Error(`Signup capture failed (${res.status})`);
   return (await res.json()) as SignupCaptureResponse;

@@ -22,6 +22,8 @@ export async function generateDemoDay(
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),
     signal: init?.signal,
+    // Edge Function name (hyphenated; no `/` allowed in a function name).
+    livePath: "/demo-generate-day",
   });
 
   if (!res.ok) {

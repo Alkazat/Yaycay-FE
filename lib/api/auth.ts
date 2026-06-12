@@ -10,6 +10,7 @@ export async function verifyTwoFactor(
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ email, code }),
+    livePath: "/auth-2fa-verify",
   });
   if (!res.ok) throw new Error(`2FA verify failed (${res.status})`);
   return (await res.json()) as TwoFactorVerifyResponse;

@@ -10,9 +10,19 @@ import { env, hasLiveApi } from "@/lib/env";
  * else stays on the mock even once the API base is configured, until BE ships
  * that handler (then flip its flag).
  */
-export function endpointUrl(path: string, served: boolean): string {
+/**
+ * Build the request URL.
+ *
+ * Mock mode uses the nested path under `/api`. Live mode (Supabase Edge
+ * Functions) appends the contract path to the functions base, where the FIRST
+ * path segment is the function name. Most paths map directly (`/trips`,
+ * `/trips/:id/plan/chat`); the three whose contract path has multiple leading
+ * segments are deployed as a single hyphenated function name, so they pass an
+ * explicit `livePath` (e.g. mock `/demo/generate-day` -> live `/demo-generate-day`).
+ */
+export function endpointUrl(path: string, served: boolean, livePath?: string): string {
   if (served && hasLiveApi()) {
-    return `${env.apiBase.replace(/\/$/, "")}${path}`;
+    return `${env.apiBase.replace(/\/$/, "")}${livePath ?? path}`;
   }
   return `/api${path}`;
 }
@@ -34,9 +44,9 @@ export function isLiveCall(served: boolean): boolean {
 export async function apiFetch(
   path: string,
   served: boolean,
-  init?: RequestInit & { accessToken?: string | null },
+  init?: RequestInit & { accessToken?: string | null; livePath?: string },
 ): Promise<Response> {
-  const url = endpointUrl(path, served);
+  const url = endpointUrl(path, served, init?.livePath);
   const headers = new Headers(init?.headers);
 
   if (isLiveCall(served) && env.supabaseAnonKey) {
@@ -46,7 +56,7 @@ export async function apiFetch(
     }
   }
 
-  const { accessToken: _ignored, ...rest } = init ?? {};
+  const { accessToken: _t, livePath: _lp, ...rest } = init ?? {};
   return fetch(url, { ...rest, headers });
 }
 
