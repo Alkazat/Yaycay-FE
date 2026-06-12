@@ -12,5 +12,9 @@ export async function POST(request: Request) {
   if (!body.email) {
     return NextResponse.json({ error: "email is required" }, { status: 422 });
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    contact_id: `c_${Math.random().toString(36).slice(2, 10)}`,
+    status: "created",
+    synced_to_brevo: false,
+  });
 }

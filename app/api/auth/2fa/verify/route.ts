@@ -9,6 +9,6 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const verified = !!body.email && /^\d{6}$/.test(body.code ?? "");
+  const verified = /^\d{6}$/.test(body.code ?? "");
   return NextResponse.json({ verified }, { status: verified ? 200 : 422 });
 }

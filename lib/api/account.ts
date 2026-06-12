@@ -1,8 +1,8 @@
 import { endpointUrl, SERVED } from "@/lib/api/http";
 import type {
   AccountSummary,
-  CheckoutRequest,
-  CheckoutResponse,
+  CheckoutSessionRequest,
+  CheckoutSessionResponse,
 } from "@/lib/contract-mock/types";
 
 export async function getAccount(signal?: AbortSignal): Promise<AccountSummary> {
@@ -17,13 +17,13 @@ export async function getAccount(signal?: AbortSignal): Promise<AccountSummary> 
  * the returned URL. Canonical path: `POST /checkout/session`.
  */
 export async function createCheckoutSession(
-  req: CheckoutRequest,
-): Promise<CheckoutResponse> {
+  req: CheckoutSessionRequest,
+): Promise<CheckoutSessionResponse> {
   const res = await fetch(endpointUrl("/checkout/session", SERVED.checkout), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),
   });
   if (!res.ok) throw new Error(`Failed to start checkout (${res.status})`);
-  return (await res.json()) as CheckoutResponse;
+  return (await res.json()) as CheckoutSessionResponse;
 }

@@ -5,10 +5,10 @@
  * dev / a single `next start`) and resets on restart. Swap target: BE journal
  * endpoints. See ./README.md.
  */
-import type { JournalEntry, JournalEntryInput } from "./types";
+import type { JournalEntryLocal, JournalEntryLocalInput } from "./types";
 import { clampStars } from "@/lib/journal";
 
-const entries: JournalEntry[] = [
+const entries: JournalEntryLocal[] = [
   {
     id: "j_seed_1",
     trip_id: "t_sg",
@@ -20,14 +20,14 @@ const entries: JournalEntry[] = [
   },
 ];
 
-export function listJournal(tripId: string, profileId?: string): JournalEntry[] {
+export function listJournal(tripId: string, profileId?: string): JournalEntryLocal[] {
   return entries
     .filter((e) => e.trip_id === tripId && (!profileId || e.profile_id === profileId))
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
-export function addJournal(input: JournalEntryInput): JournalEntry {
-  const entry: JournalEntry = {
+export function addJournal(input: JournalEntryLocalInput): JournalEntryLocal {
+  const entry: JournalEntryLocal = {
     id: `j_${Math.random().toString(36).slice(2, 10)}`,
     trip_id: input.trip_id,
     profile_id: input.profile_id,

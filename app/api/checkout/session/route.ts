@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { CheckoutRequest } from "@/lib/contract-mock/types";
+import type { CheckoutSessionRequest } from "@/lib/contract-mock/types";
 
 /**
  * MOCK Checkout-session creator. The real BE creates a Stripe Checkout session
@@ -7,7 +7,7 @@ import type { CheckoutRequest } from "@/lib/contract-mock/types";
  * local placeholder page so the redirect flow can be built and tested.
  */
 export async function POST(request: Request) {
-  let body: Partial<CheckoutRequest>;
+  let body: Partial<CheckoutSessionRequest>;
   try {
     body = await request.json();
   } catch {
@@ -19,5 +19,8 @@ export async function POST(request: Request) {
 
   const params = new URLSearchParams({ price_id: body.price_id });
   if (body.trip_id) params.set("trip_id", body.trip_id);
-  return NextResponse.json({ url: `/checkout/mock?${params.toString()}` });
+  return NextResponse.json({
+    url: `/checkout/mock?${params.toString()}`,
+    session_id: `cs_mock_${Math.random().toString(36).slice(2, 10)}`,
+  });
 }

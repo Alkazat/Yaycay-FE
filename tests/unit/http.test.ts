@@ -16,7 +16,7 @@ describe("endpointUrl (no API base configured)", () => {
     expect(endpointUrl("/checkout/session", SERVED.checkout)).toBe("/api/checkout/session");
   });
 
-  it("marks the served set per CONTRACT-STATUS v0.4", () => {
+  it("marks the served set per CONTRACT-STATUS v0.8", () => {
     expect(SERVED.demoGenerateDay).toBe(true);
     expect(SERVED.signupCapture).toBe(true);
     expect(SERVED.listTrips).toBe(true);
