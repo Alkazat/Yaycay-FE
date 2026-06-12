@@ -1,4 +1,4 @@
-import { endpointUrl, SERVED } from "@/lib/api/http";
+import { apiFetch, SERVED } from "@/lib/api/http";
 
 /**
  * Stream a planning-chat reply (SSE `PlanChatEvent` tokens). Calls `onToken`
@@ -10,7 +10,7 @@ export async function streamPlanChat(
   onToken: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(endpointUrl(`/trips/${tripId}/plan/chat`, SERVED.planChat), {
+  const res = await apiFetch(`/trips/${tripId}/plan/chat`, SERVED.planChat, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ message }),
