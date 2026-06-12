@@ -4,6 +4,7 @@ import type { ProfileMode, TripDay } from "@/lib/contract-mock/types";
 import { activitiesForView, type RenderView } from "@/lib/render/routeByKind";
 import { selectActivityCopy } from "@/lib/render/selectVariant";
 import { ChallengeBlock } from "@/components/renderer/ChallengeBlock";
+import { dayCompletion } from "@/lib/render/progress";
 import { Badge, Card, CardBody } from "@/components/ds";
 
 interface TripDayRendererProps {
@@ -12,6 +13,10 @@ interface TripDayRendererProps {
   view: RenderView;
   /** Active render mode (kid view). Defaults to standard. */
   mode?: ProfileMode;
+  /** Stable ids of ticked activities (kid view). */
+  done?: ReadonlySet<string>;
+  /** Tick/untick an activity. When provided, done-check rows render. */
+  onToggleActivity?: (activityId: string, done: boolean) => void;
 }
 
 const SLOT_LABEL: Record<string, string> = {
@@ -30,8 +35,17 @@ const SLOT_LABEL: Record<string, string> = {
  * hidden in `little` mode. Safety notes show fully in the grown-ups view and as
  * a gentle "ask a grown-up" cue in the kid view. It NEVER mutates trip content.
  */
-export function TripDayRenderer({ day, view, mode = "standard" }: TripDayRendererProps) {
+export function TripDayRenderer({
+  day,
+  view,
+  mode = "standard",
+  done,
+  onToggleActivity,
+}: TripDayRendererProps) {
   const isKid = view === "kid";
+  const doneSet = done ?? new Set<string>();
+  const completion = dayCompletion(day, doneSet);
+  const showChecks = isKid && !!onToggleActivity;
 
   return (
     <div className="yc-stack" data-testid="trip-day">
@@ -142,6 +156,40 @@ export function TripDayRenderer({ day, view, mode = "standard" }: TripDayRendere
                         Check with a grown-up before you eat here.
                       </p>
                     ) : null}
+
+                    {/* The single completion primitive: one done-check per activity. */}
+                    {showChecks ? (
+                      <label
+                        data-testid="done-check"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "var(--space-3)",
+                          minHeight: 54,
+                          marginTop: "var(--space-2)",
+                          padding: "0 var(--space-3)",
+                          borderRadius: "var(--radius-md)",
+                          background: doneSet.has(activity.id)
+                            ? "var(--sun-50)"
+                            : "var(--surface-sunk)",
+                          border: doneSet.has(activity.id)
+                            ? "2.5px solid var(--sun-300)"
+                            : "2.5px solid var(--sand-200)",
+                          cursor: "pointer",
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 600,
+                          color: "var(--royal-700)",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={doneSet.has(activity.id)}
+                          onChange={(e) => onToggleActivity?.(activity.id, e.target.checked)}
+                          style={{ width: 26, height: 26, accentColor: "var(--sun-400)" }}
+                        />
+                        <span>{doneSet.has(activity.id) ? "Done!" : "Mark as done"}</span>
+                      </label>
+                    ) : null}
                   </CardBody>
                 </Card>
               );
@@ -149,6 +197,25 @@ export function TripDayRenderer({ day, view, mode = "standard" }: TripDayRendere
           </section>
         );
       })}
+
+      {showChecks && completion.complete ? (
+        <div
+          data-testid="day-complete"
+          style={{
+            padding: "var(--space-4)",
+            textAlign: "center",
+            background: "var(--grad-sunset)",
+            border: "var(--border-ink)",
+            borderRadius: "var(--radius-xl)",
+            boxShadow: "var(--pop-sun), var(--gloss-top)",
+            fontFamily: "var(--font-display)",
+            fontWeight: 600,
+            color: "var(--royal-800)",
+          }}
+        >
+          Day complete! Amazing exploring.
+        </div>
+      ) : null}
     </div>
   );
 }

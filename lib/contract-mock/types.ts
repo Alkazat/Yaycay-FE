@@ -101,7 +101,23 @@ export interface TripDay {
   weather?: string;
   /** Hotel / move badge copy, e.g. "Tonight: Village Hotel Sentosa". */
   hotel?: string;
+  /** Per-day star challenge (claimable once per profile per day). */
+  star_challenge?: { question: string; answer: string };
+  /** Per-day mini-game config (the youngest explorers). */
+  game?: GameConfig;
   moments: Moment[];
+}
+
+/** Per-day kid mini-game. */
+export type GameType = "tap" | "colour" | "spot";
+
+export interface GameConfig {
+  type: GameType;
+  theme: string;
+  /** Emoji/sticker set the game uses. */
+  items: string[];
+  /** Tap/spot goal or target count. */
+  goal?: number;
 }
 
 export interface TripMeta {
@@ -114,11 +130,67 @@ export interface TripMeta {
   currency?: string;
 }
 
+export interface GrownupsDay {
+  day_id: string;
+  bookings?: string[];
+  costs?: string[];
+  transport?: string[];
+  tips?: string[];
+  allergy?: string[];
+}
+
 export interface GrownupsGuide {
   essentials?: string;
+  /** Seed labels for the booking checklist (state lives in the checklist API). */
   checklist?: string[];
   transport?: string;
+  /** Accommodation phases, e.g. "Sentosa (nights 1-4)". */
+  phases?: { label: string; range: string }[];
+  /** Per-day logistics cards. */
+  days?: GrownupsDay[];
 }
+
+/* --------------------------------------------------------------------------
+ * Grown-ups booking checklist (persisted ticks)
+ * ------------------------------------------------------------------------ */
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  group: string;
+  done: boolean;
+}
+
+/* --------------------------------------------------------------------------
+ * Packing lists (per profile + a shared family list)
+ * ------------------------------------------------------------------------ */
+
+export interface PackingItem {
+  id: string;
+  label: string;
+  note?: string;
+  qty?: number;
+  checked: boolean;
+}
+
+export interface PackingSection {
+  id: string;
+  title: string;
+  items: PackingItem[];
+}
+
+export interface PackingList {
+  /** Profile id, or "family" for the shared list. */
+  id: string;
+  label: string;
+  sections: PackingSection[];
+}
+
+export type PackingAction =
+  | { action: "tick"; list_id: string; item_id: string; checked: boolean }
+  | { action: "add"; list_id: string; section_id: string; label: string; qty?: number }
+  | { action: "delete"; list_id: string; item_id: string }
+  | { action: "reset" };
 
 /** The full canonical payload: Holiday -> Days -> Moments -> Activities. */
 export interface TripContent {
@@ -146,6 +218,38 @@ export interface ChildProfile {
 
 // Full lifecycle enum per the published contract (v0.4). The FE only drives the
 // middle of this range, but BE can return any value, so render defensively.
+/* --------------------------------------------------------------------------
+ * Per-profile progress (done items, keyed by stable activity id)
+ * ------------------------------------------------------------------------ */
+
+export interface ProgressState {
+  trip_id: string;
+  profile_id: string;
+  /** Stable activity ids that are ticked done. Never keyed by label text. */
+  done: string[];
+}
+
+/* --------------------------------------------------------------------------
+ * Reward economy (stars)
+ * ------------------------------------------------------------------------ */
+
+/** Where a star came from. */
+export type StarSource = "game" | "challenge";
+
+export interface StarsState {
+  trip_id: string;
+  profile_id: string;
+  stars: number;
+  /** Idempotency keys already claimed, e.g. "d_2:challenge". */
+  claims: string[];
+}
+
+export interface StarClaimRequest {
+  profile_id: string;
+  day_id: string;
+  source: StarSource;
+}
+
 export type TripStatus =
   | "draft"
   | "planning"
@@ -217,6 +321,10 @@ export interface JournalEntry {
   note?: string;
   /** 1-5 stars, or undefined when only a note was left. */
   stars?: number;
+  /** Mood label, e.g. "happy" | "loved" | "wow" | "tired" | "funny". */
+  mood?: string;
+  /** References to print-grade media (signed-URL flow). */
+  media_ref?: string[];
   created_at: string;
 }
 
@@ -227,6 +335,24 @@ export interface JournalEntryInput {
   day_id: string;
   note?: string;
   stars?: number;
+  mood?: string;
+  media_ref?: string[];
+}
+
+/* --------------------------------------------------------------------------
+ * Media (signed-URL upload for print-grade photos)
+ * ------------------------------------------------------------------------ */
+
+export interface MediaSignRequest {
+  trip_id: string;
+  content_type: string;
+}
+
+export interface MediaSignResponse {
+  /** Where the client PUTs the bytes (Storage signed URL). */
+  upload_url: string;
+  /** The reference stored on the journal entry. */
+  media_ref: string;
 }
 
 /* --------------------------------------------------------------------------
@@ -254,6 +380,19 @@ export interface SignupCaptureRequest {
 
 export interface SignupCaptureResponse {
   ok: boolean;
+}
+
+/* --------------------------------------------------------------------------
+ * Auth (second factor)
+ * ------------------------------------------------------------------------ */
+
+export interface TwoFactorVerifyRequest {
+  email: string;
+  code: string;
+}
+
+export interface TwoFactorVerifyResponse {
+  verified: boolean;
 }
 
 /* --------------------------------------------------------------------------

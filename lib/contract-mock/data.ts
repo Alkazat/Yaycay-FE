@@ -67,6 +67,16 @@ const SINGAPORE_TRIP: TripContent = {
       did_you_know: "Singapore is one whole country made of one big island and lots of little ones!",
       weather: "Singapore is HOT and a bit sticky, about 31C. Hat, water, sunscreen!",
       hotel: "Tonight: Village Hotel Sentosa. We stay here for 4 nights.",
+      star_challenge: {
+        question: "Which country are we exploring on this whole holiday?",
+        answer: "Singapore!",
+      },
+      game: {
+        type: "tap",
+        theme: "Catch the beach things before they float away!",
+        items: ["shell", "ball", "bucket", "fish", "star", "wave"],
+        goal: 8,
+      },
       moments: [
         {
           id: "d1_m1",
@@ -115,6 +125,16 @@ const SINGAPORE_TRIP: TripContent = {
       summary: "A big day out among gardens, clouds, and very tall trees.",
       did_you_know: "The Cloud Forest has the tallest indoor waterfall in the world!",
       weather: "Warm and humid, about 32C. The Cloud Forest inside is cool and misty.",
+      star_challenge: {
+        question: "What do plants need to make their own food?",
+        answer: "Sunlight, water and air. They are amazing!",
+      },
+      game: {
+        type: "spot",
+        theme: "Spot the hidden rainforest animals!",
+        items: ["frog", "bird", "bug", "snail", "leaf", "flower", "rock", "fern"],
+        goal: 4,
+      },
       moments: [
         {
           id: "d2_m1",
@@ -203,6 +223,28 @@ const SINGAPORE_TRIP: TripContent = {
     essentials: "Passports, EZ-Link cards, sunscreen, refillable water bottles.",
     checklist: ["Confirm allergy cards in English + Mandarin", "Download offline map", "Charge the camera"],
     transport: "MRT covers everything; grab a taxi only for late nights.",
+    phases: [
+      { label: "Village Hotel Sentosa", range: "nights 1-4" },
+      { label: "Mandai Rainforest Resort", range: "night 5" },
+      { label: "Treetops Bukit Timah", range: "nights 6-11" },
+    ],
+    days: [
+      {
+        day_id: "d_1",
+        bookings: ["Airport transfer to Sentosa", "Dinner: Shake Shack Siloso (walk-in)"],
+        costs: ["Transfer ~S$55 / A$60", "Dinner ~S$60 / A$66"],
+        transport: ["Grab from Changi, about 35 min"],
+        tips: ["Land tired, keep day one easy"],
+        allergy: ["Shake Shack: confirm no peanut/soy in sauces before ordering"],
+      },
+      {
+        day_id: "d_2",
+        bookings: ["Gardens by the Bay tickets (Cloud Forest + Flower Dome)"],
+        costs: ["Garden tickets ~S$53 / A$58 for the family"],
+        transport: ["MRT to Bayfront, exit B"],
+        tips: ["Cloud Forest is busiest mid-morning, go early"],
+      },
+    ],
   },
 };
 
