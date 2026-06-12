@@ -1,4 +1,4 @@
-import { endpointUrl, SERVED } from "@/lib/api/http";
+import { apiFetch, SERVED } from "@/lib/api/http";
 import type {
   DemoGenerateDayRequest,
   DemoGenerateDayResponse,
@@ -17,9 +17,7 @@ export async function generateDemoDay(
   req: DemoGenerateDayRequest,
   init?: { signal?: AbortSignal },
 ): Promise<DemoGenerateDayResponse> {
-  const url = endpointUrl("/demo/generate-day", SERVED.demoGenerateDay);
-
-  const res = await fetch(url, {
+  const res = await apiFetch("/demo/generate-day", SERVED.demoGenerateDay, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),

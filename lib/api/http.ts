@@ -17,6 +17,39 @@ export function endpointUrl(path: string, served: boolean): string {
   return `/api${path}`;
 }
 
+/**
+ * Whether a request to this endpoint hits the live BE (vs the in-repo mock).
+ */
+export function isLiveCall(served: boolean): boolean {
+  return served && hasLiveApi();
+}
+
+/**
+ * Fetch through the hybrid router. For live calls to the Supabase Edge Functions
+ * BE, attach the Supabase `apikey` + `Authorization` headers (the gateway
+ * requires them). `accessToken` is the signed-in user's JWT when available;
+ * otherwise the anon key is used (fine for public endpoints like demo/signup).
+ * Mock calls are unchanged, so CI / mock mode is unaffected.
+ */
+export async function apiFetch(
+  path: string,
+  served: boolean,
+  init?: RequestInit & { accessToken?: string | null },
+): Promise<Response> {
+  const url = endpointUrl(path, served);
+  const headers = new Headers(init?.headers);
+
+  if (isLiveCall(served) && env.supabaseAnonKey) {
+    headers.set("apikey", env.supabaseAnonKey);
+    if (!headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${init?.accessToken || env.supabaseAnonKey}`);
+    }
+  }
+
+  const { accessToken: _ignored, ...rest } = init ?? {};
+  return fetch(url, { ...rest, headers });
+}
+
 /** Endpoints the live contract serves today (CONTRACT-STATUS v0.4). */
 export const SERVED = {
   demoGenerateDay: true,
@@ -24,6 +57,7 @@ export const SERVED = {
   listTrips: true,
   getTrip: true,
   auth2fa: true,
+  planChat: true,
   // Deferred on BE - keep on the mock until their handler ships:
   profiles: false,
   account: false,
@@ -34,5 +68,4 @@ export const SERVED = {
   packing: false,
   grownups: false,
   media: false,
-  planChat: false,
 } as const;
