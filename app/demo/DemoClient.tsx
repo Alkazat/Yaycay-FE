@@ -33,6 +33,8 @@ export function DemoClient() {
   const [childName, setChildName] = useState("");
   const [date, setDate] = useState(defaultDate());
   const [email, setEmail] = useState("");
+  // True from "Build my day" until the generating overlay finishes its run.
+  const [building, setBuilding] = useState(false);
 
   const mutation = useMutation<DemoGenerateDayResponse, Error>({
     mutationFn: () => generateDemoDay({ destination, child: { name: childName }, date }),
@@ -48,15 +50,19 @@ export function DemoClient() {
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
+    setBuilding(true);
     mutation.mutate();
   };
 
-  const result = mutation.data;
+  // Reveal the result only once the overlay has run to completion.
+  const result = building ? undefined : mutation.data;
 
   return (
     <div className="yc-stack">
       <GeneratingOverlay
-        open={mutation.isPending}
+        open={building}
+        ready={mutation.isSuccess || mutation.isError}
+        onComplete={() => setBuilding(false)}
         title={`Building ${childName.trim() ? `${childName.trim()}'s` : "your"} day...`}
       />
 

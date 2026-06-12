@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_STEPS = [
   "Packing the explorer bags",
@@ -10,6 +10,22 @@ const DEFAULT_STEPS = [
   "Checking everything is allergy-safe",
   "Sprinkling the yay",
 ];
+
+const NATURAL_MS = 7000;
+const ACCEL_MS = 1000;
+const DONE_HOLD_MS = 450;
+
+/** Random, strictly-increasing completion times for `count` steps over `total`. */
+function randomTimes(count: number, total: number): number[] {
+  if (count <= 0) return [];
+  const gaps = Array.from({ length: count }, () => 0.4 + Math.random());
+  const sum = gaps.reduce((a, b) => a + b, 0) || 1;
+  let acc = 0;
+  return gaps.map((g) => {
+    acc += g;
+    return (acc / sum) * total;
+  });
+}
 
 function Dot({ done }: { done: boolean }) {
   return (
@@ -39,33 +55,84 @@ function Dot({ done }: { done: boolean }) {
 }
 
 /**
- * Full-screen "we're building it" overlay. Each step flips from waiting to done
- * on a timer; the final step holds on "waiting" until the real response arrives
- * and the overlay unmounts. Reassuring during the AI generation wait.
+ * Full-screen "we're building it" overlay.
+ *
+ * Steps 0..n-2 complete at random times over ~7s; the LAST step waits for the
+ * response. When `ready` flips true the overlay finishes any remaining steps
+ * (including the last) in ~1s, holds briefly on a fully-done list, then calls
+ * `onComplete`. So the animation always runs to completion - never cut short -
+ * whether the payload arrives early or late.
  */
 export function GeneratingOverlay({
   open,
+  ready,
+  onComplete,
   title = "Building your day...",
   steps = DEFAULT_STEPS,
 }: {
   open: boolean;
+  ready: boolean;
+  onComplete: () => void;
   title?: string;
   steps?: string[];
 }) {
-  const [active, setActive] = useState(0);
+  const n = steps.length;
+  const [doneCount, setDoneCount] = useState(0);
+
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (!open) {
-      setActive(0);
+      setDoneCount(0);
       return;
     }
-    setActive(0);
-    const id = setInterval(() => {
-      // Hold on the last step until the response lands (overlay closes).
-      setActive((a) => Math.min(a + 1, steps.length - 1));
-    }, 850);
-    return () => clearInterval(id);
-  }, [open, steps.length]);
+    setDoneCount(0);
+
+    const start = Date.now();
+    // Natural completion times for the first n-1 steps; the last waits for ready.
+    const natural = randomTimes(Math.max(n - 1, 0), NATURAL_MS);
+
+    let readyAt: number | null = null;
+    let naturalDoneAtReady = 0;
+    let finished = false;
+    let completeTimer: number | undefined;
+
+    const id = window.setInterval(() => {
+      const elapsed = Date.now() - start;
+
+      if (readyRef.current && readyAt === null) {
+        readyAt = elapsed;
+        naturalDoneAtReady = natural.filter((t) => t <= elapsed).length;
+      }
+
+      let done: number;
+      if (readyAt === null) {
+        // Natural phase: only the first n-1 steps can complete here.
+        done = natural.filter((t) => t <= elapsed).length;
+      } else {
+        // Accelerate everything remaining (incl. the last) over ~1s.
+        const frac = Math.min(1, (elapsed - readyAt) / ACCEL_MS);
+        const remaining = n - naturalDoneAtReady;
+        done = Math.min(n, naturalDoneAtReady + Math.round(frac * remaining));
+      }
+
+      setDoneCount(done);
+
+      if (done >= n && !finished) {
+        finished = true;
+        window.clearInterval(id);
+        completeTimer = window.setTimeout(() => onCompleteRef.current(), DONE_HOLD_MS);
+      }
+    }, 80);
+
+    return () => {
+      window.clearInterval(id);
+      if (completeTimer) window.clearTimeout(completeTimer);
+    };
+  }, [open, n, steps]);
 
   if (!open) return null;
 
@@ -93,9 +160,9 @@ export function GeneratingOverlay({
         </h2>
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
           {steps.map((label, i) => {
-            const done = i < active;
-            const waiting = i === active;
-            const soon = i > active;
+            const done = i < doneCount;
+            const waiting = i === doneCount;
+            const soon = i > doneCount;
             return (
               <li
                 key={label}
