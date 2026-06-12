@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AiOrb } from "@/components/ai/AiOrb";
 
 const DEFAULT_STEPS = [
   "Packing the explorer bags",
@@ -15,17 +16,6 @@ const SHOW_MS = 1500; // each line is visible for ~1.5s
 const EXIT_MS = 280; // fade-out-up duration (matches the CSS)
 const FINISH_MS = 1000; // final "Sprinkling the yay" holds ~1s once the payload lands
 const DONE_HOLD_MS = 400; // brief beat after the check before revealing
-
-/** Brand "AI" orb: a glossy pulsing core with a sweeping conic ring (the spin). */
-function AiOrb() {
-  return (
-    <div className="yc-orb-wrap" aria-hidden="true">
-      <span className="yc-orb-ring" />
-      <span className="yc-orb-core" />
-      <span className="yc-orb-spark">&#10022;</span>
-    </div>
-  );
-}
 
 function Check() {
   return (
@@ -147,7 +137,7 @@ export function GeneratingOverlay({
           {title}
         </h2>
 
-        <AiOrb />
+        <AiOrb size={150} />
 
         <div style={{ minHeight: 30, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span
@@ -168,38 +158,6 @@ export function GeneratingOverlay({
           </span>
         </div>
       </div>
-
-      <style>{`
-        .yc-tick { animation-duration: ${EXIT_MS}ms; animation-fill-mode: both; animation-timing-function: var(--ease-out); }
-        .yc-tick-in { animation-name: yc-tick-in; }
-        .yc-tick-out { animation-name: yc-tick-out; }
-        @keyframes yc-tick-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-        @keyframes yc-tick-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-12px); } }
-
-        .yc-orb-wrap { position: relative; width: 150px; height: 150px; display: grid; place-items: center; }
-        .yc-orb-core {
-          width: 112px; height: 112px; border-radius: 50%;
-          background: radial-gradient(circle at 35% 28%, #e7f6fb 0%, var(--aqua-400) 42%, var(--sky-600) 100%);
-          border: 3px solid var(--royal-600);
-          box-shadow: 0 0 42px rgba(43,195,208,.55), var(--gloss-strong);
-          animation: yc-orb-pulse 2.4s var(--ease-bounce) infinite;
-        }
-        .yc-orb-ring {
-          position: absolute; inset: 0; border-radius: 50%;
-          background: conic-gradient(from 0deg, transparent 0deg, var(--sun-400) 70deg, transparent 150deg);
-          -webkit-mask: radial-gradient(circle, transparent 60px, #000 62px);
-          mask: radial-gradient(circle, transparent 60px, #000 62px);
-          animation: yc-orb-spin 2s linear infinite;
-        }
-        .yc-orb-spark { position: absolute; color: #fff; font-size: 30px; text-shadow: 0 0 10px rgba(255,255,255,.8); animation: yc-orb-spark 2.4s ease-in-out infinite; }
-        @keyframes yc-orb-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
-        @keyframes yc-orb-spin { to { transform: rotate(360deg); } }
-        @keyframes yc-orb-spark { 0%,100%{transform:scale(.8);opacity:.7} 50%{transform:scale(1.18);opacity:1} }
-
-        @media (prefers-reduced-motion: reduce) {
-          .yc-tick, .yc-orb-core, .yc-orb-ring, .yc-orb-spark { animation: none; }
-        }
-      `}</style>
     </div>
   );
 }
