@@ -30,9 +30,11 @@ export async function POST(
       { status: 422 },
     );
   }
-  if (!body.note && body.stars == null) {
+  const hasContent =
+    !!body.note || body.stars != null || !!body.mood || (body.media_ref?.length ?? 0) > 0;
+  if (!hasContent) {
     return NextResponse.json(
-      { error: "Add a note or a star rating" },
+      { error: "Add a note, a mood, a star rating or a photo" },
       { status: 422 },
     );
   }
@@ -43,6 +45,8 @@ export async function POST(
     day_id: body.day_id,
     note: body.note,
     stars: body.stars,
+    mood: body.mood,
+    media_ref: body.media_ref,
   });
   return NextResponse.json(entry, { status: 201 });
 }

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listTrips } from "@/lib/api/trips";
 import { entitlementsFor } from "@/lib/entitlements";
 import type { Tier } from "@/lib/contract-mock/types";
+import { PlanChat } from "@/components/chat/PlanChat";
 import { Button, Card, CardBody, Badge, Banner } from "@/components/ds";
 
 /** BYO-AI connector status screen (mock - real MCP connect lives in BE). */
@@ -27,23 +28,6 @@ function ByoConnector() {
         </ol>
         <Button variant="primary" disabled>
           Connect (coming soon)
-        </Button>
-      </CardBody>
-    </Card>
-  );
-}
-
-/** Use-our-AI planning chat placeholder (streaming lands with the live BE). */
-function OurAiChat() {
-  return (
-    <Card>
-      <CardBody title="Plan with Yaycay">
-        <p style={{ margin: 0 }}>
-          Chat with Yaycay to build and tweak your trip. Streaming planning chat arrives with the
-          live planner.
-        </p>
-        <Button variant="cta" disabled>
-          Start planning (coming soon)
         </Button>
       </CardBody>
     </Card>
@@ -76,7 +60,7 @@ export function PlanClient({ tripId }: { tripId: string }) {
       ) : null}
 
       {ent.canUseByoConnector ? <ByoConnector /> : null}
-      {ent.canUseOurAi ? <OurAiChat /> : null}
+      {ent.canUseOurAi ? <PlanChat tripId={tripId} /> : null}
       {!ent.canUseByoConnector && !ent.canUseOurAi ? (
         <Card variant="soft">
           <CardBody>

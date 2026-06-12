@@ -23,9 +23,16 @@ export const SERVED = {
   signupCapture: true,
   listTrips: true,
   getTrip: true,
+  auth2fa: true,
   // Deferred on BE - keep on the mock until their handler ships:
   profiles: false,
   account: false,
   journal: false,
   checkout: false,
+  progress: false,
+  stars: false,
+  packing: false,
+  grownups: false,
+  media: false,
+  planChat: false,
 } as const;

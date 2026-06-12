@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { OfflineBanner } from "@/components/shell/OfflineBanner";
 
 interface NavItem {
   href: string;
@@ -49,6 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <OfflineBanner />
       <header className="yc-appbar">
         <Link href="/trips" className="yc-appbar__brand" aria-label="Yaycay home">
           <Image src="/icons/yaycay-logo.png" alt="" width={36} height={36} priority />
