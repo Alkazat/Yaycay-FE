@@ -163,3 +163,53 @@ body {
     padding-bottom: calc(var(--safe-bottom) + 84px);
   }
 }
+
+/* ============================================================
+   AI orb + step-line ticker - shared by the demo generating
+   overlay and the planning-chat thinking indicator. Size is
+   driven by the --orb custom property set inline.
+   ============================================================ */
+.yc-orb-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.yc-orb-core {
+  width: calc(var(--orb) * 0.75);
+  height: calc(var(--orb) * 0.75);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #e7f6fb 0%, var(--aqua-400) 42%, var(--sky-600) 100%);
+  border: max(2px, calc(var(--orb) * 0.02)) solid var(--royal-600);
+  box-shadow: 0 0 calc(var(--orb) * 0.28) rgba(43, 195, 208, 0.55), var(--gloss-strong);
+  animation: yc-orb-pulse 2.4s var(--ease-bounce) infinite;
+}
+.yc-orb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, var(--sun-400) 70deg, transparent 150deg);
+  -webkit-mask: radial-gradient(circle, transparent calc(var(--orb) * 0.4), #000 calc(var(--orb) * 0.41));
+  mask: radial-gradient(circle, transparent calc(var(--orb) * 0.4), #000 calc(var(--orb) * 0.41));
+  animation: yc-orb-spin 2s linear infinite;
+}
+.yc-orb-spark {
+  position: absolute;
+  color: #fff;
+  font-size: calc(var(--orb) * 0.2);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  animation: yc-orb-spark 2.4s ease-in-out infinite;
+}
+@keyframes yc-orb-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes yc-orb-spin { to { transform: rotate(360deg); } }
+@keyframes yc-orb-spark { 0%, 100% { transform: scale(0.8); opacity: 0.7; } 50% { transform: scale(1.18); opacity: 1; } }
+
+/* One step line fading out-up / in-up (duration must match EXIT_MS in JS). */
+.yc-tick { animation-duration: 280ms; animation-fill-mode: both; animation-timing-function: var(--ease-out); }
+.yc-tick-in { animation-name: yc-tick-in; }
+.yc-tick-out { animation-name: yc-tick-out; }
+@keyframes yc-tick-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes yc-tick-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-12px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .yc-orb-core, .yc-orb-ring, .yc-orb-spark, .yc-tick { animation: none; }
+}

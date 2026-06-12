@@ -1,4 +1,5 @@
 import { apiFetch, SERVED } from "@/lib/api/http";
+import { getAccessToken } from "@/lib/auth/session";
 import type {
   ChildProfile,
   TripContent,
@@ -6,7 +7,9 @@ import type {
 } from "@/lib/contract-mock/types";
 
 async function getJson<T>(path: string, served: boolean, signal?: AbortSignal): Promise<T> {
-  const res = await apiFetch(path, served, { signal });
+  // Trips are authenticated; carry the signed-in user's JWT when available.
+  const accessToken = await getAccessToken();
+  const res = await apiFetch(path, served, { signal, accessToken });
   if (!res.ok) throw new Error(`Request failed (${res.status}) for ${path}`);
   return (await res.json()) as T;
 }

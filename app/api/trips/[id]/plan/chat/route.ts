@@ -1,32 +1,38 @@
 import type { NextRequest } from "next/server";
+import type { ChatMessage } from "@/lib/contract-mock/types";
 
 /**
- * MOCK planning chat - streams an SSE token stream like the served
- * `POST /trips/:id/plan/chat`. Canned, guardrailed-sounding reply so the
- * streaming UI can be built before the live AI harness is wired.
+ * MOCK planning chat - streams the contract SSE shape (`PlanChatEvent` frames
+ * ending in `data: [DONE]`). Canned reply so the streaming UI works before the
+ * live AI harness is wired.
  */
 export async function POST(request: NextRequest) {
-  let message = "";
+  let messages: ChatMessage[] = [];
   try {
-    message = ((await request.json()) as { message?: string }).message ?? "";
+    messages = ((await request.json()) as { messages?: ChatMessage[] }).messages ?? [];
   } catch {
     // ignore
   }
+  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "that";
 
   const reply =
-    `Great idea. Here is how I would weave "${message.slice(0, 60) || "that"}" into the trip: ` +
+    `Great idea. Here is how I would weave "${lastUser.slice(0, 60)}" into the trip: ` +
     "I'd add a relaxed morning, keep the afternoon free for the beach, and flag any food stops " +
     "for allergy checks. Want me to pencil it into a specific day?";
-  const tokens = reply.split(/(\s+)/);
+  const chunks = reply.split(/(\s+)/);
 
   const encoder = new TextEncoder();
+  const frame = (obj: unknown) => encoder.encode(`data: ${JSON.stringify(obj)}\n\n`);
+
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      for (const t of tokens) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "token", text: t })}\n\n`));
+      controller.enqueue(frame({ start: true, generated_by: "fallback" }));
+      for (const c of chunks) {
+        controller.enqueue(frame({ delta: c }));
         await new Promise((r) => setTimeout(r, 15));
       }
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
+      controller.enqueue(frame({ done: true, job_id: null }));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       controller.close();
     },
   });
