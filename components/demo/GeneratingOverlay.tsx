@@ -91,6 +91,8 @@ export function GeneratingOverlay({
   const n = steps.length;
   const [doneCount, setDoneCount] = useState(0);
   const [phase, setPhase] = useState<Phase>("steps");
+  // Rolling tick-through used during the orb (long-wait) phase.
+  const [cycle, setCycle] = useState(0);
 
   const readyRef = useRef(ready);
   readyRef.current = ready;
@@ -144,6 +146,14 @@ export function GeneratingOverlay({
     };
   }, [open, n, steps]);
 
+  // While the AI is thinking (orb phase), tick the list through on a loop.
+  useEffect(() => {
+    if (!open || phase !== "orb") return;
+    setCycle(0);
+    const id = window.setInterval(() => setCycle((c) => (c + 1) % Math.max(n, 1)), 750);
+    return () => window.clearInterval(id);
+  }, [open, phase, n]);
+
   if (!open) return null;
 
   return (
@@ -170,11 +180,35 @@ export function GeneratingOverlay({
         </h2>
 
         {phase === "orb" ? (
-          <div className="yc-stack" style={{ alignItems: "center", gap: "var(--space-4)" }}>
+          <div className="yc-stack" style={{ alignItems: "center", gap: "var(--space-4)", width: "100%" }}>
             <AiOrb />
             <p style={{ margin: 0, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--royal-700)" }}>
               Our AI is crafting something special...
             </p>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, width: "100%", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              {steps.map((label, i) => {
+                const done = i < cycle;
+                const active = i === cycle;
+                return (
+                  <li
+                    key={label}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--space-3)",
+                      opacity: done || active ? 1 : 0.4,
+                      transition: "opacity var(--dur-base) var(--ease-out)",
+                      fontFamily: "var(--font-display)",
+                      fontWeight: 600,
+                      color: active ? "var(--sun-600)" : "var(--royal-700)",
+                    }}
+                  >
+                    <Dot done={done} />
+                    <span>{label}</span>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         ) : (
           <ul style={{ listStyle: "none", margin: 0, padding: 0, width: "100%", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
