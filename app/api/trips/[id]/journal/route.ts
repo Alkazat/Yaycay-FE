@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { addJournal, listJournal } from "@/lib/contract-mock/journalStore";
-import type { JournalEntryInput } from "@/lib/contract-mock/types";
+import type { JournalEntryLocalInput } from "@/lib/contract-mock/types";
 
 /** MOCK list/create journal entries for a trip. Active until live API is set. */
 export async function GET(
@@ -17,7 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  let body: Partial<JournalEntryInput>;
+  let body: Partial<JournalEntryLocalInput>;
   try {
     body = await request.json();
   } catch {

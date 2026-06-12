@@ -26,7 +26,14 @@ export function TripCard({ trip }: { trip: TripSummary }) {
   return (
     <Card interactive>
       <Link href={`/trips/${trip.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-        <CardBody title={trip.destination} subtitle={formatDateRange(trip.start_date, trip.end_date)}>
+        <CardBody
+          title={trip.destination}
+          subtitle={
+            trip.start_date && trip.end_date
+              ? formatDateRange(trip.start_date, trip.end_date)
+              : undefined
+          }
+        >
           <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-1)" }}>
             <Badge tone={STATUS_TONE[trip.status]}>{trip.status}</Badge>
             <Badge tone="soft">{TIER_LABEL[trip.tier]}</Badge>
@@ -36,9 +43,11 @@ export function TripCard({ trip }: { trip: TripSummary }) {
           </div>
         </CardBody>
       </Link>
-      <CardFooter>
-        <Countdown startDate={trip.start_date} timezone={trip.timezone} />
-      </CardFooter>
+      {trip.start_date && trip.timezone ? (
+        <CardFooter>
+          <Countdown startDate={trip.start_date} timezone={trip.timezone} />
+        </CardFooter>
+      ) : null}
     </Card>
   );
 }

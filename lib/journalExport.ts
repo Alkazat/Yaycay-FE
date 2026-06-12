@@ -1,4 +1,4 @@
-import type { JournalEntry, TripDay } from "@/lib/contract-mock/types";
+import type { JournalEntryLocal, TripDay } from "@/lib/contract-mock/types";
 
 /** Mood options for the journal (words, not emoji, per the brand UI rule). */
 export const MOODS: { value: string; label: string }[] = [
@@ -32,10 +32,10 @@ export function buildKeepsakeHtml(args: {
   destination: string;
   year: string;
   days: TripDay[];
-  entries: JournalEntry[];
+  entries: JournalEntryLocal[];
 }): string {
   const { profileName, destination, year, days, entries } = args;
-  const byDay = new Map<string, JournalEntry[]>();
+  const byDay = new Map<string, JournalEntryLocal[]>();
   for (const e of entries) {
     byDay.set(e.day_id, [...(byDay.get(e.day_id) ?? []), e]);
   }

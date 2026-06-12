@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { MediaSignRequest } from "@/lib/contract-mock/types";
+import type { SignUploadRequest } from "@/lib/contract-mock/types";
 
 /**
  * MOCK signed-upload creator. The real BE returns a short-lived Storage signed
@@ -8,7 +8,7 @@ import type { MediaSignRequest } from "@/lib/contract-mock/types";
  * persistence/display needs the BE media endpoints.
  */
 export async function POST(request: Request) {
-  let body: Partial<MediaSignRequest>;
+  let body: Partial<SignUploadRequest>;
   try {
     body = await request.json();
   } catch {
@@ -18,5 +18,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "trip_id is required" }, { status: 422 });
   }
   const ref = `media_${Math.random().toString(36).slice(2, 10)}`;
-  return NextResponse.json({ upload_url: `/api/media/mock-put/${ref}`, media_ref: ref });
+  return NextResponse.json({
+    media_ref: ref,
+    path: `mock/${ref}`,
+    upload_url: `/api/media/mock-put/${ref}`,
+    token: `tok_${Math.random().toString(36).slice(2, 10)}`,
+  });
 }

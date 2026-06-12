@@ -14,7 +14,7 @@ experience behind a stable, versioned contract: API, AI harness, MCP, Stripe,
 webhooks, and the data model. Independently deployable; RLS-isolated; truthful
 contract (an endpoint enters the contract when its handler ships).
 
-## Current state (from `CONTRACT-STATUS.md`, v0.4)
+## Current state (from `CONTRACT-STATUS.md`, v0.8)
 
 **Served today:** `POST /demo/generate-day`, `POST /signup/capture`,
 `POST /auth/2fa/verify`, `GET /trips`, `POST /trips`, `GET /trips/:id`

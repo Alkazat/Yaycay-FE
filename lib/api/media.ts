@@ -1,5 +1,5 @@
 import { endpointUrl, SERVED } from "@/lib/api/http";
-import type { MediaSignResponse } from "@/lib/contract-mock/types";
+import type { SignUploadResponse } from "@/lib/contract-mock/types";
 
 /**
  * Sign a print-grade photo upload, returning where to PUT the bytes and the
@@ -9,12 +9,12 @@ import type { MediaSignResponse } from "@/lib/contract-mock/types";
 export async function signUpload(
   tripId: string,
   contentType: string,
-): Promise<MediaSignResponse> {
+): Promise<SignUploadResponse> {
   const res = await fetch(endpointUrl("/media/sign-upload", SERVED.media), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ trip_id: tripId, content_type: contentType }),
   });
   if (!res.ok) throw new Error(`Failed to sign upload (${res.status})`);
-  return (await res.json()) as MediaSignResponse;
+  return (await res.json()) as SignUploadResponse;
 }

@@ -7,7 +7,7 @@
  * real `@alkazat/contracts` package is published.
  *
  * WHEN THE REAL CONTRACT LANDS:
- *   1. `npm i @alkazat/contracts@^0.4.0` (GitHub Packages; see ./README.md).
+ *   1. `npm i @alkazat/contracts@^0.8.0` (GitHub Packages; see ./README.md).
  *   2. Replace imports of `@/lib/contract-mock/types` with `@alkazat/contracts`.
  *   3. Delete this directory.
  *
@@ -216,7 +216,7 @@ export interface ChildProfile {
   anaphylaxis?: boolean;
 }
 
-// Full lifecycle enum per the published contract (v0.4). The FE only drives the
+// Full lifecycle enum per the published contract (v0.8). The FE only drives the
 // middle of this range, but BE can return any value, so render defensively.
 /* --------------------------------------------------------------------------
  * Per-profile progress (done items, keyed by stable activity id)
@@ -258,21 +258,54 @@ export type TripStatus =
   | "complete"
   | "archived";
 
-/** A trip as it appears on the trips home (cards). */
+/**
+ * The list view of a trip (`GET /trips` -> `{ trips: TripSummary[] }`). Adds the
+ * two derived fields the FE list needs on top of the stored trip columns:
+ * `day_count` (number of days in the content) and `data_kept` (whether the trip
+ * data is still retained, i.e. not past its disposal date).
+ */
 export interface TripSummary {
   id: string;
   destination: string;
-  start_date: string;
-  end_date: string;
-  timezone: string;
+  start_date?: string;
+  end_date?: string;
+  timezone?: string;
+  currency?: string;
   tier: Tier;
   status: TripStatus;
-  cover?: string;
-  day_count: number;
-  /** When trip data is scheduled for deletion (12 months post-holiday). */
   retention_expires_at?: string;
-  /** True once a data-keep token has been bought for this trip. */
-  data_kept?: boolean;
+  /** Number of days currently planned in the trip content. */
+  day_count: number;
+  /** False once the trip is past its retention/disposal date. */
+  data_kept: boolean;
+  created_at?: string;
+}
+
+/** A single trip's stored metadata (`POST /trips` -> `Trip`). */
+export interface Trip {
+  id: string;
+  destination: string;
+  start_date?: string;
+  end_date?: string;
+  timezone?: string;
+  currency?: string;
+  tier: Tier;
+  status: TripStatus;
+  /** When trip data is scheduled for disposal unless a keep-token extends it. */
+  retention_expires_at?: string;
+  created_at?: string;
+}
+
+export interface ListTripsResponse {
+  trips: TripSummary[];
+}
+
+export interface CreateTripRequest {
+  destination: string;
+  start_date?: string;
+  end_date?: string;
+  timezone?: string;
+  currency?: string;
 }
 
 /* --------------------------------------------------------------------------
@@ -294,19 +327,22 @@ export type ProductId =
   | "price_destination_addon"
   | "price_photobook";
 
-/**
- * Body for `POST /checkout/session` (the canonical path - not `/checkout`).
- * BE creates the Stripe Checkout session and returns its hosted URL.
- */
-export interface CheckoutRequest {
-  price_id: ProductId;
-  /** Optional trip the purchase applies to (e.g. a data-keep token). */
+/** Request body for `POST /checkout/session`. */
+export interface CheckoutSessionRequest {
+  /** The Stripe price id of a known, active catalogue product. */
+  price_id: string;
+  /** Optional trip the purchased tier applies to. */
   trip_id?: string;
+  /** Redirect targets; fall back to server defaults when omitted. */
+  success_url?: string;
+  cancel_url?: string;
 }
 
-export interface CheckoutResponse {
-  /** Stripe Checkout URL to redirect to (BE creates the session). */
+export interface CheckoutSessionResponse {
+  /** The Stripe-hosted Checkout URL to redirect the customer to. */
   url: string;
+  /** The Stripe Checkout Session id. */
+  session_id: string;
 }
 
 /* --------------------------------------------------------------------------
@@ -314,6 +350,38 @@ export interface CheckoutResponse {
  * ------------------------------------------------------------------------ */
 
 export interface JournalEntry {
+  id: string;
+  trip_id: string;
+  /** Optional child profile this entry is tagged to. */
+  profile_id?: string | null;
+  body: string;
+  /** media_ref ids from `/media/sign-upload`, resolved to signed URLs on read. */
+  media_ref: string[];
+  created_at: string;
+}
+
+/** Request body for `POST /trips/{tripId}/journal` (paid: byo or ours). */
+export interface JournalEntryInput {
+  body?: string;
+  profile_id?: string;
+  media_ref?: string[];
+}
+
+export interface JournalListResponse {
+  entries: JournalEntry[];
+}
+
+/* --------------------------------------------------------------------------
+ * CLIENT-ONLY journal model
+ *
+ * The contract `JournalEntry` carries `{ body, profile_id?, media_ref }`. The
+ * FE journal UI captures a richer per-day memory (a star rating, a mood label,
+ * and the day it belongs to) that the contract does not model. These local-only
+ * types back the mock store, the keepsake export and the journal screen; they
+ * never describe a contract wire shape. A genuine gap is a PR against Yaycay-BE.
+ * ------------------------------------------------------------------------ */
+
+export interface JournalEntryLocal {
   id: string;
   trip_id: string;
   profile_id: string;
@@ -328,8 +396,8 @@ export interface JournalEntry {
   created_at: string;
 }
 
-/** Payload to create a journal entry (id + created_at assigned by BE). */
-export interface JournalEntryInput {
+/** Payload to create a local journal entry (id + created_at assigned by BE). */
+export interface JournalEntryLocalInput {
   trip_id: string;
   profile_id: string;
   day_id: string;
@@ -343,30 +411,64 @@ export interface JournalEntryInput {
  * Media (signed-URL upload for print-grade photos)
  * ------------------------------------------------------------------------ */
 
-export interface MediaSignRequest {
+/** Request body for `POST /media/sign-upload` (paid: byo or ours). */
+export interface SignUploadRequest {
+  /** The trip the media belongs to (must be a paid trip the caller owns). */
   trip_id: string;
-  content_type: string;
+  content_type?: string;
 }
 
-export interface MediaSignResponse {
-  /** Where the client PUTs the bytes (Storage signed URL). */
-  upload_url: string;
-  /** The reference stored on the journal entry. */
+export interface SignUploadResponse {
+  /** Stable reference stored in journal entries / trip content. */
   media_ref: string;
+  /** Storage object path (owner-prefixed). */
+  path: string;
+  /** Short-lived signed URL to PUT the file to. */
+  upload_url: string;
+  /** Upload token for the signed URL. */
+  token: string;
 }
 
 /* --------------------------------------------------------------------------
  * BYO-AI connector status
  * ------------------------------------------------------------------------ */
 
-export type ConnectorStatus = "not_connected" | "connected" | "error";
+export type ConnectorStatus = "active" | "revoked";
 
 export interface Connector {
+  id: string;
+  trip_id: string;
+  label?: string | null;
+  scopes: string[];
   status: ConnectorStatus;
-  /** Provider label when connected, e.g. "Claude", "ChatGPT", "Gemini". */
-  provider?: string;
-  last_synced_at?: string;
+  last_used_at?: string | null;
+  created_at: string;
 }
+
+export interface ConnectorsListResponse {
+  connectors: Connector[];
+}
+
+/** Request body for `POST /connectors/byo-ai` (tier=byo). */
+export interface ByoConnectorRequest {
+  trip_id: string;
+  label?: string;
+}
+
+export interface ByoConnectorResponse {
+  connector_id: string;
+  /** The scoped MCP token to add to the parent's own AI as a connector. */
+  token: string;
+  /** The MCP endpoint URL the token authenticates against. */
+  mcp_url: string;
+}
+
+/**
+ * CLIENT-ONLY richer connector status for the BYO-AI UI. The contract
+ * `ConnectorStatus` is `active | revoked`; the FE may want to render extra
+ * transient states (not yet connected, error) that have no contract counterpart.
+ */
+export type ConnectorUiStatus = "not_connected" | "connected" | "error";
 
 /* --------------------------------------------------------------------------
  * Signup capture (POST /signup/capture) - account + email, synced to Brevo
@@ -374,12 +476,19 @@ export interface Connector {
 
 export interface SignupCaptureRequest {
   email: string;
+  name?: string;
+  /** Funnel source, e.g. `website-demo` or `fe-demo`. */
+  source?: string;
   /** Marketing consent state captured at signup. */
-  consent?: boolean;
+  consent: boolean;
+  /** Optional free-form attributes synced to Brevo. */
+  attributes?: Record<string, unknown>;
 }
 
 export interface SignupCaptureResponse {
-  ok: boolean;
+  contact_id: string;
+  status: "created" | "updated";
+  synced_to_brevo?: boolean;
 }
 
 /* --------------------------------------------------------------------------
@@ -387,7 +496,6 @@ export interface SignupCaptureResponse {
  * ------------------------------------------------------------------------ */
 
 export interface TwoFactorVerifyRequest {
-  email: string;
   code: string;
 }
 
@@ -402,16 +510,20 @@ export interface TwoFactorVerifyResponse {
 export interface DemoChildProfile {
   name: string;
   age?: number;
-  mode?: "little" | "explorer" | "explorer_plus";
+  /** Explorer mode used to pick the variant block. */
+  mode?: "little" | "standard" | "explorer" | "explorer_plus";
   interests?: string[];
+  /** Dietary flags surfaced to adults as safety notes. */
   dietary?: string[];
+  /** Medical flags surfaced to adults as safety callouts. */
+  medical?: string[];
 }
 
 export interface DemoGenerateDayRequest {
   destination: string;
-  child: DemoChildProfile;
-  /** Optional trip date (YYYY-MM-DD). */
+  /** Optional day to theme the plan around. */
   date?: string;
+  child: DemoChildProfile;
 }
 
 /**
@@ -423,4 +535,90 @@ export interface DemoGenerateDayResponse {
   day: TripDay;
   grownups_teaser: string;
   generated_by?: "ai" | "fallback";
+}
+
+/* --------------------------------------------------------------------------
+ * Errors
+ * ------------------------------------------------------------------------ */
+
+export interface ApiErrorBody {
+  error: {
+    code: string;
+    message: string;
+    details?: string[];
+  };
+}
+
+/* --------------------------------------------------------------------------
+ * AI surfaces (v0.3): planning chat + ingestion
+ *
+ * NB: the contract references its content-model `Day`/`Booking`; the FE content
+ * model names these `TripDay` / `ActivityBooking`, so they are used here.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * A structured edit the AI harness emits. Applied to the current trip content,
+ * re-validated against the schema, then persisted.
+ */
+export type PatchOp =
+  | { op: "add_day"; day: TripDay }
+  | { op: "set_day_summary"; day_id: string; summary: string }
+  | { op: "add_moment"; day_id: string; moment: Moment }
+  | { op: "add_activity"; day_id: string; moment_id: string; activity: Activity }
+  | { op: "update_activity"; activity_id: string; set: Partial<Omit<Activity, "id">> }
+  | { op: "move_activity"; activity_id: string; to_moment_id: string }
+  | { op: "set_booking"; activity_id: string; booking: ActivityBooking };
+
+export interface TripContentPatch {
+  ops: PatchOp[];
+  /** Short human-readable note on what changed. */
+  note?: string;
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/** Request body for `POST /trips/{tripId}/plan/chat` (use-our-AI, tier=ours). */
+export interface PlanChatRequest {
+  messages: ChatMessage[];
+}
+
+/**
+ * The chat response is a `text/event-stream`. Each SSE `data:` frame is one of
+ * these JSON objects; the stream ends with a literal `data: [DONE]`.
+ */
+export type PlanChatEvent =
+  | { start: true; generated_by: "ai" | "fallback" }
+  | { delta: string }
+  | { done: true; job_id: string | null }
+  | { error: string };
+
+/** A photo of a receipt/booking/ticket for the vision model. */
+export interface IngestImage {
+  /** e.g. `image/jpeg`, `image/png`. */
+  media_type: string;
+  /** base64-encoded image bytes (no `data:` prefix). */
+  data: string;
+}
+
+/** Request body for `POST /trips/{tripId}/ingest` (paid: byo or ours). */
+export interface IngestRequest {
+  /** A note, pasted confirmation, or OCR text. One of text/image is required. */
+  text?: string;
+  image?: IngestImage;
+  /** Optional targeting hint. */
+  hint?: { day_id?: string; moment_id?: string };
+}
+
+export interface IngestResponse {
+  applied: boolean;
+  /** The ai_jobs ledger id for this ingestion (counts to the daily cap). */
+  job_id: string | null;
+  generated_by: "ai" | "fallback";
+  /** The patch the harness produced. */
+  patch: TripContentPatch;
+  /** The full trip content after applying the patch. */
+  content: TripContent;
 }
