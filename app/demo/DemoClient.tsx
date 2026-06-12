@@ -7,7 +7,7 @@ import { generateDemoDay } from "@/lib/api/demo";
 import { captureSignup } from "@/lib/api/signup";
 import type { DemoGenerateDayResponse } from "@/lib/contract-mock/types";
 import { PREFILL_EMAIL_PARAM } from "@/lib/constants";
-import { Button, Card, CardBody, Input } from "@/components/ds";
+import { Button, Card, CardBody, Input, Badge } from "@/components/ds";
 import { Countdown } from "@/components/Countdown";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { GeneratingOverlay } from "@/components/demo/GeneratingOverlay";
@@ -126,7 +126,14 @@ export function DemoClient() {
             <Countdown startDate={date} timezone={localTimezone()} />
           </div>
 
-          <h2 style={{ textAlign: "center" }}>Day 1 in {destination}</h2>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-2)" }}>
+            <h2 style={{ textAlign: "center", margin: 0 }}>Day 1 in {destination}</h2>
+            {result.generated_by === "ai" ? (
+              <Badge tone="aqua">Built by Yaycay AI</Badge>
+            ) : result.generated_by === "fallback" ? (
+              <Badge tone="soft">Sample day</Badge>
+            ) : null}
+          </div>
 
           {/* The demo shows one explorer's view, with a quiz. */}
           <TripDayRenderer day={result.day} view="kid" mode="explorer_plus" />

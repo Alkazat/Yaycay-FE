@@ -2,16 +2,13 @@
 
 import { useState } from "react";
 import { streamPlanChat } from "@/lib/api/planChat";
+import type { ChatMessage } from "@/lib/contract-mock/types";
+import { ChatThinking } from "@/components/chat/ChatThinking";
 import { Card, CardBody, Button } from "@/components/ds";
 
-interface Msg {
-  role: "you" | "yaycay";
-  text: string;
-}
-
-/** Use-our-AI planning chat with a streaming reply. */
+/** Use-our-AI planning chat with a streaming reply (contract `messages`/SSE). */
 export function PlanChat({ tripId }: { tripId: string }) {
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
 
@@ -20,22 +17,29 @@ export function PlanChat({ tripId }: { tripId: string }) {
     if (!text || streaming) return;
     setInput("");
     setStreaming(true);
-    setMessages((m) => [...m, { role: "you", text }, { role: "yaycay", text: "" }]);
-    try {
-      await streamPlanChat(tripId, text, (token) => {
-        setMessages((m) => {
-          const next = [...m];
-          next[next.length - 1] = {
-            role: "yaycay",
-            text: next[next.length - 1].text + token,
-          };
-          return next;
-        });
+
+    // History sent to the model is everything up to and including this turn.
+    const history: ChatMessage[] = [...messages, { role: "user", content: text }];
+    // Render the user turn + an empty assistant turn we stream into.
+    setMessages([...history, { role: "assistant", content: "" }]);
+
+    const appendDelta = (delta: string) =>
+      setMessages((m) => {
+        const next = [...m];
+        const last = next[next.length - 1];
+        next[next.length - 1] = { role: "assistant", content: last.content + delta };
+        return next;
       });
+
+    try {
+      await streamPlanChat(tripId, history, { onDelta: appendDelta });
     } catch {
       setMessages((m) => {
         const next = [...m];
-        next[next.length - 1] = { role: "yaycay", text: "Sorry, chat hiccuped. Give it another go?" };
+        next[next.length - 1] = {
+          role: "assistant",
+          content: "Sorry, chat hiccuped. Give it another go?",
+        };
         return next;
       });
     } finally {
@@ -52,22 +56,26 @@ export function PlanChat({ tripId }: { tripId: string }) {
               Ask me to add a day, swap an activity, or find something for a rainy afternoon.
             </p>
           ) : (
-            messages.map((m, i) => (
-              <div
-                key={i}
-                style={{
-                  alignSelf: m.role === "you" ? "flex-end" : "flex-start",
-                  maxWidth: "85%",
-                  padding: "var(--space-2) var(--space-3)",
-                  borderRadius: "var(--radius-lg)",
-                  background: m.role === "you" ? "var(--sky-500)" : "var(--surface-sunk)",
-                  color: m.role === "you" ? "#fff" : "var(--text-body)",
-                  fontWeight: 600,
-                }}
-              >
-                {m.text || "..."}
-              </div>
-            ))
+            messages.map((m, i) => {
+              const isUser = m.role === "user";
+              const isPendingAssistant = m.role === "assistant" && m.content === "" && streaming;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    alignSelf: isUser ? "flex-end" : "flex-start",
+                    maxWidth: "85%",
+                    padding: "var(--space-2) var(--space-3)",
+                    borderRadius: "var(--radius-lg)",
+                    background: isUser ? "var(--sky-500)" : "var(--surface-sunk)",
+                    color: isUser ? "#fff" : "var(--text-body)",
+                    fontWeight: 600,
+                  }}
+                >
+                  {isPendingAssistant ? <ChatThinking /> : m.content}
+                </div>
+              );
+            })
           )}
         </div>
 
