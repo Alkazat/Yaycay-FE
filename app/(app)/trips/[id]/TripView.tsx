@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTrip, listProfiles } from "@/lib/api/trips";
 import { getProgress, setActivityDone } from "@/lib/api/progress";
-import { tripProgress } from "@/lib/render/progress";
+import { tripProgress, dayCompletion } from "@/lib/render/progress";
+import { todayDayId } from "@/lib/render/today";
+import { DayNav } from "@/components/trips/DayNav";
+import { TripComplete } from "@/components/trips/TripComplete";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
@@ -36,13 +39,15 @@ export function TripView({ tripId }: { tripId: string }) {
   const trip = tripQuery.data;
   const profiles = profilesQuery.data ?? [];
 
-  // Default selections once data arrives.
-  const dayId = activeDayId ?? trip?.days[0]?.id ?? null;
+  // Default selections once data arrives. The view lands on today during the
+  // trip, otherwise day one.
+  const todayId = trip ? todayDayId(trip.days, trip.trip.timezone) : null;
+  const dayId = activeDayId ?? todayId ?? trip?.days[0]?.id ?? null;
   const profileId = activeProfileId ?? profiles[0]?.id ?? null;
   const activeProfile = profiles.find((p) => p.id === profileId) ?? null;
   // Render mode follows the active profile's default; a manual toggle overrides
   // it, which is also how Explorer+ is reached (the prototype orphaned it).
-  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "standard";
+  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "explorer";
   const anaphylactic = profiles.filter((p) => p.anaphylaxis);
 
   const activeDay = useMemo(
@@ -98,6 +103,11 @@ export function TripView({ tripId }: { tripId: string }) {
   }
 
   const tp = tripProgress(trip, doneSet);
+  const tripComplete = tp.totalDays > 0 && tp.daysComplete === tp.totalDays;
+  const dayItems = trip.days.map((d) => {
+    const c = dayCompletion(d, doneSet);
+    return { id: d.id, label: d.label, pct: c.pct, complete: c.complete };
+  });
 
   return (
     <div className="yc-stack" data-testid="trip-view">
@@ -157,6 +167,10 @@ export function TripView({ tripId }: { tripId: string }) {
         ]}
       />
 
+      {view === "kid" && tripComplete ? (
+        <TripComplete destination={trip.trip.destination} />
+      ) : null}
+
       {view === "kid" && profiles.length > 0 ? (
         <ProfileSwitcher
           profiles={profiles}
@@ -184,7 +198,7 @@ export function TripView({ tripId }: { tripId: string }) {
           value={mode}
           onChange={(m: string) => setModeOverride(m as ProfileMode)}
           tabs={[
-            { value: "standard", label: "Explorer" },
+            { value: "explorer", label: "Explorer" },
             { value: "little", label: "Little" },
             { value: "explorer_plus", label: "Explorer+" },
           ]}
@@ -200,14 +214,19 @@ export function TripView({ tripId }: { tripId: string }) {
         </Banner>
       ) : null}
 
-      {/* Day navigation - one scroll context; tabs wrap rather than nest-scroll. */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
-        <Tabs
-          value={dayId ?? ""}
-          onChange={setActiveDayId}
-          tabs={trip.days.map((d) => ({ value: d.id, label: d.label }))}
-        />
-      </div>
+      {/* Day navigation: progress rings, today halo, completion discs. */}
+      <DayNav days={dayItems} activeId={dayId} todayId={todayId} onSelect={setActiveDayId} />
+      {todayId && todayId !== dayId ? (
+        <div>
+          <button
+            type="button"
+            className="yc-btn yc-btn--secondary yc-btn--sm"
+            onClick={() => setActiveDayId(todayId)}
+          >
+            Jump to today
+          </button>
+        </div>
+      ) : null}
 
       {activeDay ? (
         <TripDayRenderer
