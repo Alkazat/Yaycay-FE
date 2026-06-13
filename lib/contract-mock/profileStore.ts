@@ -4,11 +4,18 @@
  * resets on restart. Swap target: BE `GET|POST /profiles`, `PATCH|DELETE
  * /profiles/:id`.
  */
-import { MOCK_PROFILES } from "./data";
+import { MOCK_PROFILES, MOCK_PINS } from "./data";
 import type { ChildProfile, ChildProfileInput } from "./types";
 
 let profiles: ChildProfile[] = MOCK_PROFILES.map((p) => ({ ...p }));
 let seq = 0;
+
+/**
+ * PIN store, kept OUT of the profile record - mirrors the contract rule that a
+ * PIN is never returned by the API (only `pin_set: boolean` is surfaced). Maps
+ * profile id -> 4-digit PIN. Module memory; resets on restart.
+ */
+const pins = new Map<string, string>(Object.entries(MOCK_PINS));
 
 export function listProfiles(): ChildProfile[] {
   return profiles;
@@ -21,7 +28,10 @@ export function createProfile(input: ChildProfileInput): ChildProfile {
     name: input.name ?? "Explorer",
     avatar: input.avatar ?? null,
     age: input.age ?? null,
+    // Default to a child profile - the safe default (no Grown-ups access).
+    type: input.type ?? "child",
     mode: input.mode ?? null,
+    pin_set: false,
     interests: input.interests ?? [],
     dietary: input.dietary ?? [],
     medical: input.medical ?? [],
@@ -41,6 +51,7 @@ export function updateProfile(id: string, input: ChildProfileInput): ChildProfil
     name: input.name ?? cur.name,
     avatar: input.avatar !== undefined ? input.avatar : cur.avatar,
     age: input.age !== undefined ? input.age : cur.age,
+    type: input.type ?? cur.type,
     mode: input.mode !== undefined ? input.mode : cur.mode,
     interests: input.interests ?? cur.interests,
     dietary: input.dietary ?? cur.dietary,
@@ -54,5 +65,29 @@ export function updateProfile(id: string, input: ChildProfileInput): ChildProfil
 export function deleteProfile(id: string): boolean {
   const before = profiles.length;
   profiles = profiles.filter((p) => p.id !== id);
+  pins.delete(id);
   return profiles.length < before;
+}
+
+/**
+ * Set / change a guardian PIN (`POST /profiles/:id/pin`). Flips `pin_set` on the
+ * record; the PIN value itself is stored separately and never returned. Returns
+ * the updated profile, or `undefined` if the profile does not exist.
+ */
+export function setPin(id: string, pin: string): ChildProfile | undefined {
+  const idx = profiles.findIndex((p) => p.id === id);
+  if (idx < 0) return undefined;
+  pins.set(id, pin);
+  profiles[idx] = { ...profiles[idx], pin_set: true, updated_at: new Date().toISOString() };
+  return profiles[idx];
+}
+
+/**
+ * Verify a guardian PIN (`POST /profiles/:id/pin/verify`). Returns `true` only
+ * when a PIN is configured and matches. (Real BE adds hashing + rate limiting;
+ * this mock just compares.)
+ */
+export function verifyPin(id: string, pin: string): boolean {
+  const expected = pins.get(id);
+  return expected !== undefined && expected === pin;
 }
