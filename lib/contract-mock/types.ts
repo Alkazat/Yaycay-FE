@@ -20,7 +20,7 @@
 export type ActivityKind = "kid" | "shared" | "adult";
 
 /** Tagged render variants by the active child profile's mode/age. */
-export type ProfileMode = "standard" | "little" | "explorer_plus";
+export type ProfileMode = "explorer" | "little" | "explorer_plus";
 
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";
@@ -511,7 +511,7 @@ export interface DemoChildProfile {
   name: string;
   age?: number;
   /** Explorer mode used to pick the variant block. */
-  mode?: "little" | "standard" | "explorer" | "explorer_plus";
+  mode?: "little" | "explorer" | "explorer_plus";
   interests?: string[];
   /** Dietary flags surfaced to adults as safety notes. */
   dietary?: string[];

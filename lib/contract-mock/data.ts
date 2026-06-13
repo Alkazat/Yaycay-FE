@@ -20,8 +20,8 @@ export const MOCK_ACCOUNT: AccountSummary = {
 };
 
 export const MOCK_PROFILES: ChildProfile[] = [
-  { id: "p_savy", name: "Savy", age: 13, mode: "standard" },
-  { id: "p_tay", name: "Tay", age: 9, mode: "standard" },
+  { id: "p_savy", name: "Savy", age: 13, mode: "explorer" },
+  { id: "p_tay", name: "Tay", age: 9, mode: "explorer" },
   {
     id: "p_lenny",
     name: "Lenny",

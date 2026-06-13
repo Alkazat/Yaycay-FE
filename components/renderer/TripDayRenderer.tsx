@@ -12,7 +12,7 @@ interface TripDayRendererProps {
   day: TripDay;
   /** Which surface to fill: the kid view or the grown-ups view. */
   view: RenderView;
-  /** Active render mode (kid view). Defaults to standard. */
+  /** Active render mode (kid view). Defaults to explorer. */
   mode?: ProfileMode;
   /** Stable ids of ticked activities (kid view). */
   done?: ReadonlySet<string>;
@@ -39,7 +39,7 @@ const SLOT_LABEL: Record<string, string> = {
 export function TripDayRenderer({
   day,
   view,
-  mode = "standard",
+  mode = "explorer",
   done,
   onToggleActivity,
 }: TripDayRendererProps) {

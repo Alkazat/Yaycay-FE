@@ -42,7 +42,7 @@ export function TripView({ tripId }: { tripId: string }) {
   const activeProfile = profiles.find((p) => p.id === profileId) ?? null;
   // Render mode follows the active profile's default; a manual toggle overrides
   // it, which is also how Explorer+ is reached (the prototype orphaned it).
-  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "standard";
+  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "explorer";
   const anaphylactic = profiles.filter((p) => p.anaphylaxis);
 
   const activeDay = useMemo(
@@ -184,7 +184,7 @@ export function TripView({ tripId }: { tripId: string }) {
           value={mode}
           onChange={(m: string) => setModeOverride(m as ProfileMode)}
           tabs={[
-            { value: "standard", label: "Explorer" },
+            { value: "explorer", label: "Explorer" },
             { value: "little", label: "Little" },
             { value: "explorer_plus", label: "Explorer+" },
           ]}

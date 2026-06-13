@@ -10,7 +10,7 @@ interface ProfileSwitcherProps {
 }
 
 const MODE_LABEL: Record<string, string> = {
-  standard: "Explorer",
+  explorer: "Explorer",
   little: "Little explorer",
   explorer_plus: "Explorer+",
 };
