@@ -9,6 +9,7 @@
 import type {
   AccountSummary,
   ChildProfile,
+  Trip,
   TripContent,
   TripSummary,
 } from "./types";
@@ -291,4 +292,12 @@ const TRIPS_BY_ID: Record<string, TripContent> = {
 
 export function getMockTrip(id: string): TripContent | undefined {
   return TRIPS_BY_ID[id];
+}
+
+/** The `Trip` record (row) for `GET /trips/:id`, derived from the list summary. */
+export function getMockTripRecord(id: string): Trip | undefined {
+  const s = MOCK_TRIPS.find((t) => t.id === id);
+  if (!s) return undefined;
+  const { day_count: _dc, data_kept: _dk, ...trip } = s;
+  return trip;
 }

@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getChecklist, setChecklistItem } from "@/lib/api/grownups";
-import type { ChecklistItem, GrownupsGuide as Guide } from "@/lib/contract-mock/types";
+import { mergeChecklist } from "@/lib/grownupsChecklist";
+import type { GrownupsGuide as Guide } from "@/lib/contract-mock/types";
 import { Card, CardBody, Badge } from "@/components/ds";
 
 function Logistics({ title, items }: { title: string; items?: string[] }) {
@@ -37,14 +38,15 @@ export function GrownupsGuide({
   });
 
   const toggle = useMutation({
-    mutationFn: ({ itemId, done }: { itemId: string; done: boolean }) =>
-      setChecklistItem(tripId, itemId, done),
+    mutationFn: ({ item, checked }: { item: string; checked: boolean }) =>
+      setChecklistItem(tripId, item, checked),
     onSuccess: (items) => queryClient.setQueryData(key, items),
   });
 
   const dayLogistics = guide.days?.find((d) => d.day_id === activeDayId);
-  const items = checklistQuery.data ?? [];
-  const groups = [...new Set(items.map((i) => i.group))];
+  // Contract persists only ticks (keyed by `item`); labels come from the trip
+  // content seed. Merge them into render rows.
+  const rows = mergeChecklist(guide.checklist ?? [], checklistQuery.data);
 
   return (
     <div className="yc-stack">
@@ -95,35 +97,28 @@ export function GrownupsGuide({
 
       <Card variant="soft">
         <CardBody title="Booking checklist">
-          {groups.map((group) => (
-            <div key={group} style={{ marginBottom: "var(--space-3)" }}>
-              <strong style={{ color: "var(--royal-700)" }}>{group}</strong>
-              {items
-                .filter((i) => i.group === group)
-                .map((item: ChecklistItem) => (
-                  <label
-                    key={item.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "var(--space-3)",
-                      minHeight: 44,
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      color: item.done ? "var(--text-muted)" : "var(--text-body)",
-                      textDecoration: item.done ? "line-through" : "none",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.done}
-                      onChange={(e) => toggle.mutate({ itemId: item.id, done: e.target.checked })}
-                      style={{ width: 22, height: 22, accentColor: "var(--meadow-400)" }}
-                    />
-                    {item.label}
-                  </label>
-                ))}
-            </div>
+          {rows.map((row) => (
+            <label
+              key={row.item}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-3)",
+                minHeight: 44,
+                cursor: "pointer",
+                fontWeight: 700,
+                color: row.checked ? "var(--text-muted)" : "var(--text-body)",
+                textDecoration: row.checked ? "line-through" : "none",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={row.checked}
+                onChange={(e) => toggle.mutate({ item: row.item, checked: e.target.checked })}
+                style={{ width: 22, height: 22, accentColor: "var(--meadow-400)" }}
+              />
+              {row.label}
+            </label>
           ))}
         </CardBody>
       </Card>

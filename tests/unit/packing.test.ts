@@ -8,13 +8,13 @@ const list: PackingList = {
   sections: [
     {
       id: "s1",
-      title: "Clothes",
+      label: "Clothes",
       items: [
         { id: "i1", label: "Hat", checked: true },
         { id: "i2", label: "Shoes", checked: false },
       ],
     },
-    { id: "s2", title: "Tech", items: [{ id: "i3", label: "Charger", checked: true }] },
+    { id: "s2", label: "Tech", items: [{ id: "i3", label: "Charger", checked: true }] },
   ],
 };
 

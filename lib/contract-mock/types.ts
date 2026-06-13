@@ -44,6 +44,8 @@ export type {
   Weather,
   Hotel,
   ChildProfile,
+  ChildProfilesResponse,
+  ChildProfileInput,
   ExplorerMode,
   TripStatus,
   Trip,
@@ -74,6 +76,23 @@ export type {
   PlanChatEvent,
   IngestImage,
   IngestRequest,
+  // Per-trip surfaces now served by the live contract (adopted wholesale):
+  PackingItem,
+  PackingSection,
+  PackingList,
+  PackingResponse,
+  PackingPatchRequest,
+  TripProgress,
+  TripProgressResponse,
+  ProgressUpdateRequest,
+  StarLedgerEntry,
+  StarBalance,
+  StarsResponse,
+  StarClaimRequest,
+  StarClaimResponse,
+  ChecklistItem,
+  ChecklistResponse,
+  ChecklistUpdateRequest,
 } from "@alkazat/contracts";
 
 // ===========================================================================
@@ -214,82 +233,21 @@ export interface TripContent {
 }
 
 /* --------------------------------------------------------------------------
- * Grown-ups booking checklist (persisted ticks)
+ * Packing / progress / stars / checklist
+ *
+ * These per-trip surfaces are now served by the live contract, so their
+ * request/response shapes are re-exported from `@alkazat/contracts` above
+ * (`PackingResponse`/`PackingList`/..., `TripProgress`, `StarsResponse`,
+ * `ChecklistResponse`, ...). The only star type the contract does not model is
+ * the FE's claim vocabulary, kept local below.
  * ------------------------------------------------------------------------ */
 
-export interface ChecklistItem {
-  id: string;
-  label: string;
-  group: string;
-  done: boolean;
-}
-
-/* --------------------------------------------------------------------------
- * Packing lists (per profile + a shared family list)
- * ------------------------------------------------------------------------ */
-
-export interface PackingItem {
-  id: string;
-  label: string;
-  note?: string;
-  qty?: number;
-  checked: boolean;
-}
-
-export interface PackingSection {
-  id: string;
-  title: string;
-  items: PackingItem[];
-}
-
-export interface PackingList {
-  /** Profile id, or "family" for the shared list. */
-  id: string;
-  label: string;
-  sections: PackingSection[];
-}
-
-export type PackingAction =
-  | { action: "tick"; list_id: string; item_id: string; checked: boolean }
-  | { action: "add"; list_id: string; section_id: string; label: string; qty?: number }
-  | { action: "delete"; list_id: string; item_id: string }
-  | { action: "reset" };
-
-/* --------------------------------------------------------------------------
- * Profiles
- * ------------------------------------------------------------------------ */
-
-/* --------------------------------------------------------------------------
- * Per-profile progress (done items, keyed by stable activity id)
- * ------------------------------------------------------------------------ */
-
-export interface ProgressState {
-  trip_id: string;
-  profile_id: string;
-  /** Stable activity ids that are ticked done. Never keyed by label text. */
-  done: string[];
-}
-
-/* --------------------------------------------------------------------------
- * Reward economy (stars)
- * ------------------------------------------------------------------------ */
-
-/** Where a star came from. */
+/**
+ * The FE's own claim sources. The contract `StarClaimRequest.source` is a free
+ * string (e.g. `challenge:<id>`); the FE only ever claims these two kinds and
+ * scopes them by day, so this stays local as the FE-side vocabulary.
+ */
 export type StarSource = "game" | "challenge";
-
-export interface StarsState {
-  trip_id: string;
-  profile_id: string;
-  stars: number;
-  /** Idempotency keys already claimed, e.g. "d_2:challenge". */
-  claims: string[];
-}
-
-export interface StarClaimRequest {
-  profile_id: string;
-  day_id: string;
-  source: StarSource;
-}
 
 /* --------------------------------------------------------------------------
  * Account + billing

@@ -66,16 +66,24 @@ export const SERVED = {
   signupCapture: true,
   listTrips: true,
   getTrip: true,
+  content: true,
   auth2fa: true,
   planChat: true,
-  // Deferred on BE - keep on the mock until their handler ships:
-  profiles: false,
+  // Live; the FE consumes the contract DTOs (per-trip surfaces migrated wholesale):
+  profiles: true,
+  checkout: true,
+  packing: true,
+  progress: true,
+  stars: true,
+  grownups: true,
+  ingest: true,
+  connectors: true,
+  // Deferred on the mock:
+  //  - journal: contract `JournalEntry` has no `day_id`, but the FE journal is
+  //    day-scoped (picker, per-day badges, keepsake). Stays mock pending a BE
+  //    contract field. See lib/contract-mock/journalStore.ts.
+  //  - account / media: no contract handler adopted yet.
   account: false,
   journal: false,
-  checkout: false,
-  progress: false,
-  stars: false,
-  packing: false,
-  grownups: false,
   media: false,
 } as const;

@@ -9,10 +9,10 @@ let counter = 0;
 const uid = (p: string) => `${p}_${(counter += 1)}`;
 
 function seed(): PackingList[] {
-  const mk = (title: string, labels: string[]): PackingSection => ({
+  const mk = (label: string, labels: string[]): PackingSection => ({
     id: uid("sec"),
-    title,
-    items: labels.map((label) => ({ id: uid("item"), label, checked: false })),
+    label,
+    items: labels.map((l) => ({ id: uid("item"), label: l, checked: false })),
   });
   return [
     {

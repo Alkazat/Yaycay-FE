@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { getTrip } from "@/lib/api/trips";
+import { getTripContent } from "@/lib/api/trips";
 import { collectPins, projectPins } from "@/lib/map";
 import { Card, CardBody, Badge } from "@/components/ds";
 
@@ -15,7 +15,7 @@ import { Card, CardBody, Badge } from "@/components/ds";
 export function MapClient({ tripId }: { tripId: string }) {
   const params = useSearchParams();
   const focusParam = params.get("focus");
-  const tripQuery = useQuery({ queryKey: ["trip", tripId], queryFn: ({ signal }) => getTrip(tripId, signal) });
+  const tripQuery = useQuery({ queryKey: ["trip", tripId], queryFn: ({ signal }) => getTripContent(tripId, signal) });
   const [selected, setSelected] = useState<string | null>(null);
 
   if (tripQuery.isLoading) return <p>Loading the map...</p>;
