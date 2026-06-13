@@ -12,6 +12,7 @@ interface ProfileSwitcherProps {
 const MODE_LABEL: Record<string, string> = {
   standard: "Explorer",
   little: "Little explorer",
+  explorer: "Big explorer",
   explorer_plus: "Explorer+",
 };
 
@@ -51,7 +52,7 @@ export function ProfileSwitcher({ profiles, activeId, onSelect }: ProfileSwitche
             <span style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
               <span>{p.name}</span>
               <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
-                {MODE_LABEL[p.mode] ?? p.mode}
+                {p.mode ? MODE_LABEL[p.mode] ?? p.mode : "Explorer"}
               </span>
             </span>
           </button>
