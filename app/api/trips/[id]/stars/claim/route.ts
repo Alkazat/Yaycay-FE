@@ -11,11 +11,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  if (!body.profile_id || !body.day_id || !body.source) {
+  if (!body.profile_id || !body.source) {
     return NextResponse.json(
-      { error: "profile_id, day_id and source are required" },
+      { error: "profile_id and source are required" },
       { status: 422 },
     );
   }
-  return NextResponse.json(claimStar(id, body.profile_id, body.day_id, body.source));
+  return NextResponse.json(
+    claimStar(id, body.profile_id, body.source, body.day ?? "", body.stars ?? 1),
+  );
 }

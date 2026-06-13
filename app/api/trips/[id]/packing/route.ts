@@ -6,7 +6,7 @@ import {
   deleteItem,
   resetTicks,
 } from "@/lib/contract-mock/packingStore";
-import type { PackingAction } from "@/lib/contract-mock/types";
+import type { PackingPatchRequest } from "@/lib/contract-mock/types";
 
 /** MOCK packing lists (per profile + family) with tick + CRUD. */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  let body: PackingAction;
+  let body: PackingPatchRequest;
   try {
     body = await request.json();
   } catch {

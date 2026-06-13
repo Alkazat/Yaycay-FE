@@ -13,17 +13,28 @@ describe("endpointUrl (no API base configured)", () => {
 
   it("deferred endpoints always use the local mock", () => {
     expect(endpointUrl("/account", SERVED.account)).toBe("/api/account");
-    expect(endpointUrl("/checkout/session", SERVED.checkout)).toBe("/api/checkout/session");
+    expect(endpointUrl("/trips/t1/journal", SERVED.journal)).toBe("/api/trips/t1/journal");
   });
 
-  it("marks the served set per CONTRACT-STATUS v0.8", () => {
+  it("marks the live served set the FE consumes today", () => {
+    // Live since launch / earlier waves.
     expect(SERVED.demoGenerateDay).toBe(true);
     expect(SERVED.signupCapture).toBe(true);
     expect(SERVED.listTrips).toBe(true);
     expect(SERVED.getTrip).toBe(true);
-    expect(SERVED.profiles).toBe(false);
-    expect(SERVED.account).toBe(false);
+    expect(SERVED.content).toBe(true);
+    expect(SERVED.profiles).toBe(true);
+    expect(SERVED.checkout).toBe(true);
+    // Per-trip surfaces migrated to the contract shapes.
+    expect(SERVED.packing).toBe(true);
+    expect(SERVED.progress).toBe(true);
+    expect(SERVED.stars).toBe(true);
+    expect(SERVED.grownups).toBe(true);
+    expect(SERVED.ingest).toBe(true);
+    expect(SERVED.connectors).toBe(true);
+    // Still on the mock: journal (contract has no day_id), account, media.
     expect(SERVED.journal).toBe(false);
-    expect(SERVED.checkout).toBe(false);
+    expect(SERVED.account).toBe(false);
+    expect(SERVED.media).toBe(false);
   });
 });

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { claimStar } from "@/lib/api/stars";
 import { hasClaimed } from "@/lib/stars";
-import type { ChildProfile, StarsState, TripDay } from "@/lib/contract-mock/types";
+import type { ChildProfile, StarsResponse, TripDay } from "@/lib/contract-mock/types";
 import { Button } from "@/components/ds";
 import { GameOverlay } from "@/components/games/GameOverlay";
 
@@ -24,14 +24,14 @@ export function GameLauncher({
 
   const claim = useMutation({
     mutationFn: () =>
-      claimStar(tripId, { profile_id: profile.id, day_id: day.id, source: "game" }),
-    onSuccess: (data) => queryClient.setQueryData(starsKey, data),
+      claimStar(tripId, { profile_id: profile.id, source: "game", day: day.id }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: starsKey }),
   });
 
   if (!day.game) return null;
 
-  const stars = queryClient.getQueryData<StarsState>(starsKey);
-  const completed = stars ? hasClaimed(stars, day.id, "game") : false;
+  const stars = queryClient.getQueryData<StarsResponse>(starsKey);
+  const completed = hasClaimed(stars, profile.id, day.id, "game");
 
   return (
     <>

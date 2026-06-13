@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getMockTrip } from "@/lib/contract-mock/data";
+import { getMockTripRecord } from "@/lib/contract-mock/data";
 
-/** MOCK get-trip. Returns the full TripContent payload for a trip id. */
+/** MOCK get-trip record (the row, not the content). Active until live API is set. */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const trip = getMockTrip(id);
+  const trip = getMockTripRecord(id);
   if (!trip) {
     return NextResponse.json({ error: "Trip not found" }, { status: 404 });
   }

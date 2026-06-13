@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPacking, mutatePacking } from "@/lib/api/packing";
 import { listCount, allPacked } from "@/lib/packing";
-import type { PackingAction, PackingList } from "@/lib/contract-mock/types";
+import type { PackingList, PackingPatchRequest } from "@/lib/contract-mock/types";
 import { Tabs, Card, CardBody, Button, ProgressMeter, Badge } from "@/components/ds";
 
 export function PackingClient({ tripId }: { tripId: string }) {
@@ -13,7 +13,7 @@ export function PackingClient({ tripId }: { tripId: string }) {
   const query = useQuery({ queryKey: key, queryFn: ({ signal }) => getPacking(tripId, signal) });
 
   const mutate = useMutation({
-    mutationFn: (action: PackingAction) => mutatePacking(tripId, action),
+    mutationFn: (action: PackingPatchRequest) => mutatePacking(tripId, action),
     onSuccess: (lists) => queryClient.setQueryData(key, lists),
   });
 
@@ -74,7 +74,7 @@ export function PackingClient({ tripId }: { tripId: string }) {
 
           {list.sections.map((section) => (
             <Card key={section.id} variant="soft">
-              <CardBody title={section.title}>
+              <CardBody title={section.label}>
                 {section.items.map((item) => (
                   <div
                     key={item.id}
@@ -105,7 +105,7 @@ export function PackingClient({ tripId }: { tripId: string }) {
 
                 <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
                   <input
-                    aria-label={`Add to ${section.title}`}
+                    aria-label={`Add to ${section.label}`}
                     placeholder="Add an item"
                     value={draft[section.id] ?? ""}
                     onChange={(e) => setDraft((d) => ({ ...d, [section.id]: e.target.value }))}
