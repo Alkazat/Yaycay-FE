@@ -27,6 +27,15 @@ const SLOT_LABEL: Record<string, string> = {
   anytime: "Anytime",
 };
 
+const REWARD_EMOJI = ["⭐", "🏆", "🌟", "🎉", "✨", "🦁", "🌴"];
+
+/** Stable reward emoji per activity (same sticker every time it's revisited). */
+function rewardFor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return REWARD_EMOJI[h % REWARD_EMOJI.length];
+}
+
 /**
  * The core renderer. Walks a day's Moments -> Activities, filters by `kind`
  * for the active `view`, picks the right `variants` block for the active
@@ -199,6 +208,16 @@ export function TripDayRenderer({
                         />
                         <span>{doneSet.has(activity.id) ? "Done!" : "Mark as done"}</span>
                       </label>
+                    ) : null}
+
+                    {/* Reward sticker bounces in once the activity is done. */}
+                    {showChecks && doneSet.has(activity.id) ? (
+                      <div className="yc-sticker" data-testid="reward-sticker">
+                        <span className="yc-sticker-emoji" aria-hidden>
+                          {rewardFor(activity.id)}
+                        </span>
+                        Activity complete!
+                      </div>
                     ) : null}
                   </CardBody>
                 </Card>

@@ -213,3 +213,115 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .yc-orb-core, .yc-orb-ring, .yc-orb-spark, .yc-tick { animation: none; }
 }
+
+/* ---- Day rail: per-day progress rings (conic gradient by % ticked) ---- */
+.yc-daynav {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding: var(--space-1) var(--space-1) var(--space-2);
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.yc-daychip {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 4px;
+  cursor: pointer;
+  scroll-snap-align: center;
+  font-family: var(--font-display);
+}
+/* The ring: meadow fills 0deg..(pct), the rest is sand. --pct set inline. */
+.yc-daychip-ring {
+  --pct: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background:
+    conic-gradient(var(--meadow-400) calc(var(--pct) * 1%), var(--sand-200) 0);
+  transition: transform 160ms var(--ease-bounce);
+}
+.yc-daychip-core {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--surface-card);
+  color: var(--royal-700);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+}
+.yc-daychip-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  max-width: 72px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.yc-daychip[aria-selected="true"] .yc-daychip-ring { transform: scale(1.08); }
+.yc-daychip[aria-selected="true"] .yc-daychip-core {
+  background: var(--sky-50);
+  box-shadow: 0 0 0 2.5px var(--royal-500) inset;
+}
+.yc-daychip[aria-selected="true"] .yc-daychip-label { color: var(--royal-700); }
+/* Today: gold halo. */
+.yc-daychip[data-today="true"] .yc-daychip-ring {
+  box-shadow: 0 0 0 3px var(--sun-400), 0 0 12px var(--sun-300);
+}
+/* Complete: full meadow disc + check glyph. */
+.yc-daychip[data-complete="true"] .yc-daychip-core {
+  background: var(--meadow-400);
+  color: #fff;
+}
+.yc-daychip-pulse .yc-daychip-ring { animation: yc-daychip-pop 420ms var(--ease-bounce); }
+@keyframes yc-daychip-pop { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
+
+/* ---- Activity reward sticker (bounces in when an activity is done) ---- */
+.yc-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--sun-50);
+  border: 2.5px solid var(--sun-300);
+  color: var(--royal-700);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  animation: yc-sticker-in 460ms var(--ease-bounce) both;
+}
+.yc-sticker-emoji { font-size: 1.4em; animation: yc-sticker-wobble 1.8s ease-in-out infinite; }
+@keyframes yc-sticker-in {
+  0% { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  60% { transform: scale(1.15) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes yc-sticker-wobble { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+/* ---- Trip completion celebration (confetti) ---- */
+.yc-trip-complete { position: relative; overflow: hidden; }
+.yc-confetti { position: absolute; top: -12px; width: 9px; height: 14px; border-radius: 2px; opacity: 0.9; animation: yc-confetti-fall linear infinite; }
+@keyframes yc-confetti-fall {
+  0% { transform: translateY(-20px) rotate(0); }
+  100% { transform: translateY(260px) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yc-daychip-ring, .yc-daychip-pulse .yc-daychip-ring, .yc-sticker, .yc-sticker-emoji, .yc-confetti {
+    animation: none;
+    transition: none;
+  }
+}
