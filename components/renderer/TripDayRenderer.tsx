@@ -12,7 +12,7 @@ interface TripDayRendererProps {
   day: TripDay;
   /** Which surface to fill: the kid view or the grown-ups view. */
   view: RenderView;
-  /** Active render mode (kid view). Defaults to explorer. */
+  /** Active render mode (kid view). Defaults to standard. */
   mode?: ProfileMode;
   /** Stable ids of ticked activities (kid view). */
   done?: ReadonlySet<string>;
@@ -48,7 +48,7 @@ function rewardFor(id: string): string {
 export function TripDayRenderer({
   day,
   view,
-  mode = "explorer",
+  mode = "standard",
   done,
   onToggleActivity,
 }: TripDayRendererProps) {
@@ -62,7 +62,11 @@ export function TripDayRenderer({
       <header className="yc-stack" style={{ gap: "var(--space-2)" }}>
         <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
           <Badge tone="sun">{day.label}</Badge>
-          {day.hotel ? <Badge tone="ink">{day.hotel}</Badge> : null}
+          {day.hotel && (day.hotel.name || day.hotel.phase) ? (
+            <Badge tone="ink">
+              {[day.hotel.name, day.hotel.phase].filter(Boolean).join(" - ")}
+            </Badge>
+          ) : null}
         </div>
         {day.summary ? <p style={{ margin: 0, color: "var(--text-body)" }}>{day.summary}</p> : null}
 
@@ -82,8 +86,19 @@ export function TripDayRenderer({
           </div>
         ) : null}
 
-        {day.weather ? (
-          <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>{day.weather}</p>
+        {day.weather && (day.weather.summary || day.weather.high != null || day.weather.low != null) ? (
+          <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
+            {[
+              day.weather.summary,
+              day.weather.high != null || day.weather.low != null
+                ? `${day.weather.high != null ? `High ${day.weather.high}C` : ""}${
+                    day.weather.high != null && day.weather.low != null ? " / " : ""
+                  }${day.weather.low != null ? `Low ${day.weather.low}C` : ""}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" - ")}
+          </p>
         ) : null}
       </header>
 

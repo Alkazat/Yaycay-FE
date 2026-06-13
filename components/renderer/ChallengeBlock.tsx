@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { ActivityChallenge } from "@/lib/contract-mock/types";
+import type { Challenge } from "@/lib/contract-mock/types";
 
-const TYPE_LABEL: Record<ActivityChallenge["type"], string> = {
+const TYPE_LABEL: Record<Challenge["type"], string> = {
   quiz: "Quiz",
   spot: "Spot it",
   photo: "Photo challenge",
   challenge: "Challenge",
 };
 
-const TYPE_TONE: Record<ActivityChallenge["type"], string> = {
+const TYPE_TONE: Record<Challenge["type"], string> = {
   quiz: "var(--sun-400)",
   spot: "var(--sky-400)",
   photo: "var(--coral-400)",
@@ -18,7 +18,7 @@ const TYPE_TONE: Record<ActivityChallenge["type"], string> = {
 };
 
 /** A typed challenge with a reveal-answer toggle. Hidden in little mode. */
-export function ChallengeBlock({ challenge }: { challenge: ActivityChallenge }) {
+export function ChallengeBlock({ challenge }: { challenge: Challenge }) {
   const [revealed, setRevealed] = useState(false);
 
   return (
@@ -46,19 +46,23 @@ export function ChallengeBlock({ challenge }: { challenge: ActivityChallenge }) 
       >
         {TYPE_LABEL[challenge.type]}
       </span>
-      <p style={{ margin: 0, fontWeight: 700 }}>{challenge.question}</p>
-      {revealed ? (
-        <p style={{ margin: 0, color: "var(--royal-700)" }}>{challenge.answer}</p>
+      <p style={{ margin: 0, fontWeight: 700 }}>{challenge.prompt}</p>
+      {challenge.answer ? (
+        <>
+          {revealed ? (
+            <p style={{ margin: 0, color: "var(--royal-700)" }}>{challenge.answer}</p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setRevealed((r) => !r)}
+            className="yc-btn yc-btn--secondary yc-btn--sm"
+            style={{ alignSelf: "flex-start" }}
+            aria-expanded={revealed}
+          >
+            {revealed ? "Hide answer" : "Reveal the answer"}
+          </button>
+        </>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setRevealed((r) => !r)}
-        className="yc-btn yc-btn--secondary yc-btn--sm"
-        style={{ alignSelf: "flex-start" }}
-        aria-expanded={revealed}
-      >
-        {revealed ? "Hide answer" : "Reveal the answer"}
-      </button>
     </div>
   );
 }

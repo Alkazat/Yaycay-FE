@@ -1,4 +1,5 @@
-import { endpointUrl, SERVED } from "@/lib/api/http";
+import { apiFetch, SERVED } from "@/lib/api/http";
+import { getAccessToken } from "@/lib/auth/session";
 import type {
   AccountSummary,
   CheckoutSessionRequest,
@@ -6,7 +7,9 @@ import type {
 } from "@/lib/contract-mock/types";
 
 export async function getAccount(signal?: AbortSignal): Promise<AccountSummary> {
-  const res = await fetch(endpointUrl("/account", SERVED.account), { signal });
+  // Authenticated; carry the signed-in user's JWT when available.
+  const accessToken = await getAccessToken();
+  const res = await apiFetch("/account", SERVED.account, { signal, accessToken });
   if (!res.ok) throw new Error(`Failed to load account (${res.status})`);
   return (await res.json()) as AccountSummary;
 }
@@ -19,10 +22,12 @@ export async function getAccount(signal?: AbortSignal): Promise<AccountSummary> 
 export async function createCheckoutSession(
   req: CheckoutSessionRequest,
 ): Promise<CheckoutSessionResponse> {
-  const res = await fetch(endpointUrl("/checkout/session", SERVED.checkout), {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch("/checkout/session", SERVED.checkout, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),
+    accessToken,
   });
   if (!res.ok) throw new Error(`Failed to start checkout (${res.status})`);
   return (await res.json()) as CheckoutSessionResponse;
