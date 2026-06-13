@@ -1,4 +1,5 @@
-import { endpointUrl, SERVED } from "@/lib/api/http";
+import { apiFetch, SERVED } from "@/lib/api/http";
+import { getAccessToken } from "@/lib/auth/session";
 import type { PackingAction, PackingList } from "@/lib/contract-mock/types";
 
 async function read(res: Response): Promise<PackingList[]> {
@@ -7,15 +8,19 @@ async function read(res: Response): Promise<PackingList[]> {
 }
 
 export async function getPacking(tripId: string, signal?: AbortSignal): Promise<PackingList[]> {
-  return read(await fetch(endpointUrl(`/trips/${tripId}/packing`, SERVED.packing), { signal }));
+  // Trips are authenticated; carry the signed-in user's JWT when available.
+  const accessToken = await getAccessToken();
+  return read(await apiFetch(`/trips/${tripId}/packing`, SERVED.packing, { signal, accessToken }));
 }
 
 export async function mutatePacking(tripId: string, action: PackingAction): Promise<PackingList[]> {
+  const accessToken = await getAccessToken();
   return read(
-    await fetch(endpointUrl(`/trips/${tripId}/packing`, SERVED.packing), {
+    await apiFetch(`/trips/${tripId}/packing`, SERVED.packing, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(action),
+      accessToken,
     }),
   );
 }

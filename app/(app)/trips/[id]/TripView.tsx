@@ -47,8 +47,8 @@ export function TripView({ tripId }: { tripId: string }) {
   const activeProfile = profiles.find((p) => p.id === profileId) ?? null;
   // Render mode follows the active profile's default; a manual toggle overrides
   // it, which is also how Explorer+ is reached (the prototype orphaned it).
-  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "explorer";
-  const anaphylactic = profiles.filter((p) => p.anaphylaxis);
+  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "standard";
+  const anaphylactic = profiles.filter((p) => p.medical.includes("anaphylaxis"));
 
   const activeDay = useMemo(
     () => trip?.days.find((d) => d.id === dayId) ?? trip?.days[0],
@@ -198,8 +198,9 @@ export function TripView({ tripId }: { tripId: string }) {
           value={mode}
           onChange={(m: string) => setModeOverride(m as ProfileMode)}
           tabs={[
-            { value: "explorer", label: "Explorer" },
+            { value: "standard", label: "Explorer" },
             { value: "little", label: "Little" },
+            { value: "explorer", label: "Big explorer" },
             { value: "explorer_plus", label: "Explorer+" },
           ]}
         />
@@ -208,7 +209,7 @@ export function TripView({ tripId }: { tripId: string }) {
       {view === "grownups" && anaphylactic.length > 0 ? (
         <Banner tone="danger" title="Allergy protocol">
           {anaphylactic
-            .map((p) => `${p.name} (${(p.allergies ?? []).join(", ") || "anaphylaxis"})`)
+            .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
             .join("; ")}
           . Carry the EpiPen at all times and confirm every dish with the kitchen.
         </Banner>

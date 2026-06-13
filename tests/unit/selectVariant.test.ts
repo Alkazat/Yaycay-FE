@@ -54,21 +54,21 @@ describe("selectActivityCopy", () => {
     expect(selectActivityCopy(partial, "explorer_plus").body).toBe("Base.");
   });
 
-  it("explorer mode shows base copy when no explorer variant exists", () => {
-    const r = selectActivityCopy(base, "explorer");
+  it("standard mode shows base copy when no standard variant exists", () => {
+    const r = selectActivityCopy(base, "standard");
     expect(r.body).toBe("Base body copy.");
     expect(r.fact).toBeUndefined();
     expect(r.quiz).toBeUndefined();
   });
 
-  it("uses an explorer variant body override when present", () => {
-    const withExplorer: Activity = {
+  it("uses a standard variant body override when present", () => {
+    const withStandard: Activity = {
       id: "a4",
       kind: "kid",
       title: "T",
       body: "Base.",
-      variants: { explorer: { body: "Explorer override." } },
+      variants: { standard: { body: "Standard override." } },
     };
-    expect(selectActivityCopy(withExplorer, "explorer").body).toBe("Explorer override.");
+    expect(selectActivityCopy(withStandard, "standard").body).toBe("Standard override.");
   });
 });

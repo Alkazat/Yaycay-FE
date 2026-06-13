@@ -1,32 +1,95 @@
 /**
  * ============================================================================
- * MOCK CONTRACT TYPES - TEMPORARY
+ * @alkazat/contracts adoption barrel (FE)
  * ============================================================================
- * These mirror the canonical content model in 00-MODEL-CONTEXT.md (section 5)
- * and the FE handoff. They exist ONLY so the app builds and runs before the
- * real `@alkazat/contracts` package is published.
+ * The FE now pins `@alkazat/contracts@^0.8.0` (GitHub Packages). The wire DTOs
+ * that match the published contract are re-exported straight from the package
+ * below, so there is a single source of truth for the request/response shapes
+ * the FE exchanges with BE.
  *
- * WHEN THE REAL CONTRACT LANDS:
- *   1. `npm i @alkazat/contracts@^0.8.0` (GitHub Packages; see ./README.md).
- *   2. Replace imports of `@/lib/contract-mock/types` with `@alkazat/contracts`.
- *   3. Delete this directory.
+ * The rest is kept local on purpose, in two groups:
  *
- * Do NOT add fields here that are not in the documented model. A genuine gap is
- * a PR against Yaycay-BE (model context section 3), never a local invention.
+ *  1. The FE content model (TripDay/Activity/Moment/TripContent/...). The FE
+ *     keeps a local `TripDay` shape, but its `weather`/`hotel` fields and the
+ *     activity `challenge` field now adopt the contract `Weather`/`Hotel`/
+ *     `Challenge` types, and `ProfileMode` is widened to the contract
+ *     `ExplorerMode`. The remaining drift - the full `TripDay` -> contract
+ *     `Day` swap, and the local `GameConfig`/`star_challenge` vs contract
+ *     `Game`/`StarChallenge` - is DEFERRED pending mapping decisions, so those
+ *     fields stay local.
+ *
+ *  2. Client-only view models (packing, stars, checklist, per-day progress, the
+ *     richer local journal entry, transient connector UI state). These describe
+ *     local-first FE state the contract does not - and should not - model.
  * ============================================================================
  */
 
-/** Routes an activity to a view. */
-export type ActivityKind = "kid" | "shared" | "adult";
+import type {
+  ActivityKind,
+  Tier,
+  Challenge,
+  Weather,
+  Hotel,
+  ChildProfile,
+  ExplorerMode,
+} from "@alkazat/contracts";
 
-/** Tagged render variants by the active child profile's mode/age. */
-export type ProfileMode = "explorer" | "little" | "explorer_plus";
+// ---------------------------------------------------------------------------
+// Re-exported verbatim from the published contract (drop-in matches).
+// ---------------------------------------------------------------------------
+export type {
+  ActivityKind,
+  Tier,
+  Challenge,
+  Weather,
+  Hotel,
+  ChildProfile,
+  ExplorerMode,
+  TripStatus,
+  Trip,
+  TripSummary,
+  ListTripsResponse,
+  CreateTripRequest,
+  CheckoutSessionRequest,
+  CheckoutSessionResponse,
+  JournalEntry,
+  JournalEntryInput,
+  JournalListResponse,
+  SignUploadRequest,
+  SignUploadResponse,
+  ConnectorStatus,
+  Connector,
+  ConnectorsListResponse,
+  ByoConnectorRequest,
+  ByoConnectorResponse,
+  SignupCaptureRequest,
+  SignupCaptureResponse,
+  TwoFactorVerifyRequest,
+  TwoFactorVerifyResponse,
+  DemoChildProfile,
+  DemoGenerateDayRequest,
+  ApiErrorBody,
+  ChatMessage,
+  PlanChatRequest,
+  PlanChatEvent,
+  IngestImage,
+  IngestRequest,
+} from "@alkazat/contracts";
+
+// ===========================================================================
+// FE content model (kept local - diverges from contract v0.8; see header).
+// ===========================================================================
+
+/**
+ * Tagged render variants by the active child profile's mode/age.
+ *
+ * Widened to the contract {@link ExplorerMode} (adds `explorer`). Kept as a
+ * local alias so existing renderer/profile call sites keep their name.
+ */
+export type ProfileMode = ExplorerMode;
 
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";
-
-/** Trip purchase tier. */
-export type Tier = "free" | "byo" | "ours";
 
 export interface GeoLocation {
   name: string;
@@ -57,13 +120,6 @@ export interface ActivitySafety {
 /** Typed challenge attached to an activity. Hidden in `little` mode. */
 export type ChallengeType = "quiz" | "spot" | "photo" | "challenge";
 
-export interface ActivityChallenge {
-  type: ChallengeType;
-  question: string;
-  /** Revealed on demand; never read aloud. */
-  answer: string;
-}
-
 export interface Activity {
   id: string;
   kind: ActivityKind;
@@ -74,7 +130,7 @@ export interface Activity {
   /** Blue "wow fact" callouts. */
   facts?: string[];
   /** Typed challenge (quiz/spot/photo/challenge); hidden in little mode. */
-  challenge?: ActivityChallenge;
+  challenge?: Challenge;
   booking?: ActivityBooking;
   /** Dietary / medical flags surfaced in the grown-ups view. */
   safety?: ActivitySafety;
@@ -97,10 +153,10 @@ export interface TripDay {
   summary?: string;
   /** Yellow "today's journey" intro fact. */
   did_you_know?: string;
-  /** Short weather note, e.g. "Singapore is HOT! About 32C". */
-  weather?: string;
-  /** Hotel / move badge copy, e.g. "Tonight: Village Hotel Sentosa". */
-  hotel?: string;
+  /** Weather summary + temps for the day (contract {@link Weather}). */
+  weather?: Weather;
+  /** Hotel / move badge for the day (contract {@link Hotel}). */
+  hotel?: Hotel;
   /** Per-day star challenge (claimable once per profile per day). */
   star_challenge?: { question: string; answer: string };
   /** Per-day mini-game config (the youngest explorers). */
@@ -150,6 +206,13 @@ export interface GrownupsGuide {
   days?: GrownupsDay[];
 }
 
+/** The full canonical payload: Holiday -> Days -> Moments -> Activities. */
+export interface TripContent {
+  trip: TripMeta;
+  days: TripDay[];
+  grownups?: GrownupsGuide;
+}
+
 /* --------------------------------------------------------------------------
  * Grown-ups booking checklist (persisted ticks)
  * ------------------------------------------------------------------------ */
@@ -192,32 +255,10 @@ export type PackingAction =
   | { action: "delete"; list_id: string; item_id: string }
   | { action: "reset" };
 
-/** The full canonical payload: Holiday -> Days -> Moments -> Activities. */
-export interface TripContent {
-  trip: TripMeta;
-  days: TripDay[];
-  grownups?: GrownupsGuide;
-}
-
 /* --------------------------------------------------------------------------
- * Profiles + trip listing DTOs
+ * Profiles
  * ------------------------------------------------------------------------ */
 
-/** A child profile under the account (model context section 4). */
-export interface ChildProfile {
-  id: string;
-  name: string;
-  avatar?: string;
-  age?: number;
-  /** Render mode/age band the kid view selects variants by (default). */
-  mode: ProfileMode;
-  /** Dietary/medical flags (sensitive). Surfaced to grown-ups only. */
-  allergies?: string[];
-  anaphylaxis?: boolean;
-}
-
-// Full lifecycle enum per the published contract (v0.8). The FE only drives the
-// middle of this range, but BE can return any value, so render defensively.
 /* --------------------------------------------------------------------------
  * Per-profile progress (done items, keyed by stable activity id)
  * ------------------------------------------------------------------------ */
@@ -250,64 +291,6 @@ export interface StarClaimRequest {
   source: StarSource;
 }
 
-export type TripStatus =
-  | "draft"
-  | "planning"
-  | "ready"
-  | "holidaying"
-  | "complete"
-  | "archived";
-
-/**
- * The list view of a trip (`GET /trips` -> `{ trips: TripSummary[] }`). Adds the
- * two derived fields the FE list needs on top of the stored trip columns:
- * `day_count` (number of days in the content) and `data_kept` (whether the trip
- * data is still retained, i.e. not past its disposal date).
- */
-export interface TripSummary {
-  id: string;
-  destination: string;
-  start_date?: string;
-  end_date?: string;
-  timezone?: string;
-  currency?: string;
-  tier: Tier;
-  status: TripStatus;
-  retention_expires_at?: string;
-  /** Number of days currently planned in the trip content. */
-  day_count: number;
-  /** False once the trip is past its retention/disposal date. */
-  data_kept: boolean;
-  created_at?: string;
-}
-
-/** A single trip's stored metadata (`POST /trips` -> `Trip`). */
-export interface Trip {
-  id: string;
-  destination: string;
-  start_date?: string;
-  end_date?: string;
-  timezone?: string;
-  currency?: string;
-  tier: Tier;
-  status: TripStatus;
-  /** When trip data is scheduled for disposal unless a keep-token extends it. */
-  retention_expires_at?: string;
-  created_at?: string;
-}
-
-export interface ListTripsResponse {
-  trips: TripSummary[];
-}
-
-export interface CreateTripRequest {
-  destination: string;
-  start_date?: string;
-  end_date?: string;
-  timezone?: string;
-  currency?: string;
-}
-
 /* --------------------------------------------------------------------------
  * Account + billing
  * ------------------------------------------------------------------------ */
@@ -326,50 +309,6 @@ export type ProductId =
   | "price_datakeep_annual"
   | "price_destination_addon"
   | "price_photobook";
-
-/** Request body for `POST /checkout/session`. */
-export interface CheckoutSessionRequest {
-  /** The Stripe price id of a known, active catalogue product. */
-  price_id: string;
-  /** Optional trip the purchased tier applies to. */
-  trip_id?: string;
-  /** Redirect targets; fall back to server defaults when omitted. */
-  success_url?: string;
-  cancel_url?: string;
-}
-
-export interface CheckoutSessionResponse {
-  /** The Stripe-hosted Checkout URL to redirect the customer to. */
-  url: string;
-  /** The Stripe Checkout Session id. */
-  session_id: string;
-}
-
-/* --------------------------------------------------------------------------
- * Journal (notes + star ratings, per profile/day)
- * ------------------------------------------------------------------------ */
-
-export interface JournalEntry {
-  id: string;
-  trip_id: string;
-  /** Optional child profile this entry is tagged to. */
-  profile_id?: string | null;
-  body: string;
-  /** media_ref ids from `/media/sign-upload`, resolved to signed URLs on read. */
-  media_ref: string[];
-  created_at: string;
-}
-
-/** Request body for `POST /trips/{tripId}/journal` (paid: byo or ours). */
-export interface JournalEntryInput {
-  body?: string;
-  profile_id?: string;
-  media_ref?: string[];
-}
-
-export interface JournalListResponse {
-  entries: JournalEntry[];
-}
 
 /* --------------------------------------------------------------------------
  * CLIENT-ONLY journal model
@@ -408,129 +347,23 @@ export interface JournalEntryLocalInput {
 }
 
 /* --------------------------------------------------------------------------
- * Media (signed-URL upload for print-grade photos)
+ * CLIENT-ONLY connector UI state
+ *
+ * The contract `ConnectorStatus` is `active | revoked`; the FE may want to
+ * render extra transient states (not yet connected, error) with no contract
+ * counterpart.
  * ------------------------------------------------------------------------ */
 
-/** Request body for `POST /media/sign-upload` (paid: byo or ours). */
-export interface SignUploadRequest {
-  /** The trip the media belongs to (must be a paid trip the caller owns). */
-  trip_id: string;
-  content_type?: string;
-}
-
-export interface SignUploadResponse {
-  /** Stable reference stored in journal entries / trip content. */
-  media_ref: string;
-  /** Storage object path (owner-prefixed). */
-  path: string;
-  /** Short-lived signed URL to PUT the file to. */
-  upload_url: string;
-  /** Upload token for the signed URL. */
-  token: string;
-}
-
-/* --------------------------------------------------------------------------
- * BYO-AI connector status
- * ------------------------------------------------------------------------ */
-
-export type ConnectorStatus = "active" | "revoked";
-
-export interface Connector {
-  id: string;
-  trip_id: string;
-  label?: string | null;
-  scopes: string[];
-  status: ConnectorStatus;
-  last_used_at?: string | null;
-  created_at: string;
-}
-
-export interface ConnectorsListResponse {
-  connectors: Connector[];
-}
-
-/** Request body for `POST /connectors/byo-ai` (tier=byo). */
-export interface ByoConnectorRequest {
-  trip_id: string;
-  label?: string;
-}
-
-export interface ByoConnectorResponse {
-  connector_id: string;
-  /** The scoped MCP token to add to the parent's own AI as a connector. */
-  token: string;
-  /** The MCP endpoint URL the token authenticates against. */
-  mcp_url: string;
-}
-
-/**
- * CLIENT-ONLY richer connector status for the BYO-AI UI. The contract
- * `ConnectorStatus` is `active | revoked`; the FE may want to render extra
- * transient states (not yet connected, error) that have no contract counterpart.
- */
 export type ConnectorUiStatus = "not_connected" | "connected" | "error";
 
 /* --------------------------------------------------------------------------
- * Signup capture (POST /signup/capture) - account + email, synced to Brevo
+ * Demo endpoint response (POST /demo/generate-day)
+ *
+ * The request DTO is re-exported from the contract above. The response is kept
+ * local because its `day` is the FE `TripDay` shape rather than the contract's
+ * `Day`.
  * ------------------------------------------------------------------------ */
 
-export interface SignupCaptureRequest {
-  email: string;
-  name?: string;
-  /** Funnel source, e.g. `website-demo` or `fe-demo`. */
-  source?: string;
-  /** Marketing consent state captured at signup. */
-  consent: boolean;
-  /** Optional free-form attributes synced to Brevo. */
-  attributes?: Record<string, unknown>;
-}
-
-export interface SignupCaptureResponse {
-  contact_id: string;
-  status: "created" | "updated";
-  synced_to_brevo?: boolean;
-}
-
-/* --------------------------------------------------------------------------
- * Auth (second factor)
- * ------------------------------------------------------------------------ */
-
-export interface TwoFactorVerifyRequest {
-  code: string;
-}
-
-export interface TwoFactorVerifyResponse {
-  verified: boolean;
-}
-
-/* --------------------------------------------------------------------------
- * Demo endpoint DTOs (POST /demo/generate-day)
- * ------------------------------------------------------------------------ */
-
-export interface DemoChildProfile {
-  name: string;
-  age?: number;
-  /** Explorer mode used to pick the variant block. */
-  mode?: "little" | "explorer" | "explorer_plus";
-  interests?: string[];
-  /** Dietary flags surfaced to adults as safety notes. */
-  dietary?: string[];
-  /** Medical flags surfaced to adults as safety callouts. */
-  medical?: string[];
-}
-
-export interface DemoGenerateDayRequest {
-  destination: string;
-  /** Optional day to theme the plan around. */
-  date?: string;
-  child: DemoChildProfile;
-}
-
-/**
- * The demo returns one AI-built day plus a grown-ups teaser. Per the contract
- * there is NO trip object here; the FE drives the demo countdown from the date
- * the family entered.
- */
 export interface DemoGenerateDayResponse {
   day: TripDay;
   grownups_teaser: string;
@@ -538,22 +371,10 @@ export interface DemoGenerateDayResponse {
 }
 
 /* --------------------------------------------------------------------------
- * Errors
- * ------------------------------------------------------------------------ */
-
-export interface ApiErrorBody {
-  error: {
-    code: string;
-    message: string;
-    details?: string[];
-  };
-}
-
-/* --------------------------------------------------------------------------
- * AI surfaces (v0.3): planning chat + ingestion
+ * AI surfaces (v0.3): planning chat + ingestion patches
  *
- * NB: the contract references its content-model `Day`/`Booking`; the FE content
- * model names these `TripDay` / `ActivityBooking`, so they are used here.
+ * These reference the FE content model (`TripDay`/`Activity`/`TripContent`),
+ * so they stay local alongside it.
  * ------------------------------------------------------------------------ */
 
 /**
@@ -573,43 +394,6 @@ export interface TripContentPatch {
   ops: PatchOp[];
   /** Short human-readable note on what changed. */
   note?: string;
-}
-
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
-/** Request body for `POST /trips/{tripId}/plan/chat` (use-our-AI, tier=ours). */
-export interface PlanChatRequest {
-  messages: ChatMessage[];
-}
-
-/**
- * The chat response is a `text/event-stream`. Each SSE `data:` frame is one of
- * these JSON objects; the stream ends with a literal `data: [DONE]`.
- */
-export type PlanChatEvent =
-  | { start: true; generated_by: "ai" | "fallback" }
-  | { delta: string }
-  | { done: true; job_id: string | null }
-  | { error: string };
-
-/** A photo of a receipt/booking/ticket for the vision model. */
-export interface IngestImage {
-  /** e.g. `image/jpeg`, `image/png`. */
-  media_type: string;
-  /** base64-encoded image bytes (no `data:` prefix). */
-  data: string;
-}
-
-/** Request body for `POST /trips/{tripId}/ingest` (paid: byo or ours). */
-export interface IngestRequest {
-  /** A note, pasted confirmation, or OCR text. One of text/image is required. */
-  text?: string;
-  image?: IngestImage;
-  /** Optional targeting hint. */
-  hint?: { day_id?: string; moment_id?: string };
 }
 
 export interface IngestResponse {

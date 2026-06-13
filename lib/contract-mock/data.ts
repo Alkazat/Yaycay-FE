@@ -20,15 +20,40 @@ export const MOCK_ACCOUNT: AccountSummary = {
 };
 
 export const MOCK_PROFILES: ChildProfile[] = [
-  { id: "p_savy", name: "Savy", age: 13, mode: "explorer" },
-  { id: "p_tay", name: "Tay", age: 9, mode: "explorer" },
+  {
+    id: "p_savy",
+    name: "Savy",
+    age: 13,
+    mode: "standard",
+    interests: [],
+    dietary: [],
+    medical: [],
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "p_tay",
+    name: "Tay",
+    age: 9,
+    mode: "standard",
+    interests: [],
+    dietary: [],
+    medical: [],
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  },
   {
     id: "p_lenny",
     name: "Lenny",
     age: 4,
     mode: "little",
-    allergies: ["nuts", "legumes"],
-    anaphylaxis: true,
+    interests: [],
+    // FE allergies fold into the contract's dietary string[].
+    dietary: ["nuts", "legumes"],
+    // anaphylaxis modelled as a medical flag.
+    medical: ["anaphylaxis"],
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
   },
 ];
 
@@ -65,8 +90,16 @@ const SINGAPORE_TRIP: TripContent = {
       label: "Arrival",
       summary: "Land, settle in, and dip your toes in the day with an easy first afternoon.",
       did_you_know: "Singapore is one whole country made of one big island and lots of little ones!",
-      weather: "Singapore is HOT and a bit sticky, about 31C. Hat, water, sunscreen!",
-      hotel: "Tonight: Village Hotel Sentosa. We stay here for 4 nights.",
+      weather: {
+        summary: "Singapore is HOT and a bit sticky. Hat, water, sunscreen!",
+        high: 31,
+        low: 26,
+      },
+      hotel: {
+        name: "Village Hotel Sentosa",
+        phase: "arrive",
+        note: "We stay here for 4 nights.",
+      },
       star_challenge: {
         question: "Which country are we exploring on this whole holiday?",
         answer: "Singapore!",
@@ -103,7 +136,7 @@ const SINGAPORE_TRIP: TripContent = {
               ],
               challenge: {
                 type: "spot",
-                question: "Spot three different colours of beach umbrella.",
+                prompt: "Spot three different colours of beach umbrella.",
                 answer: "Look along the shoreline, there are usually red, blue and yellow ones!",
               },
             },
@@ -124,7 +157,11 @@ const SINGAPORE_TRIP: TripContent = {
       label: "Explorers",
       summary: "A big day out among gardens, clouds, and very tall trees.",
       did_you_know: "The Cloud Forest has the tallest indoor waterfall in the world!",
-      weather: "Warm and humid, about 32C. The Cloud Forest inside is cool and misty.",
+      weather: {
+        summary: "Warm and humid. The Cloud Forest inside is cool and misty.",
+        high: 32,
+        low: 27,
+      },
       star_challenge: {
         question: "What do plants need to make their own food?",
         answer: "Sunlight, water and air. They are amazing!",
@@ -151,7 +188,7 @@ const SINGAPORE_TRIP: TripContent = {
               facts: ["The waterfall is 35 metres tall, taller than ten giraffes!"],
               challenge: {
                 type: "quiz",
-                question: "Why is it so misty inside the Cloud Forest?",
+                prompt: "Why is it so misty inside the Cloud Forest?",
                 answer: "Machines spray a cool fog so the mountain plants feel at home.",
               },
             },
