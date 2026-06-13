@@ -60,7 +60,7 @@ export async function apiFetch(
   return fetch(url, { ...rest, headers });
 }
 
-/** Endpoints the live contract serves today (CONTRACT-STATUS v0.8). */
+/** Endpoints the live contract serves today (per Yaycay-BE CONTRACT-STATUS, v0.12). */
 export const SERVED = {
   demoGenerateDay: true,
   signupCapture: true,
@@ -68,14 +68,16 @@ export const SERVED = {
   getTrip: true,
   auth2fa: true,
   planChat: true,
-  // Deferred on BE - keep on the mock until their handler ships:
-  profiles: false,
+  // Now served by BE (CONTRACT-STATUS): profiles v0.9, journal v0.6, checkout
+  // v0.5, progress v0.9, stars v0.11, packing v0.12, grownups v0.11, media v0.6.
+  profiles: true,
+  journal: true,
+  checkout: true,
+  progress: true,
+  stars: true,
+  packing: true,
+  grownups: true,
+  media: true,
+  // Still deferred on BE - keep on the mock until the handler ships:
   account: false,
-  journal: false,
-  checkout: false,
-  progress: false,
-  stars: false,
-  packing: false,
-  grownups: false,
-  media: false,
 } as const;
