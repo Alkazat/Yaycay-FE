@@ -10,13 +10,13 @@
  * The rest is kept local on purpose, in two groups:
  *
  *  1. The FE content model (TripDay/Activity/Moment/TripContent/...). The FE
- *     renders a deliberately simplified shape - `weather`/`hotel` as display
- *     strings, an `ActivityChallenge` with a `question`, a 3-value
- *     `ProfileMode` - that genuinely diverges from contract v0.8's richer
- *     `Day`/`Weather`/`Hotel`/`Challenge`/`ExplorerMode`. Re-exporting the
- *     published versions would not type-check against the renderers, so these
- *     stay local. Closing that gap is a BE contract change (model context
- *     section 3), not a local invention.
+ *     keeps a local `TripDay` shape, but its `weather`/`hotel` fields and the
+ *     activity `challenge` field now adopt the contract `Weather`/`Hotel`/
+ *     `Challenge` types, and `ProfileMode` is widened to the contract
+ *     `ExplorerMode`. The remaining drift - the full `TripDay` -> contract
+ *     `Day` swap, and the local `GameConfig`/`star_challenge` vs contract
+ *     `Game`/`StarChallenge` - is DEFERRED pending mapping decisions, so those
+ *     fields stay local.
  *
  *  2. Client-only view models (packing, stars, checklist, per-day progress, the
  *     richer local journal entry, transient connector UI state). These describe
@@ -24,7 +24,15 @@
  * ============================================================================
  */
 
-import type { ActivityKind, Tier } from "@alkazat/contracts";
+import type {
+  ActivityKind,
+  Tier,
+  Challenge,
+  Weather,
+  Hotel,
+  ChildProfile,
+  ExplorerMode,
+} from "@alkazat/contracts";
 
 // ---------------------------------------------------------------------------
 // Re-exported verbatim from the published contract (drop-in matches).
@@ -32,6 +40,11 @@ import type { ActivityKind, Tier } from "@alkazat/contracts";
 export type {
   ActivityKind,
   Tier,
+  Challenge,
+  Weather,
+  Hotel,
+  ChildProfile,
+  ExplorerMode,
   TripStatus,
   Trip,
   TripSummary,
@@ -67,8 +80,13 @@ export type {
 // FE content model (kept local - diverges from contract v0.8; see header).
 // ===========================================================================
 
-/** Tagged render variants by the active child profile's mode/age. */
-export type ProfileMode = "standard" | "little" | "explorer_plus";
+/**
+ * Tagged render variants by the active child profile's mode/age.
+ *
+ * Widened to the contract {@link ExplorerMode} (adds `explorer`). Kept as a
+ * local alias so existing renderer/profile call sites keep their name.
+ */
+export type ProfileMode = ExplorerMode;
 
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";
@@ -102,13 +120,6 @@ export interface ActivitySafety {
 /** Typed challenge attached to an activity. Hidden in `little` mode. */
 export type ChallengeType = "quiz" | "spot" | "photo" | "challenge";
 
-export interface ActivityChallenge {
-  type: ChallengeType;
-  question: string;
-  /** Revealed on demand; never read aloud. */
-  answer: string;
-}
-
 export interface Activity {
   id: string;
   kind: ActivityKind;
@@ -119,7 +130,7 @@ export interface Activity {
   /** Blue "wow fact" callouts. */
   facts?: string[];
   /** Typed challenge (quiz/spot/photo/challenge); hidden in little mode. */
-  challenge?: ActivityChallenge;
+  challenge?: Challenge;
   booking?: ActivityBooking;
   /** Dietary / medical flags surfaced in the grown-ups view. */
   safety?: ActivitySafety;
@@ -142,10 +153,10 @@ export interface TripDay {
   summary?: string;
   /** Yellow "today's journey" intro fact. */
   did_you_know?: string;
-  /** Short weather note, e.g. "Singapore is HOT! About 32C". */
-  weather?: string;
-  /** Hotel / move badge copy, e.g. "Tonight: Village Hotel Sentosa". */
-  hotel?: string;
+  /** Weather summary + temps for the day (contract {@link Weather}). */
+  weather?: Weather;
+  /** Hotel / move badge for the day (contract {@link Hotel}). */
+  hotel?: Hotel;
   /** Per-day star challenge (claimable once per profile per day). */
   star_challenge?: { question: string; answer: string };
   /** Per-day mini-game config (the youngest explorers). */
@@ -247,19 +258,6 @@ export type PackingAction =
 /* --------------------------------------------------------------------------
  * Profiles
  * ------------------------------------------------------------------------ */
-
-/** A child profile under the account (model context section 4). */
-export interface ChildProfile {
-  id: string;
-  name: string;
-  avatar?: string;
-  age?: number;
-  /** Render mode/age band the kid view selects variants by (default). */
-  mode: ProfileMode;
-  /** Dietary/medical flags (sensitive). Surfaced to grown-ups only. */
-  allergies?: string[];
-  anaphylaxis?: boolean;
-}
 
 /* --------------------------------------------------------------------------
  * Per-profile progress (done items, keyed by stable activity id)
