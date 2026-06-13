@@ -23,35 +23,59 @@ export const MOCK_PROFILES: ChildProfile[] = [
   {
     id: "p_savy",
     name: "Savy",
+    type: "child",
     age: 13,
-    mode: "standard",
+    // ~12-16 -> Big Explorer.
+    mode: "explorer_plus",
     interests: [],
     dietary: [],
     medical: [],
+    pin_set: false,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },
   {
     id: "p_tay",
     name: "Tay",
+    type: "child",
     age: 9,
-    mode: "standard",
+    // ~7-11 -> Explorer.
+    mode: "explorer",
     interests: [],
     dietary: [],
     medical: [],
+    pin_set: false,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },
   {
     id: "p_lenny",
     name: "Lenny",
+    type: "child",
     age: 4,
+    // under ~6 -> Little Explorer.
     mode: "little",
     interests: [],
     // FE allergies fold into the contract's dietary string[].
     dietary: ["nuts", "legumes"],
     // anaphylaxis modelled as a medical flag.
     medical: ["anaphylaxis"],
+    pin_set: false,
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "p_parent",
+    name: "Mum",
+    type: "parent_carer",
+    age: null,
+    // The Grown Ups voice.
+    mode: "standard",
+    interests: [],
+    dietary: [],
+    medical: [],
+    // A PIN is configured; the Grown-ups view prompts for it (mock PIN: 1234).
+    pin_set: true,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },

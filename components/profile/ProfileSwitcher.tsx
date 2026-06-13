@@ -10,10 +10,10 @@ interface ProfileSwitcherProps {
 }
 
 const MODE_LABEL: Record<string, string> = {
-  standard: "Explorer",
-  little: "Little explorer",
-  explorer: "Big explorer",
-  explorer_plus: "Explorer+",
+  little: "Little Explorer",
+  explorer: "Explorer",
+  explorer_plus: "Big Explorer",
+  standard: "Grown Ups",
 };
 
 /** Pick the active child profile; the trip view renders variants by its mode. */

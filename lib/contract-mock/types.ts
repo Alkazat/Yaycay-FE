@@ -30,7 +30,7 @@ import type {
   Challenge,
   Weather,
   Hotel,
-  ChildProfile,
+  ChildProfile as ContractChildProfile,
   ExplorerMode,
 } from "@alkazat/contracts";
 
@@ -43,7 +43,6 @@ export type {
   Challenge,
   Weather,
   Hotel,
-  ChildProfile,
   ExplorerMode,
   TripStatus,
   Trip,
@@ -87,6 +86,25 @@ export type {
  * local alias so existing renderer/profile call sites keep their name.
  */
 export type ProfileMode = ExplorerMode;
+
+/**
+ * Who a profile belongs to (contract v0.15). `child` profiles are locked to the
+ * Explorers view; `parent_carer` profiles (display: "Parent / Carer") can unlock
+ * the Grown-ups view with a PIN and may also co-explore the Explorers view.
+ */
+export type ProfileType = "child" | "parent_carer";
+
+/**
+ * Child/parent profile. Extends the published contract shape with the v0.15
+ * fields (profile type + Grown-ups PIN state) until the package here is bumped
+ * to `^0.15.0`; the local fields match the contract exactly, so the bump is a
+ * no-op for call sites.
+ */
+export interface ChildProfile extends ContractChildProfile {
+  type: ProfileType;
+  /** Whether a Grown-ups PIN is configured (parent/carer). PIN never returned. */
+  pin_set: boolean;
+}
 
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";

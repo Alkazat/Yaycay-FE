@@ -71,6 +71,8 @@ export const SERVED = {
   // Now served by BE (CONTRACT-STATUS): profiles v0.9, journal v0.6, checkout
   // v0.5, progress v0.9, stars v0.11, packing v0.12, grownups v0.11, media v0.6.
   profiles: true,
+  // Grown-ups PIN gate (contract v0.15): POST /profiles/:id/pin[/verify].
+  profilePin: true,
   journal: true,
   checkout: true,
   progress: true,
