@@ -1,4 +1,5 @@
-import { endpointUrl, SERVED } from "@/lib/api/http";
+import { apiFetch, SERVED } from "@/lib/api/http";
+import { getAccessToken } from "@/lib/auth/session";
 import type { SignUploadResponse } from "@/lib/contract-mock/types";
 
 /**
@@ -10,10 +11,12 @@ export async function signUpload(
   tripId: string,
   contentType: string,
 ): Promise<SignUploadResponse> {
-  const res = await fetch(endpointUrl("/media/sign-upload", SERVED.media), {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch("/media/sign-upload", SERVED.media, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ trip_id: tripId, content_type: contentType }),
+    accessToken,
   });
   if (!res.ok) throw new Error(`Failed to sign upload (${res.status})`);
   return (await res.json()) as SignUploadResponse;
