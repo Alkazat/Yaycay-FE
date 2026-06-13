@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStars, claimStar } from "@/lib/api/stars";
-import { sgdValue, hasClaimed, STAR_CURRENCY } from "@/lib/stars";
+import { sgdValue, hasClaimed, balanceFor, STAR_CURRENCY } from "@/lib/stars";
 import type { ChildProfile, StarSource, TripDay } from "@/lib/contract-mock/types";
 import { Card, CardBody, Button, Badge } from "@/components/ds";
 
@@ -25,14 +25,14 @@ export function StarBank({ tripId, profile, day }: StarBankProps) {
 
   const claim = useMutation({
     mutationFn: (source: StarSource) =>
-      claimStar(tripId, { profile_id: profile.id, day_id: day.id, source }),
-    onSuccess: (data) => queryClient.setQueryData(starsKey, data),
+      claimStar(tripId, { profile_id: profile.id, source, day: day.id }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: starsKey }),
   });
 
   const [revealed, setRevealed] = useState(false);
   const challenge = day.star_challenge;
-  const claimedChallenge = stars ? hasClaimed(stars, day.id, "challenge") : false;
-  const count = stars?.stars ?? 0;
+  const claimedChallenge = hasClaimed(stars, profile.id, day.id, "challenge");
+  const count = balanceFor(stars, profile.id);
 
   return (
     <Card>

@@ -3,38 +3,53 @@
  * live API exists. Claims are idempotent per profile per day per source. Module
  * memory; resets on restart. Swap target: BE `/trips/:id/stars` endpoints.
  */
-import type { StarsState, StarSource } from "./types";
-import { claimKey } from "@/lib/stars";
+import type { StarBalance, StarClaimResponse, StarLedgerEntry, StarsResponse } from "./types";
 
-const store = new Map<string, StarsState>();
+const store = new Map<string, StarLedgerEntry[]>();
+let seq = 0;
 
-function key(tripId: string, profileId: string): string {
-  return `${tripId}::${profileId}`;
+function ledger(tripId: string): StarLedgerEntry[] {
+  if (!store.has(tripId)) store.set(tripId, []);
+  return store.get(tripId)!;
 }
 
-export function getStars(tripId: string, profileId: string): StarsState {
-  return (
-    store.get(key(tripId, profileId)) ?? {
-      trip_id: tripId,
-      profile_id: profileId,
-      stars: 0,
-      claims: [],
-    }
-  );
+function balances(entries: StarLedgerEntry[]): StarBalance[] {
+  const totals = new Map<string, number>();
+  for (const e of entries) totals.set(e.profile_id, (totals.get(e.profile_id) ?? 0) + e.stars);
+  return [...totals].map(([profile_id, stars]) => ({ profile_id, stars }));
+}
+
+function balanceFor(entries: StarLedgerEntry[], profileId: string): number {
+  return balances(entries).find((b) => b.profile_id === profileId)?.stars ?? 0;
+}
+
+export function getStars(tripId: string): StarsResponse {
+  const entries = ledger(tripId);
+  return { balances: balances(entries), entries: [...entries] };
 }
 
 export function claimStar(
   tripId: string,
   profileId: string,
-  dayId: string,
-  source: StarSource,
-): StarsState {
-  const state = getStars(tripId, profileId);
-  const ck = claimKey(dayId, source);
-  if (!state.claims.includes(ck)) {
-    state.claims = [...state.claims, ck];
-    state.stars += 1;
+  source: string,
+  day: string,
+  stars = 1,
+): StarClaimResponse {
+  const entries = ledger(tripId);
+  const existing = entries.find(
+    (e) => e.profile_id === profileId && e.day === day && e.source === source,
+  );
+  if (existing) {
+    return { claimed: false, entry: existing, balance: balanceFor(entries, profileId) };
   }
-  store.set(key(tripId, profileId), state);
-  return state;
+  const entry: StarLedgerEntry = {
+    id: `star_${(seq += 1)}`,
+    profile_id: profileId,
+    source,
+    day,
+    stars,
+    created_at: new Date().toISOString(),
+  };
+  entries.push(entry);
+  return { claimed: true, entry, balance: balanceFor(entries, profileId) };
 }

@@ -1,6 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { sgdValue, claimKey, hasClaimed, STAR_VALUE } from "@/lib/stars";
-import type { StarsState } from "@/lib/contract-mock/types";
+import { sgdValue, balanceFor, hasClaimed, STAR_VALUE } from "@/lib/stars";
+import type { StarsResponse } from "@/lib/contract-mock/types";
+
+const ledger: StarsResponse = {
+  balances: [{ profile_id: "p", stars: 2 }],
+  entries: [
+    { id: "s1", profile_id: "p", source: "challenge", day: "d_2", stars: 1, created_at: "2026-06-27T00:00:00Z" },
+    { id: "s2", profile_id: "p", source: "game:abc", day: "d_2", stars: 1, created_at: "2026-06-27T01:00:00Z" },
+  ],
+};
 
 describe("stars", () => {
   it("values stars at the configured rate", () => {
@@ -8,20 +16,17 @@ describe("stars", () => {
     expect(sgdValue(4)).toBe(4 * STAR_VALUE);
   });
 
-  it("builds a per-day per-source idempotency key", () => {
-    expect(claimKey("d_2", "challenge")).toBe("d_2:challenge");
-    expect(claimKey("d_2", "game")).toBe("d_2:game");
+  it("reads a child's balance from the ledger", () => {
+    expect(balanceFor(ledger, "p")).toBe(2);
+    expect(balanceFor(ledger, "other")).toBe(0);
+    expect(balanceFor(undefined, "p")).toBe(0);
   });
 
-  it("detects an already-claimed source for a day", () => {
-    const state: StarsState = {
-      trip_id: "t",
-      profile_id: "p",
-      stars: 1,
-      claims: ["d_2:challenge"],
-    };
-    expect(hasClaimed(state, "d_2", "challenge")).toBe(true);
-    expect(hasClaimed(state, "d_2", "game")).toBe(false);
-    expect(hasClaimed(state, "d_1", "challenge")).toBe(false);
+  it("detects an already-claimed source for a day (exact or prefixed source)", () => {
+    expect(hasClaimed(ledger, "p", "d_2", "challenge")).toBe(true);
+    expect(hasClaimed(ledger, "p", "d_2", "game")).toBe(true); // matches "game:abc"
+    expect(hasClaimed(ledger, "p", "d_1", "challenge")).toBe(false);
+    expect(hasClaimed(ledger, "other", "d_2", "challenge")).toBe(false);
+    expect(hasClaimed(undefined, "p", "d_2", "challenge")).toBe(false);
   });
 });

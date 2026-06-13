@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTrip, listProfiles } from "@/lib/api/trips";
+import { getTripContent, listProfiles } from "@/lib/api/trips";
 import { getProgress, setActivityDone } from "@/lib/api/progress";
 import { tripProgress, dayCompletion } from "@/lib/render/progress";
 import { todayDayId } from "@/lib/render/today";
@@ -18,13 +18,13 @@ import { GameLauncher } from "@/components/games/GameLauncher";
 import { GrownupsGuide } from "@/components/grownups/GrownupsGuide";
 import { Countdown } from "@/components/Countdown";
 import { Tabs, Card, CardBody, Banner, ProgressMeter } from "@/components/ds";
-import type { ProfileMode, ProgressState } from "@/lib/contract-mock/types";
+import type { ProfileMode, TripProgress } from "@/lib/contract-mock/types";
 import { formatDateRange } from "@/lib/format";
 
 export function TripView({ tripId }: { tripId: string }) {
   const tripQuery = useQuery({
     queryKey: ["trip", tripId],
-    queryFn: ({ signal }) => getTrip(tripId, signal),
+    queryFn: ({ signal }) => getTripContent(tripId, signal),
   });
   const profilesQuery = useQuery({
     queryKey: ["profiles"],
@@ -63,7 +63,7 @@ export function TripView({ tripId }: { tripId: string }) {
     enabled: !!profileId,
   });
   const doneSet = useMemo(
-    () => new Set(progressQuery.data?.done ?? []),
+    () => new Set(progressQuery.data?.done_items ?? []),
     [progressQuery.data],
   );
 
@@ -72,14 +72,14 @@ export function TripView({ tripId }: { tripId: string }) {
       setActivityDone(tripId, profileId!, activityId, done),
     onMutate: async ({ activityId, done }) => {
       await queryClient.cancelQueries({ queryKey: progressKey });
-      const prev = queryClient.getQueryData<ProgressState>(progressKey);
-      const next = new Set(prev?.done ?? []);
+      const prev = queryClient.getQueryData<TripProgress>(progressKey);
+      const next = new Set(prev?.done_items ?? []);
       if (done) next.add(activityId);
       else next.delete(activityId);
-      queryClient.setQueryData<ProgressState>(progressKey, {
-        trip_id: tripId,
+      queryClient.setQueryData<TripProgress>(progressKey, {
         profile_id: profileId ?? "",
-        done: [...next],
+        done_items: [...next],
+        updated_at: new Date().toISOString(),
       });
       return { prev };
     },

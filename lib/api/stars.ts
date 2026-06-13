@@ -1,26 +1,31 @@
 import { apiFetch, SERVED } from "@/lib/api/http";
 import { getAccessToken } from "@/lib/auth/session";
-import type { StarsState, StarClaimRequest } from "@/lib/contract-mock/types";
+import type {
+  StarClaimRequest,
+  StarClaimResponse,
+  StarsResponse,
+} from "@/lib/contract-mock/types";
 
+/**
+ * The whole trip's star ledger (`{ balances, entries }`). The contract returns
+ * every child's row; the FE selects a child with the `lib/stars` helpers.
+ * `profileId` is kept on the signature only to scope the react-query cache key.
+ */
 export async function getStars(
   tripId: string,
-  profileId: string,
+  _profileId: string,
   signal?: AbortSignal,
-): Promise<StarsState> {
+): Promise<StarsResponse> {
   const accessToken = await getAccessToken();
-  const res = await apiFetch(
-    `/trips/${tripId}/stars?profile_id=${encodeURIComponent(profileId)}`,
-    SERVED.stars,
-    { signal, accessToken },
-  );
+  const res = await apiFetch(`/trips/${tripId}/stars`, SERVED.stars, { signal, accessToken });
   if (!res.ok) throw new Error(`Failed to load stars (${res.status})`);
-  return (await res.json()) as StarsState;
+  return (await res.json()) as StarsResponse;
 }
 
 export async function claimStar(
   tripId: string,
   req: StarClaimRequest,
-): Promise<StarsState> {
+): Promise<StarClaimResponse> {
   const accessToken = await getAccessToken();
   const res = await apiFetch(`/trips/${tripId}/stars/claim`, SERVED.stars, {
     method: "POST",
@@ -29,5 +34,5 @@ export async function claimStar(
     accessToken,
   });
   if (!res.ok) throw new Error(`Failed to claim star (${res.status})`);
-  return (await res.json()) as StarsState;
+  return (await res.json()) as StarClaimResponse;
 }

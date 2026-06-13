@@ -2,7 +2,9 @@ import { apiFetch, SERVED } from "@/lib/api/http";
 import { getAccessToken } from "@/lib/auth/session";
 import type {
   ChildProfile,
+  Trip,
   TripContent,
+  TripContentPatch,
   TripSummary,
 } from "@/lib/contract-mock/types";
 
@@ -19,12 +21,33 @@ export async function listTrips(signal?: AbortSignal): Promise<TripSummary[]> {
   return data.trips;
 }
 
-export async function getTrip(id: string, signal?: AbortSignal): Promise<TripContent> {
-  return getJson<TripContent>(`/trips/${id}`, SERVED.getTrip, signal);
+/** The trip record (row): status, tier, dates, retention. NOT the day content. */
+export async function getTrip(id: string, signal?: AbortSignal): Promise<Trip> {
+  return getJson<Trip>(`/trips/${id}`, SERVED.getTrip, signal);
+}
+
+/** The full day-by-day content (`GET /trips/:id/content`). */
+export async function getTripContent(id: string, signal?: AbortSignal): Promise<TripContent> {
+  return getJson<TripContent>(`/trips/${id}/content`, SERVED.content, signal);
+}
+
+/** Apply a structured patch to the trip content (`PATCH /trips/:id/content`). */
+export async function patchTripContent(
+  id: string,
+  patch: TripContentPatch,
+): Promise<TripContent> {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch(`/trips/${id}/content`, SERVED.content, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(patch),
+    accessToken,
+  });
+  if (!res.ok) throw new Error(`Failed to update trip content (${res.status})`);
+  return (await res.json()) as TripContent;
 }
 
 export async function listProfiles(signal?: AbortSignal): Promise<ChildProfile[]> {
-  // Deferred on BE - stays on the mock until GET /profiles ships.
   const data = await getJson<{ profiles: ChildProfile[] }>("/profiles", SERVED.profiles, signal);
   return data.profiles;
 }

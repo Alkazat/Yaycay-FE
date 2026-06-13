@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTrip, listProfiles } from "@/lib/api/trips";
+import { getTripContent, listProfiles } from "@/lib/api/trips";
 import { listJournal, addJournalEntry } from "@/lib/api/journal";
 import { signUpload } from "@/lib/api/media";
 import { averageStars } from "@/lib/journal";
@@ -22,7 +22,7 @@ interface PendingPhoto {
 export function JournalClient({ tripId }: { tripId: string }) {
   const queryClient = useQueryClient();
 
-  const tripQuery = useQuery({ queryKey: ["trip", tripId], queryFn: ({ signal }) => getTrip(tripId, signal) });
+  const tripQuery = useQuery({ queryKey: ["trip", tripId], queryFn: ({ signal }) => getTripContent(tripId, signal) });
   const profilesQuery = useQuery({ queryKey: ["profiles"], queryFn: ({ signal }) => listProfiles(signal) });
 
   const profiles = profilesQuery.data ?? [];
