@@ -5,6 +5,13 @@ on:
     branches: [develop, main]
   pull_request:
 
+# @alkazat/contracts is published to GitHub Packages under the @alkazat scope.
+# packages:read + NODE_AUTH_TOKEN let `npm ci` resolve it via the committed
+# .npmrc auth line.
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -18,6 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint
         run: npm run lint
@@ -43,6 +52,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
