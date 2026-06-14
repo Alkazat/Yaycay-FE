@@ -3,6 +3,7 @@
 import type { ProfileMode, TripDay } from "@/lib/contract-mock/types";
 import { activitiesForView, type RenderView } from "@/lib/render/routeByKind";
 import { selectActivityCopy } from "@/lib/render/selectVariant";
+import { showsChallenge, showsBonus } from "@/lib/profile/access";
 import { ChallengeBlock } from "@/components/renderer/ChallengeBlock";
 import { ReadAloud } from "@/components/renderer/ReadAloud";
 import { dayCompletion } from "@/lib/render/progress";
@@ -86,7 +87,8 @@ export function TripDayRenderer({
           </div>
         ) : null}
 
-        {day.weather && (day.weather.summary || day.weather.high != null || day.weather.low != null) ? (
+        {day.weather &&
+        (day.weather.summary || day.weather.high != null || day.weather.low != null) ? (
           <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
             {[
               day.weather.summary,
@@ -144,8 +146,8 @@ export function TripDayRenderer({
                         ))
                       : null}
 
-                    {/* Explorer+ variant fact. */}
-                    {isKid && copy.fact ? (
+                    {/* Bonus deep-dive fact - Big Explorer (explorer_plus) only. */}
+                    {isKid && showsBonus(mode) && copy.fact ? (
                       <p style={{ margin: 0, color: "var(--sky-700)", fontWeight: 700 }}>
                         Did you know? {copy.fact}
                       </p>
@@ -161,12 +163,12 @@ export function TripDayRenderer({
                     ) : null}
 
                     {/* Typed challenge - kid view, hidden in little mode. */}
-                    {isKid && mode !== "little" && activity.challenge ? (
+                    {isKid && showsChallenge(mode) && activity.challenge ? (
                       <ChallengeBlock challenge={activity.challenge} />
                     ) : null}
 
-                    {/* Explorer+ variant quiz. */}
-                    {isKid && copy.quiz ? (
+                    {/* Bonus quiz - Big Explorer (explorer_plus) only. */}
+                    {isKid && showsBonus(mode) && copy.quiz ? (
                       <div
                         style={{
                           marginTop: "var(--space-2)",

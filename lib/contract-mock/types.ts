@@ -30,7 +30,8 @@ import type {
   Challenge,
   Weather,
   Hotel,
-  ChildProfile,
+  ChildProfile as ContractChildProfile,
+  ChildProfileInput as ContractChildProfileInput,
   ExplorerMode,
 } from "@alkazat/contracts";
 
@@ -43,9 +44,6 @@ export type {
   Challenge,
   Weather,
   Hotel,
-  ChildProfile,
-  ChildProfilesResponse,
-  ChildProfileInput,
   ExplorerMode,
   TripStatus,
   Trip,
@@ -106,6 +104,56 @@ export type {
  * local alias so existing renderer/profile call sites keep their name.
  */
 export type ProfileMode = ExplorerMode;
+
+// ===========================================================================
+// Profile identity + access (contract @0.13 target; local until published).
+//
+// `@0.12` `ChildProfile` carries only `mode`. The user-types model adds two
+// fields - `type` (who the profile is) and `pin_set` (is a Grown-ups PIN
+// configured) - plus PIN set/verify endpoints. These are modelled locally and
+// served by the in-repo mock until `@alkazat/contracts@0.13.0` publishes them;
+// then drop these augmentations and re-export the contract types verbatim.
+// ===========================================================================
+
+/** Who a profile belongs to. Children are locked to the Explorers view. */
+export type ProfileType = "child" | "guardian";
+
+/**
+ * A profile, augmented with the user-types fields. Extends the contract
+ * `ChildProfile`; the new fields are optional so a `@0.12` payload (no `type`)
+ * still type-checks - access helpers default an absent `type` to `child`
+ * (the safe, no-Grown-ups default).
+ */
+export interface ChildProfile extends ContractChildProfile {
+  /** NEW (@0.13) - who the profile is. Absent => treated as `child`. */
+  type?: ProfileType;
+  /** NEW (@0.13), read-only - is a Grown-ups PIN configured? PIN never returned. */
+  pin_set?: boolean;
+}
+
+export interface ChildProfilesResponse {
+  profiles: ChildProfile[];
+}
+
+/** Create/update body; adds `type` to the contract input. */
+export interface ChildProfileInput extends ContractChildProfileInput {
+  type?: ProfileType;
+}
+
+/** Set / change a guardian PIN (`POST /profiles/:id/pin`, write-only). */
+export interface ProfilePinSetRequest {
+  /** 4-digit PIN. Never returned by the API. */
+  pin: string;
+}
+
+/** Verify a guardian PIN to unlock Grown-ups (`POST /profiles/:id/pin/verify`). */
+export interface ProfilePinVerifyRequest {
+  pin: string;
+}
+
+export interface ProfilePinVerifyResponse {
+  ok: boolean;
+}
 
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";

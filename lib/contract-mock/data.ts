@@ -6,13 +6,7 @@
  * Swap target: live BE endpoints (list trips, get trip, list profiles).
  * See ./README.md.
  */
-import type {
-  AccountSummary,
-  ChildProfile,
-  Trip,
-  TripContent,
-  TripSummary,
-} from "./types";
+import type { AccountSummary, ChildProfile, Trip, TripContent, TripSummary } from "./types";
 
 export const MOCK_ACCOUNT: AccountSummary = {
   email: "family@example.com",
@@ -20,12 +14,32 @@ export const MOCK_ACCOUNT: AccountSummary = {
   tier: "ours",
 };
 
+/**
+ * One family across all four user types: a guardian (Grown Ups, PIN-locked)
+ * plus three children at the three explorer bands. `type` gates the views;
+ * `mode` drives the renderer voice. See the user-types handoff.
+ */
 export const MOCK_PROFILES: ChildProfile[] = [
+  {
+    id: "p_mum",
+    name: "Mum",
+    age: 38,
+    type: "guardian",
+    mode: "standard",
+    pin_set: true,
+    interests: [],
+    dietary: [],
+    medical: [],
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  },
   {
     id: "p_savy",
     name: "Savy",
     age: 13,
-    mode: "standard",
+    type: "child",
+    mode: "explorer_plus",
+    pin_set: false,
     interests: [],
     dietary: [],
     medical: [],
@@ -36,7 +50,9 @@ export const MOCK_PROFILES: ChildProfile[] = [
     id: "p_tay",
     name: "Tay",
     age: 9,
-    mode: "standard",
+    type: "child",
+    mode: "explorer",
+    pin_set: false,
     interests: [],
     dietary: [],
     medical: [],
@@ -47,7 +63,9 @@ export const MOCK_PROFILES: ChildProfile[] = [
     id: "p_lenny",
     name: "Lenny",
     age: 4,
+    type: "child",
     mode: "little",
+    pin_set: false,
     interests: [],
     // FE allergies fold into the contract's dietary string[].
     dietary: ["nuts", "legumes"],
@@ -57,6 +75,15 @@ export const MOCK_PROFILES: ChildProfile[] = [
     updated_at: "2026-01-01T00:00:00.000Z",
   },
 ];
+
+/**
+ * Guardian PINs (profile id -> 4-digit PIN). Kept separate from the profile
+ * records, mirroring the contract rule that a PIN is never returned by the API.
+ * Demo PIN for the Grown-ups gate is `1234`.
+ */
+export const MOCK_PINS: Record<string, string> = {
+  p_mum: "1234",
+};
 
 export const MOCK_TRIPS: TripSummary[] = [
   {
@@ -90,7 +117,8 @@ const SINGAPORE_TRIP: TripContent = {
       date: "2026-06-26",
       label: "Arrival",
       summary: "Land, settle in, and dip your toes in the day with an easy first afternoon.",
-      did_you_know: "Singapore is one whole country made of one big island and lots of little ones!",
+      did_you_know:
+        "Singapore is one whole country made of one big island and lots of little ones!",
       weather: {
         summary: "Singapore is HOT and a bit sticky. Hat, water, sunscreen!",
         high: 31,
@@ -128,7 +156,10 @@ const SINGAPORE_TRIP: TripContent = {
                 little: { body: "Can you find a shell and a smooth pebble? Hold them up high!" },
                 explorer_plus: {
                   fact: "Siloso Beach sand was brought in from nearby islands.",
-                  quiz: { q: "What do you call sand that is made of tiny shells?", a: "Coral sand." },
+                  quiz: {
+                    q: "What do you call sand that is made of tiny shells?",
+                    a: "Coral sand.",
+                  },
                 },
               },
               facts: [
@@ -259,7 +290,11 @@ const SINGAPORE_TRIP: TripContent = {
   ],
   grownups: {
     essentials: "Passports, EZ-Link cards, sunscreen, refillable water bottles.",
-    checklist: ["Confirm allergy cards in English + Mandarin", "Download offline map", "Charge the camera"],
+    checklist: [
+      "Confirm allergy cards in English + Mandarin",
+      "Download offline map",
+      "Charge the camera",
+    ],
     transport: "MRT covers everything; grab a taxi only for late nights.",
     phases: [
       { label: "Village Hotel Sentosa", range: "nights 1-4" },
