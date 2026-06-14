@@ -1,21 +1,22 @@
 import { describe, it, expect } from "vitest";
 import { buildKeepsakeHtml, moodLabel } from "@/lib/journalExport";
-import type { JournalEntryLocal, TripDay } from "@/lib/contract-mock/types";
+import type { JournalEntry, TripDay } from "@/lib/contract-mock/types";
 
 const days: TripDay[] = [
   { id: "d1", date: "2026-06-26", label: "Arrival", moments: [] },
   { id: "d2", date: "2026-06-27", label: "Explorers", moments: [] },
 ];
 
-const entries: JournalEntryLocal[] = [
+const entries: JournalEntry[] = [
   {
     id: "j1",
     trip_id: "t",
     profile_id: "p",
     day_id: "d1",
-    note: "Best <day> ever",
+    body: "Best <day> ever",
     stars: 5,
     mood: "loved",
+    media_ref: [],
     created_at: "2026-06-26T10:00:00Z",
   },
 ];

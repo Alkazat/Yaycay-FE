@@ -3,7 +3,7 @@ import { getAccessToken } from "@/lib/auth/session";
 import type {
   ChildProfile,
   ChildProfileInput,
-  ProfilePinVerifyResponse,
+  PinVerifyResponse,
 } from "@/lib/contract-mock/types";
 
 /** Create a child profile (`POST /profiles`). */
@@ -71,6 +71,6 @@ export async function verifyProfilePin(id: string, pin: string): Promise<boolean
     accessToken,
   });
   if (!res.ok) throw new Error(`Failed to verify PIN (${res.status})`);
-  const data = (await res.json()) as ProfilePinVerifyResponse;
-  return data.ok;
+  const data = (await res.json()) as PinVerifyResponse;
+  return data.verified;
 }
