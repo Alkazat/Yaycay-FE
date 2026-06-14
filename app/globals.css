@@ -69,24 +69,37 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: calc(var(--safe-top) + var(--space-3)) calc(var(--safe-right) + var(--gutter))
-    var(--space-3) calc(var(--safe-left) + var(--gutter));
+  padding: calc(var(--safe-top) + var(--space-2)) calc(var(--safe-right) + var(--gutter))
+    var(--space-2) calc(var(--safe-left) + var(--gutter));
   background: var(--surface-card);
   border-bottom: 2.5px solid var(--royal-500);
+  transition: padding 0.18s ease;
+}
+/* Compact state once the page is scrolled. */
+.yc-appbar--scrolled {
+  padding-top: calc(var(--safe-top) + 6px);
+  padding-bottom: 6px;
 }
 .yc-appbar__brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-h4);
-  color: var(--royal-700);
   text-decoration: none;
 }
 .yc-appbar__brand img {
-  height: 42px;
+  height: 58px;
   width: auto;
+  transition: height 0.18s ease;
+}
+.yc-appbar--scrolled .yc-appbar__brand img {
+  height: 34px;
+}
+.yc-appbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.yc-appbar__account {
+  gap: 8px;
 }
 .yc-appnav {
   display: flex;
@@ -125,6 +138,20 @@ body {
 @media (max-width: 640px) {
   .yc-appnav {
     display: none;
+  }
+  /* Account is an icon button top-right on mobile (label kept for screen readers). */
+  .yc-appbar__account-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .yc-appbar__account {
+    padding: 0;
+    min-width: var(--control-md);
+    justify-content: center;
   }
   .yc-tabbar {
     display: flex;
