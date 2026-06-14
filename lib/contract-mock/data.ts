@@ -6,7 +6,15 @@
  * Swap target: live BE endpoints (list trips, get trip, list profiles).
  * See ./README.md.
  */
-import type { AccountSummary, ChildProfile, Trip, TripContent, TripSummary } from "./types";
+import type {
+  AccountSummary,
+  ChatHistoryMessage,
+  ChildProfile,
+  CompanionCard,
+  Trip,
+  TripContent,
+  TripSummary,
+} from "./types";
 
 export const MOCK_ACCOUNT: AccountSummary = {
   email: "family@example.com",
@@ -243,6 +251,67 @@ const SINGAPORE_TRIP: TripContent = {
           ],
         },
         {
+          id: "d2_m_lunch",
+          slot: "afternoon",
+          title: "Lunch at Satay by the Bay",
+          time_hint: "12:30",
+          location: { name: "Satay by the Bay" },
+          activities: [
+            {
+              id: "d2_a_lunch",
+              kind: "shared",
+              title: "Lunch at Satay by the Bay",
+              body: "An open-air food garden by the water - lots of stalls to choose from.",
+              meal: {
+                venue: "Satay by the Bay",
+                allergy_label: "Tree-nut allergy: flagged",
+                checked: [
+                  "Satay peanut sauce is on the menu across several stalls.",
+                  "Seafood and chicken-rice stalls don't list nut sauces.",
+                ],
+                confirm_on_day: [
+                  "Ask each stall before ordering - recipes and oils change.",
+                  "Keep Pip's antihistamine and EpiPen on you, not in the bag.",
+                ],
+                stalls: [
+                  {
+                    name: "Satay stalls (peanut sauce)",
+                    label: "Tree-nut: flagged",
+                    risk: "flagged",
+                    note: "Peanut sauce is central here. Best avoided for Pip.",
+                  },
+                  {
+                    name: "Seafood BBQ stall",
+                    label: "Tree-nut: lower risk",
+                    risk: "lower",
+                    note: "No nut sauces on the standard dishes. Still confirm on the day.",
+                  },
+                  {
+                    name: "Hainanese chicken rice",
+                    label: "Tree-nut: lower risk",
+                    risk: "lower",
+                    note: "Plain rice + chicken. Ask about the chilli/ginger sides.",
+                  },
+                ],
+                ask_kitchen: {
+                  language: "Mandarin",
+                  phrase:
+                    "请问这道菜里有坚果或坚果油吗?我女儿对坚果有严重过敏。",
+                  english:
+                    "Does this dish contain any nuts or nut oils? My daughter has a serious tree-nut allergy.",
+                },
+                reminder: {
+                  confirm: [
+                    "Tell the stall: serious tree-nut allergy.",
+                    "Ask about nuts and nut oils in the dish and the sides.",
+                    "Confirm before you order, not after.",
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        {
           id: "d2_m2",
           slot: "evening",
           title: "Supertree light show",
@@ -328,6 +397,105 @@ const SINGAPORE_TRIP: TripContent = {
 const TRIPS_BY_ID: Record<string, TripContent> = {
   t_sg: SINGAPORE_TRIP,
 };
+
+/**
+ * During-trip companion cards for the Walker Singapore trip. Pre-loaded "what's
+ * nearby" answers with tree-nut text flags + confirm-on-the-day notes already
+ * applied, plus a one-tap rain plan. Tree-nut allergy language never says "safe".
+ */
+const COMPANION_BY_TRIP: Record<string, CompanionCard[]> = {
+  t_sg: [
+    {
+      id: "comp_satay",
+      near_label: "Near Gardens by the Bay",
+      prompt: "What's good to eat near here?",
+      options: [
+        {
+          name: "Satay by the Bay - seafood stalls",
+          flags: ["Tree-nut allergy: flagged"],
+          note: "Satay sauce is peanut-based. Ask the kitchen and confirm on the day before ordering.",
+        },
+        {
+          name: "Supertree Food Hall - grilled chicken rice",
+          flags: ["Tree-nut allergy: lower risk"],
+          note: "No nut sauces on the standard dish. Still confirm with the stall before you order.",
+        },
+      ],
+      rain_plan: {
+        title: "If it rains: ArtScience Museum",
+        body: "A 10-minute covered walk. Pre-booked as your indoor anchor for the afternoon.",
+      },
+      created_at: "2025-09-15T03:00:00.000Z",
+    },
+  ],
+};
+
+/**
+ * Reopenable planning-chat transcript for the Walker trip: the opening
+ * three-question conversation plus a forwarded hotel-confirmation import chip.
+ */
+const CHAT_BY_TRIP: Record<string, ChatHistoryMessage[]> = {
+  t_sg: [
+    {
+      id: "m1",
+      role: "assistant",
+      kind: "text",
+      content: "Where are you headed, and who's coming along?",
+      seq: 1,
+      created_at: "2025-08-01T09:00:00.000Z",
+    },
+    {
+      id: "m2",
+      role: "user",
+      kind: "text",
+      content: "Singapore in September - two grown-ups and three kids (9, 6 and 3).",
+      seq: 2,
+      created_at: "2025-08-01T09:00:30.000Z",
+    },
+    {
+      id: "m3",
+      role: "user",
+      kind: "import_chip",
+      content: "Hotel confirmation - Marina Bay, 14-18 Sep",
+      meta: { source: "email", kind: "hotel_confirmation" },
+      seq: 3,
+      created_at: "2025-08-01T09:01:00.000Z",
+    },
+    {
+      id: "m4",
+      role: "assistant",
+      kind: "text",
+      content: "Got it. Anything we should plan around - allergies, nap times, must-dos?",
+      seq: 4,
+      created_at: "2025-08-01T09:01:20.000Z",
+    },
+    {
+      id: "m5",
+      role: "user",
+      kind: "text",
+      content: "Pip has a tree-nut allergy. Theo (3) still naps after lunch.",
+      seq: 5,
+      created_at: "2025-08-01T09:01:50.000Z",
+    },
+    {
+      id: "m6",
+      role: "assistant",
+      kind: "text",
+      content:
+        "Perfect - I'll flag tree nuts on every meal and keep Theo's afternoons gentle. Building your Singapore days now.",
+      seq: 6,
+      created_at: "2025-08-01T09:02:10.000Z",
+    },
+  ],
+};
+
+export function getMockCompanion(tripId: string): CompanionCard[] {
+  return COMPANION_BY_TRIP[tripId] ?? [];
+}
+
+export function getMockChatHistory(tripId: string): ChatHistoryMessage[] {
+  return CHAT_BY_TRIP[tripId] ?? [];
+}
 
 export function getMockTrip(id: string): TripContent | undefined {
   return TRIPS_BY_ID[id];

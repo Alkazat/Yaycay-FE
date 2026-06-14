@@ -5,6 +5,7 @@ import { activitiesForView, type RenderView } from "@/lib/render/routeByKind";
 import { selectActivityCopy } from "@/lib/render/selectVariant";
 import { showsChallenge, showsBonus } from "@/lib/profile/access";
 import { ChallengeBlock } from "@/components/renderer/ChallengeBlock";
+import { MealCardView } from "@/components/renderer/MealCard";
 import { ReadAloud } from "@/components/renderer/ReadAloud";
 import { dayCompletion } from "@/lib/render/progress";
 import { Badge, Card, CardBody } from "@/components/ds";
@@ -126,6 +127,9 @@ export function TripDayRenderer({
                 <Card key={activity.id} variant="soft">
                   <CardBody title={copy.title}>
                     {copy.body ? <p style={{ margin: 0 }}>{copy.body}</p> : null}
+
+                    {/* Allergy-aware meal card (shown in both views). */}
+                    {activity.meal ? <MealCardView meal={activity.meal} /> : null}
 
                     {activity.booking ? (
                       <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>

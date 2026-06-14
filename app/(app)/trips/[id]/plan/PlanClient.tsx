@@ -5,6 +5,7 @@ import { listTrips } from "@/lib/api/trips";
 import { entitlementsFor } from "@/lib/entitlements";
 import type { Tier } from "@/lib/contract-mock/types";
 import { PlanChat } from "@/components/chat/PlanChat";
+import { ChatHistoryPanel } from "@/components/chat/ChatHistoryPanel";
 import { Button, Card, CardBody, Badge, Banner } from "@/components/ds";
 
 /** BYO-AI connector entry point. The connect flow lives at /connect. */
@@ -59,6 +60,7 @@ export function PlanClient({ tripId }: { tripId: string }) {
         <Banner tone="danger">We couldn&apos;t load the planner. Give it another go?</Banner>
       ) : null}
 
+      <ChatHistoryPanel tripId={tripId} />
       {ent.canUseByoConnector ? <ByoConnector /> : null}
       {ent.canUseOurAi ? <PlanChat tripId={tripId} /> : null}
       {!ent.canUseByoConnector && !ent.canUseOurAi ? (

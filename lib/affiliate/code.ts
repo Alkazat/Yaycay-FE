@@ -10,12 +10,14 @@ const KEY = "yc_affiliate_code";
 
 /** Codes are short, opaque slugs; guard against junk before persisting. */
 const CODE_RE = /^[A-Za-z0-9_-]{1,64}$/;
+/** Supabase magic-link `?code=` is a UUID; never mistake it for an affiliate code. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Read `?code=` from the current URL and persist it. Safe to call on every mount. */
 export function captureAffiliateCode(): void {
   if (typeof window === "undefined") return;
   const code = new URLSearchParams(window.location.search).get("code");
-  if (code && CODE_RE.test(code)) {
+  if (code && CODE_RE.test(code) && !UUID_RE.test(code)) {
     try {
       window.localStorage.setItem(KEY, code);
     } catch {

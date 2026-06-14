@@ -90,4 +90,8 @@ export const SERVED = {
   // Media sign-upload (`POST /media/sign-upload` -> live fn `media-sign-upload`);
   // journal reads resolve media_ref ids to signed URLs. Live as of contract @0.18.
   media: true,
+  // During-trip companion cards (`GET /trips/:id/companion`) and the reopenable
+  // planning chat history (`GET /trips/:id/chat`). Live as of contract @0.21/0.22.
+  companion: true,
+  chatHistory: true,
 } as const;

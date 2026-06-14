@@ -4,10 +4,21 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 /**
- * Route guard for the signed-in app. Auth is enforced ONLY when Supabase is
- * configured; without credentials (CI / local mock) this passes through so the
- * app stays open. When configured, an unauthenticated request to a protected
- * path is redirected to /auth.
+ * Paths reachable without signing in. Everything else (including the root) is
+ * the signed-in app and bounces to /auth. `/connect` stays public so the BYO-AI
+ * connector setup + its OAuth consent (which does its own sign-in handoff) work.
+ */
+const PUBLIC_PREFIXES = ["/auth", "/demo", "/connect"];
+
+function isPublic(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Go-live route guard. The root domain IS the app: an unauthenticated request to
+ * any non-public path is redirected to /auth (carrying a `next` so sign-in
+ * returns there). Auth is enforced ONLY when Supabase is configured; without
+ * credentials (CI / local mock) this passes through so the app stays open.
  */
 export async function middleware(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,14 +43,23 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = "/auth";
-    return NextResponse.redirect(redirect);
-  }
-  return response;
+  if (user) return response;
+
+  // Unauthenticated: allow the public pages, bounce everything else to /auth.
+  const { pathname, search } = request.nextUrl;
+  if (isPublic(pathname)) return response;
+
+  const redirect = request.nextUrl.clone();
+  redirect.pathname = "/auth";
+  redirect.search = "";
+  // Preserve the intended destination (except the bare root, which lands on the
+  // app home after sign-in by default).
+  if (pathname !== "/") redirect.searchParams.set("next", `${pathname}${search}`);
+  return NextResponse.redirect(redirect);
 }
 
 export const config = {
-  matcher: ["/trips/:path*", "/profiles/:path*", "/account/:path*"],
+  // Run on every page route; skip API routes, Next internals, and any path with
+  // a dot (static assets, the PWA service worker, manifest, icons, .well-known).
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
 };

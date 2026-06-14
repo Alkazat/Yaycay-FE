@@ -100,6 +100,15 @@ export type {
   ChecklistItem,
   ChecklistResponse,
   ChecklistUpdateRequest,
+  // During-trip companion + reopenable planning chat (contract v0.21/0.22).
+  ChatRole,
+  ChatHistoryMessageKind,
+  ChatHistoryMessage,
+  ChatHistory,
+  CompanionOption,
+  CompanionRainPlan,
+  CompanionCard,
+  CompanionResponse,
 } from "@alkazat/contracts";
 
 // ===========================================================================
@@ -147,6 +156,49 @@ export interface ActivitySafety {
   note: string;
 }
 
+/** A stall/option on a meal card. `risk` orders + emphasises; the label is the truth. */
+export interface MealStall {
+  name: string;
+  /** Text label shown to the parent, e.g. "Tree-nut: flagged". Never colour alone. */
+  label: string;
+  risk: "flagged" | "lower";
+  note?: string;
+}
+
+/** A bilingual "ask the kitchen" phrase card. */
+export interface AskKitchenCard {
+  /** Local language name, e.g. "Mandarin". */
+  language: string;
+  /** The phrase in the local language. */
+  phrase: string;
+  /** The same phrase in English. */
+  english: string;
+}
+
+/** The pre-meal reminder: an amber "confirm before you order" checklist. */
+export interface MealReminder {
+  confirm: string[];
+}
+
+/**
+ * Structured allergy-aware meal card for a meal activity. Frames everything as
+ * flags / checks / reminders - never "safe" - so the final confirmation stays
+ * with the parent.
+ */
+export interface MealCard {
+  venue: string;
+  /** Headline allergy text label, e.g. "Tree-nut allergy: flagged". */
+  allergy_label: string;
+  /** "What we checked" reasoning rows. */
+  checked: string[];
+  /** "Confirm on the day" rows. */
+  confirm_on_day: string[];
+  /** Flagged vs lower-risk stalls. */
+  stalls: MealStall[];
+  ask_kitchen: AskKitchenCard;
+  reminder?: MealReminder;
+}
+
 /** Typed challenge attached to an activity. Hidden in `little` mode. */
 export type ChallengeType = "quiz" | "spot" | "photo" | "challenge";
 
@@ -164,6 +216,8 @@ export interface Activity {
   booking?: ActivityBooking;
   /** Dietary / medical flags surfaced in the grown-ups view. */
   safety?: ActivitySafety;
+  /** Structured allergy-aware meal card (lunch/dinner activities). */
+  meal?: MealCard;
   media_ref?: string[];
 }
 
