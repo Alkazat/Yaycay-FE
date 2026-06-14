@@ -78,15 +78,14 @@ export const SERVED = {
   grownups: true,
   ingest: true,
   connectors: true,
+  // Guardian PIN set/verify (`POST /profiles/:id/pin[/verify]`) - the user-types
+  // model is live as of contract @0.15 (PinRequest/PinVerifyResponse).
+  profilesPin: true,
+  // Journal - live as of contract @0.15: JournalEntry/JournalEntryInput carry
+  // day_id, mood and stars, so the day-scoped FE journal maps wholesale.
+  journal: true,
   // Deferred on the mock:
-  //  - profilesPin: guardian PIN set/verify (`POST /profiles/:id/pin[/verify]`).
-  //    User-types model targets contract @0.13; mock-served until published.
-  profilesPin: false,
-  //  - journal: contract `JournalEntry` has no `day_id`, but the FE journal is
-  //    day-scoped (picker, per-day badges, keepsake). Stays mock pending a BE
-  //    contract field. See lib/contract-mock/journalStore.ts.
   //  - account / media: no contract handler adopted yet.
   account: false,
-  journal: false,
   media: false,
 } as const;

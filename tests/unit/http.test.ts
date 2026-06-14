@@ -13,7 +13,7 @@ describe("endpointUrl (no API base configured)", () => {
 
   it("deferred endpoints always use the local mock", () => {
     expect(endpointUrl("/account", SERVED.account)).toBe("/api/account");
-    expect(endpointUrl("/trips/t1/journal", SERVED.journal)).toBe("/api/trips/t1/journal");
+    expect(endpointUrl("/media/sign-upload", SERVED.media)).toBe("/api/media/sign-upload");
   });
 
   it("marks the live served set the FE consumes today", () => {
@@ -32,8 +32,10 @@ describe("endpointUrl (no API base configured)", () => {
     expect(SERVED.grownups).toBe(true);
     expect(SERVED.ingest).toBe(true);
     expect(SERVED.connectors).toBe(true);
-    // Still on the mock: journal (contract has no day_id), account, media.
-    expect(SERVED.journal).toBe(false);
+    // Adopted from contract @0.15: journal (day_id/mood/stars) + guardian PIN.
+    expect(SERVED.journal).toBe(true);
+    expect(SERVED.profilesPin).toBe(true);
+    // Still on the mock: account, media (no contract handler adopted yet).
     expect(SERVED.account).toBe(false);
     expect(SERVED.media).toBe(false);
   });

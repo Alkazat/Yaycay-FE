@@ -10,7 +10,7 @@ export function clampStars(value: number): number {
 }
 
 /** Average star rating across entries that have a rating, or null if none. */
-export function averageStars(values: Array<number | undefined>): number | null {
+export function averageStars(values: Array<number | null | undefined>): number | null {
   const rated = values.filter((v): v is number => typeof v === "number");
   if (rated.length === 0) return null;
   const sum = rated.reduce((acc, v) => acc + v, 0);

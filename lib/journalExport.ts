@@ -1,4 +1,4 @@
-import type { JournalEntryLocal, TripDay } from "@/lib/contract-mock/types";
+import type { JournalEntry, TripDay } from "@/lib/contract-mock/types";
 
 /** Mood options for the journal (words, not emoji, per the brand UI rule). */
 export const MOODS: { value: string; label: string }[] = [
@@ -32,11 +32,14 @@ export function buildKeepsakeHtml(args: {
   destination: string;
   year: string;
   days: TripDay[];
-  entries: JournalEntryLocal[];
+  entries: JournalEntry[];
 }): string {
   const { profileName, destination, year, days, entries } = args;
-  const byDay = new Map<string, JournalEntryLocal[]>();
+  const byDay = new Map<string, JournalEntry[]>();
   for (const e of entries) {
+    // day_id is nullable (trip-level entries); the keepsake groups by day, so
+    // skip entries with no day scope.
+    if (!e.day_id) continue;
     byDay.set(e.day_id, [...(byDay.get(e.day_id) ?? []), e]);
   }
 
@@ -49,7 +52,7 @@ export function buildKeepsakeHtml(args: {
               const bits = [
                 e.mood ? `<em>${escapeHtml(moodLabel(e.mood) ?? e.mood)}</em>` : "",
                 e.stars ? `${"*".repeat(e.stars)} (${e.stars}/5)` : "",
-                e.note ? escapeHtml(e.note) : "",
+                e.body ? escapeHtml(e.body) : "",
                 e.media_ref?.length ? `${e.media_ref.length} photo(s)` : "",
               ].filter(Boolean);
               return `<li>${bits.join(" &middot; ")}</li>`;
