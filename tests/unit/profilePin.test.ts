@@ -13,7 +13,7 @@ import {
  * (the route handlers are thin wrappers around it).
  */
 describe("profileStore PIN", () => {
-  it("verifies the seeded guardian PIN and rejects a wrong one", () => {
+  it("verifies the seeded parent/carer PIN and rejects a wrong one", () => {
     // Mum (p_mum) is seeded with PIN 1234 and pin_set: true.
     const mum = listProfiles().find((p) => p.id === "p_mum");
     expect(mum?.pin_set).toBe(true);
@@ -27,7 +27,7 @@ describe("profileStore PIN", () => {
   });
 
   it("setPin configures a PIN, flips pin_set, and the new PIN verifies", () => {
-    const created = createProfile({ name: "Dad", type: "guardian" });
+    const created = createProfile({ name: "Dad", type: "parent_carer" });
     expect(created.pin_set).toBe(false);
     expect(verifyPin(created.id, "5678")).toBe(false);
 

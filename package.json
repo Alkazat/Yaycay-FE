@@ -19,7 +19,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@alkazat/contracts": "^0.15.0",
+    "@alkazat/contracts": "^0.18.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",

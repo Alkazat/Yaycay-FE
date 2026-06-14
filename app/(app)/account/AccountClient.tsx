@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getAccount, createCheckoutSession } from "@/lib/api/account";
 import { listTrips } from "@/lib/api/trips";
+import { getAffiliateCode } from "@/lib/affiliate/code";
 import { retentionStatus } from "@/lib/retention";
 import { formatHumanDate } from "@/lib/format";
 import type { Tier, TripSummary } from "@/lib/contract-mock/types";
@@ -62,7 +63,11 @@ export function AccountClient() {
 
   const checkout = useMutation({
     mutationFn: (trip: TripSummary) =>
-      createCheckoutSession({ price_id: "price_datakeep_annual", trip_id: trip.id }),
+      createCheckoutSession({
+        price_id: "price_datakeep_annual",
+        trip_id: trip.id,
+        code: getAffiliateCode(),
+      }),
     onSuccess: ({ url }) => {
       window.location.href = url;
     },

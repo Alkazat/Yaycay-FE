@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { setPin } from "@/lib/contract-mock/profileStore";
 import type { PinRequest } from "@/lib/contract-mock/types";
 
-/** Mock guardian PIN set/change (`POST /profiles/:id/pin`). Write-only. */
+/** Mock parent/carer PIN set/change (`POST /profiles/:id/pin`). Write-only. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let body: PinRequest;

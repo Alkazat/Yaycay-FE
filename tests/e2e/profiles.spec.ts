@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Profile management: create explorers/grown-ups and set a guardian PIN. Names
+ * Profile management: create explorers/grown-ups and set a parent/carer PIN. Names
  * are unique per project so the shared mock store can't cross-contaminate the
  * phone/tablet/desktop runs.
  */
@@ -30,7 +30,7 @@ test("adds a grown-up and sets their Grown-ups PIN", async ({ page }, testInfo) 
 
   const card = page.getByTestId("profile-card").filter({ hasText: name });
   await expect(card).toBeVisible();
-  // A fresh guardian has no PIN yet.
+  // A fresh parent/carer has no PIN yet.
   await expect(card.getByText("No PIN")).toBeVisible();
 
   await card.getByTestId("set-pin-open").click();

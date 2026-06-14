@@ -5,10 +5,10 @@ import type { RenderView } from "@/lib/render/routeByKind";
  * Profile identity + view access (the user-types model).
  *
  * Two independent axes drive everything here:
- *  - `type` (`child` | `guardian`)  - WHO the profile is; gates the views.
+ *  - `type` (`child` | `parent/carer`)  - WHO the profile is; gates the views.
  *  - `mode` ({@link ExplorerMode})  - HOW content is written; drives the renderer.
  *
- * `standard` is the guardian voice (the Grown-ups view), NOT a child band; the
+ * `standard` is the parent/carer voice (the Grown-ups view), NOT a child band; the
  * three child bands are `little`, `explorer`, `explorer_plus`. See the user-types
  * handoff. These are pure helpers so the gate is unit-testable in isolation.
  */
@@ -37,8 +37,8 @@ export function profileType(p: Pick<ChildProfile, "type">): ProfileType {
   return p.type ?? "child";
 }
 
-export function isGuardian(p: Pick<ChildProfile, "type">): boolean {
-  return profileType(p) === "guardian";
+export function isParentCarer(p: Pick<ChildProfile, "type">): boolean {
+  return profileType(p) === "parent_carer";
 }
 
 export function isChild(p: Pick<ChildProfile, "type">): boolean {
@@ -47,29 +47,29 @@ export function isChild(p: Pick<ChildProfile, "type">): boolean {
 
 /**
  * The views a profile may enter. Children are locked to Explorers; only
- * guardians get the Grown-ups view (behind the PIN gate, see below).
+ * parent/carers get the Grown-ups view (behind the PIN gate, see below).
  */
 export function viewsForProfile(p: Pick<ChildProfile, "type">): RenderView[] {
-  return isGuardian(p) ? ["kid", "grownups"] : ["kid"];
+  return isParentCarer(p) ? ["kid", "grownups"] : ["kid"];
 }
 
 /** Whether a profile may reach the Grown-ups view at all. */
 export function canAccessGrownups(p: Pick<ChildProfile, "type">): boolean {
-  return isGuardian(p);
+  return isParentCarer(p);
 }
 
 /**
- * Whether entering Grown-ups requires a PIN unlock first. Only guardians with a
- * configured PIN are gated; a guardian with no PIN set passes through (there is
+ * Whether entering Grown-ups requires a PIN unlock first. Only parent/carers with a
+ * configured PIN are gated; a parent/carer with no PIN set passes through (there is
  * nothing to verify yet).
  */
 export function grownupsNeedsPin(p: Pick<ChildProfile, "type" | "pin_set">): boolean {
-  return isGuardian(p) && !!p.pin_set;
+  return isParentCarer(p) && !!p.pin_set;
 }
 
 /**
- * The kid-view render mode for a profile: a child's band, or the guardian voice
- * (`standard`) when a guardian co-explores. Defaults to `standard`.
+ * The kid-view render mode for a profile: a child's band, or the parent/carer voice
+ * (`standard`) when a parent/carer co-explores. Defaults to `standard`.
  */
 export function modeForProfile(p: Pick<ChildProfile, "mode">): ExplorerMode {
   return p.mode ?? "standard";

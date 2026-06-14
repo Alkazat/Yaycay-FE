@@ -57,6 +57,8 @@ export type {
   CreateTripRequest,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
+  // Account (v0.18): the owner account summary (email, secondary_email, tier, ...).
+  AccountSummary,
   JournalEntry,
   JournalEntryInput,
   JournalListResponse,
@@ -259,13 +261,6 @@ export type StarSource = "game" | "challenge";
 /* --------------------------------------------------------------------------
  * Account + billing
  * ------------------------------------------------------------------------ */
-
-export interface AccountSummary {
-  email: string;
-  /** Secondary email required for password reset / recovery. */
-  secondary_email?: string;
-  tier: Tier;
-}
 
 /** Catalogue product the FE can open a Checkout session for. */
 export type ProductId =

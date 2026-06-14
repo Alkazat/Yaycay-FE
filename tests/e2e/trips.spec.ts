@@ -2,11 +2,11 @@ import { test, expect, type Page } from "@playwright/test";
 
 /**
  * Trips home -> trip view journey, exercising the renderer, the user-types view
- * gate (children locked to Explorers; Grown-ups behind the guardian PIN) and
+ * gate (children locked to Explorers; Grown-ups behind the parent/carer PIN) and
  * band-driven content (challenge/quiz gating follows the active profile).
  */
 
-/** Activate the guardian (Mum) and clear the Grown-ups PIN gate (demo PIN 1234). */
+/** Activate the parent/carer (Mum) and clear the Grown-ups PIN gate (demo PIN 1234). */
 async function unlockGrownups(page: Page) {
   await page.getByRole("radio", { name: /mum/i }).click();
   await page.getByRole("tab", { name: /grown-ups/i }).click();
@@ -14,7 +14,7 @@ async function unlockGrownups(page: Page) {
   await page.getByTestId("pin-submit").click();
 }
 
-test("children are locked to Explorers; the guardian PIN unlocks Grown-ups", async ({ page }) => {
+test("children are locked to Explorers; the parent/carer PIN unlocks Grown-ups", async ({ page }) => {
   await page.goto("/trips");
 
   await expect(page.getByRole("heading", { name: /your trips/i })).toBeVisible();
@@ -33,7 +33,7 @@ test("children are locked to Explorers; the guardian PIN unlocks Grown-ups", asy
   // Default lands on a child explorer: the Grown-ups tab is absent (not disabled).
   await expect(page.getByRole("tab", { name: /grown-ups/i })).toHaveCount(0);
 
-  // Activate the guardian, tap Grown-ups, and pass the PIN gate.
+  // Activate the parent/carer, tap Grown-ups, and pass the PIN gate.
   await unlockGrownups(page);
 
   // Grown-ups content is now revealed.

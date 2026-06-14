@@ -14,6 +14,8 @@ export async function signUpload(
   const accessToken = await getAccessToken();
   const res = await apiFetch("/media/sign-upload", SERVED.media, {
     method: "POST",
+    // Two-segment contract path deploys as a single hyphenated function.
+    livePath: "/media-sign-upload",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ trip_id: tripId, content_type: contentType }),
     accessToken,

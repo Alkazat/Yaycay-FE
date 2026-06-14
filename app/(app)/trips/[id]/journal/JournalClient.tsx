@@ -261,7 +261,34 @@ export function JournalClient({ tripId }: { tripId: string }) {
                   {e.stars ? <StarRating value={e.stars} readOnly /> : null}
                 </div>
                 {e.body ? <p style={{ margin: "var(--space-2) 0 0" }}>{e.body}</p> : null}
-                {e.media_ref && e.media_ref.length > 0 ? (
+                {e.media_ref && e.media_ref.some((r) => /^https?:\/\//.test(r)) ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "var(--space-2)",
+                      flexWrap: "wrap",
+                      marginTop: "var(--space-2)",
+                    }}
+                  >
+                    {e.media_ref
+                      .filter((r) => /^https?:\/\//.test(r))
+                      .map((r, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={`${e.id}-${i}`}
+                          src={r}
+                          alt="memory"
+                          style={{
+                            width: 96,
+                            height: 96,
+                            objectFit: "cover",
+                            borderRadius: "var(--radius-md)",
+                            border: "2.5px solid var(--royal-200)",
+                          }}
+                        />
+                      ))}
+                  </div>
+                ) : e.media_ref && e.media_ref.length > 0 ? (
                   <p style={{ margin: "var(--space-2) 0 0", color: "var(--text-muted)", fontWeight: 700 }}>
                     {e.media_ref.length} photo(s)
                   </p>

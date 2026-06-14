@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -62,6 +63,16 @@ export function AuthClient({ prefillEmail }: { prefillEmail: string }) {
   return (
     <main className="yc-shell">
       <div className="yc-container yc-stack">
+        <div style={{ textAlign: "center" }}>
+          <Image
+            src="/icons/yaycay-wordmark.png"
+            alt="Yaycay"
+            width={168}
+            height={117}
+            priority
+            style={{ display: "inline-block", height: "auto", maxWidth: "70%" }}
+          />
+        </div>
         <h1 style={{ textAlign: "center" }}>Sign in</h1>
 
         {!configured ? (
