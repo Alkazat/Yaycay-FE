@@ -251,6 +251,67 @@ const SINGAPORE_TRIP: TripContent = {
           ],
         },
         {
+          id: "d2_m_lunch",
+          slot: "afternoon",
+          title: "Lunch at Satay by the Bay",
+          time_hint: "12:30",
+          location: { name: "Satay by the Bay" },
+          activities: [
+            {
+              id: "d2_a_lunch",
+              kind: "shared",
+              title: "Lunch at Satay by the Bay",
+              body: "An open-air food garden by the water - lots of stalls to choose from.",
+              meal: {
+                venue: "Satay by the Bay",
+                allergy_label: "Tree-nut allergy: flagged",
+                checked: [
+                  "Satay peanut sauce is on the menu across several stalls.",
+                  "Seafood and chicken-rice stalls don't list nut sauces.",
+                ],
+                confirm_on_day: [
+                  "Ask each stall before ordering - recipes and oils change.",
+                  "Keep Pip's antihistamine and EpiPen on you, not in the bag.",
+                ],
+                stalls: [
+                  {
+                    name: "Satay stalls (peanut sauce)",
+                    label: "Tree-nut: flagged",
+                    risk: "flagged",
+                    note: "Peanut sauce is central here. Best avoided for Pip.",
+                  },
+                  {
+                    name: "Seafood BBQ stall",
+                    label: "Tree-nut: lower risk",
+                    risk: "lower",
+                    note: "No nut sauces on the standard dishes. Still confirm on the day.",
+                  },
+                  {
+                    name: "Hainanese chicken rice",
+                    label: "Tree-nut: lower risk",
+                    risk: "lower",
+                    note: "Plain rice + chicken. Ask about the chilli/ginger sides.",
+                  },
+                ],
+                ask_kitchen: {
+                  language: "Mandarin",
+                  phrase:
+                    "请问这道菜里有坚果或坚果油吗?我女儿对坚果有严重过敏。",
+                  english:
+                    "Does this dish contain any nuts or nut oils? My daughter has a serious tree-nut allergy.",
+                },
+                reminder: {
+                  confirm: [
+                    "Tell the stall: serious tree-nut allergy.",
+                    "Ask about nuts and nut oils in the dish and the sides.",
+                    "Confirm before you order, not after.",
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        {
           id: "d2_m2",
           slot: "evening",
           title: "Supertree light show",
