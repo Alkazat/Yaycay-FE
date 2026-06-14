@@ -59,11 +59,10 @@ export function JournalClient({ tripId }: { tripId: string }) {
 
   const mutation = useMutation({
     mutationFn: () =>
-      addJournalEntry({
-        trip_id: tripId,
+      addJournalEntry(tripId, {
         profile_id: profileId!,
         day_id: dayId || trip?.days[0]?.id || "",
-        note,
+        body: note,
         stars: stars || undefined,
         mood: mood || undefined,
         media_ref: photos.map((p) => p.media_ref),
@@ -256,12 +255,12 @@ export function JournalClient({ tripId }: { tripId: string }) {
               <CardBody>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-3)" }}>
                   <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
-                    <Badge tone="aqua">{dayLabel(e.day_id)}</Badge>
+                    <Badge tone="aqua">{e.day_id ? dayLabel(e.day_id) : "Trip"}</Badge>
                     {e.mood ? <Badge tone="soft">{moodLabel(e.mood) ?? e.mood}</Badge> : null}
                   </div>
                   {e.stars ? <StarRating value={e.stars} readOnly /> : null}
                 </div>
-                {e.note ? <p style={{ margin: "var(--space-2) 0 0" }}>{e.note}</p> : null}
+                {e.body ? <p style={{ margin: "var(--space-2) 0 0" }}>{e.body}</p> : null}
                 {e.media_ref && e.media_ref.length > 0 ? (
                   <p style={{ margin: "var(--space-2) 0 0", color: "var(--text-muted)", fontWeight: 700 }}>
                     {e.media_ref.length} photo(s)

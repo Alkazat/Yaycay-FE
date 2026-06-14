@@ -17,6 +17,8 @@ function profile(p: Partial<ChildProfile>): ChildProfile {
   return {
     id: "p",
     name: "P",
+    type: "child",
+    pin_set: false,
     interests: [],
     dietary: [],
     medical: [],

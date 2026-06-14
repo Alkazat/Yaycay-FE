@@ -30,8 +30,6 @@ import type {
   Challenge,
   Weather,
   Hotel,
-  ChildProfile as ContractChildProfile,
-  ChildProfileInput as ContractChildProfileInput,
   ExplorerMode,
 } from "@alkazat/contracts";
 
@@ -45,6 +43,13 @@ export type {
   Weather,
   Hotel,
   ExplorerMode,
+  // Profiles + the user-types model (adopted from contract @0.15):
+  ChildProfile,
+  ChildProfilesResponse,
+  ChildProfileInput,
+  ProfileType,
+  PinRequest,
+  PinVerifyResponse,
   TripStatus,
   Trip,
   TripSummary,
@@ -105,55 +110,9 @@ export type {
  */
 export type ProfileMode = ExplorerMode;
 
-// ===========================================================================
-// Profile identity + access (contract @0.13 target; local until published).
-//
-// `@0.12` `ChildProfile` carries only `mode`. The user-types model adds two
-// fields - `type` (who the profile is) and `pin_set` (is a Grown-ups PIN
-// configured) - plus PIN set/verify endpoints. These are modelled locally and
-// served by the in-repo mock until `@alkazat/contracts@0.13.0` publishes them;
-// then drop these augmentations and re-export the contract types verbatim.
-// ===========================================================================
-
-/** Who a profile belongs to. Children are locked to the Explorers view. */
-export type ProfileType = "child" | "guardian";
-
-/**
- * A profile, augmented with the user-types fields. Extends the contract
- * `ChildProfile`; the new fields are optional so a `@0.12` payload (no `type`)
- * still type-checks - access helpers default an absent `type` to `child`
- * (the safe, no-Grown-ups default).
- */
-export interface ChildProfile extends ContractChildProfile {
-  /** NEW (@0.13) - who the profile is. Absent => treated as `child`. */
-  type?: ProfileType;
-  /** NEW (@0.13), read-only - is a Grown-ups PIN configured? PIN never returned. */
-  pin_set?: boolean;
-}
-
-export interface ChildProfilesResponse {
-  profiles: ChildProfile[];
-}
-
-/** Create/update body; adds `type` to the contract input. */
-export interface ChildProfileInput extends ContractChildProfileInput {
-  type?: ProfileType;
-}
-
-/** Set / change a guardian PIN (`POST /profiles/:id/pin`, write-only). */
-export interface ProfilePinSetRequest {
-  /** 4-digit PIN. Never returned by the API. */
-  pin: string;
-}
-
-/** Verify a guardian PIN to unlock Grown-ups (`POST /profiles/:id/pin/verify`). */
-export interface ProfilePinVerifyRequest {
-  pin: string;
-}
-
-export interface ProfilePinVerifyResponse {
-  ok: boolean;
-}
+// Profile identity + the user-types model (`ChildProfile.type`/`pin_set`,
+// `ProfileType`, `PinRequest`, `PinVerifyResponse`) are now adopted from
+// `@alkazat/contracts@0.15` - re-exported in the contract block above.
 
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";
@@ -317,40 +276,13 @@ export type ProductId =
   | "price_photobook";
 
 /* --------------------------------------------------------------------------
- * CLIENT-ONLY journal model
+ * Journal
  *
- * The contract `JournalEntry` carries `{ body, profile_id?, media_ref }`. The
- * FE journal UI captures a richer per-day memory (a star rating, a mood label,
- * and the day it belongs to) that the contract does not model. These local-only
- * types back the mock store, the keepsake export and the journal screen; they
- * never describe a contract wire shape. A genuine gap is a PR against Yaycay-BE.
+ * Now served by the live contract: `JournalEntry`/`JournalEntryInput` carry
+ * `day_id`, `mood` and `stars` as of `@alkazat/contracts@0.15`, so the FE's
+ * richer per-day memory is modelled by the contract directly (re-exported in
+ * the contract block above). No local journal shape remains.
  * ------------------------------------------------------------------------ */
-
-export interface JournalEntryLocal {
-  id: string;
-  trip_id: string;
-  profile_id: string;
-  day_id: string;
-  note?: string;
-  /** 1-5 stars, or undefined when only a note was left. */
-  stars?: number;
-  /** Mood label, e.g. "happy" | "loved" | "wow" | "tired" | "funny". */
-  mood?: string;
-  /** References to print-grade media (signed-URL flow). */
-  media_ref?: string[];
-  created_at: string;
-}
-
-/** Payload to create a local journal entry (id + created_at assigned by BE). */
-export interface JournalEntryLocalInput {
-  trip_id: string;
-  profile_id: string;
-  day_id: string;
-  note?: string;
-  stars?: number;
-  mood?: string;
-  media_ref?: string[];
-}
 
 /* --------------------------------------------------------------------------
  * CLIENT-ONLY connector UI state
