@@ -20,6 +20,8 @@
  * See docs/handoffs/08-MCP-CONNECTOR-HANDOFF.md.
  */
 
+import { createSupabaseOAuthStore, hasDurableOAuthStore } from "@/lib/mcp/store.supabase";
+
 export interface RegisteredClient {
   client_id: string;
   client_name?: string;
@@ -199,4 +201,7 @@ class InMemoryOAuthStore implements OAuthStore {
  */
 const g = globalThis as unknown as { __yaycayOAuthStore?: OAuthStore };
 export const oauthStore: OAuthStore =
-  g.__yaycayOAuthStore ?? (g.__yaycayOAuthStore = new InMemoryOAuthStore());
+  g.__yaycayOAuthStore ??
+  (g.__yaycayOAuthStore = hasDurableOAuthStore()
+    ? createSupabaseOAuthStore()
+    : new InMemoryOAuthStore());
