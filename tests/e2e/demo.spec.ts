@@ -32,8 +32,9 @@ test("demo builds a day and shows the countdown", async ({ page }) => {
   await expect(page.getByText(/family@example\.com/i)).toBeVisible();
 });
 
-test("home links into the demo", async ({ page }) => {
+test("the root domain is the app (redirects into trips)", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: /try the free demo/i }).click();
-  await expect(page).toHaveURL(/\/demo$/);
+  // Root is the app entry; without live auth (CI) it lands on the trips home.
+  await expect(page).toHaveURL(/\/trips$/);
+  await expect(page.getByTestId("trips-grid")).toBeVisible();
 });
