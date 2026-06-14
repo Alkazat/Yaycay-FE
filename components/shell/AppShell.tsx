@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <OfflineBanner />
       <header className="yc-appbar">
         <Link href="/trips" className="yc-appbar__brand" aria-label="Yaycay home">
-          <Image src="/icons/yaycay-logo.png" alt="" width={36} height={36} priority />
+          <Image src="/icons/yaycay-glyph.png" alt="" width={36} height={36} priority />
           <span>Yaycay</span>
         </Link>
         <nav className="yc-appnav" aria-label="Primary">

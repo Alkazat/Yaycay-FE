@@ -3,8 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { listTrips } from "@/lib/api/trips";
+import Image from "next/image";
 import { TripCard } from "@/components/trips/TripCard";
 import { Card, CardBody } from "@/components/ds";
+import { BrandLoading } from "@/components/shell/BrandLoading";
 
 export function TripsHome() {
   const { data, isLoading, isError } = useQuery({
@@ -21,7 +23,7 @@ export function TripsHome() {
         </p>
       </header>
 
-      {isLoading ? <p>Loading your adventures...</p> : null}
+      {isLoading ? <BrandLoading label="Loading your adventures…" /> : null}
 
       {isError ? (
         <Card variant="soft">
@@ -36,10 +38,21 @@ export function TripsHome() {
       {data && data.length === 0 ? (
         <Card variant="soft">
           <CardBody>
-            <p style={{ margin: 0 }}>
-              No trips yet - let&apos;s plan your first adventure.{" "}
-              <Link href="/demo">Try the demo</Link>.
-            </p>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "var(--space-3)",
+                textAlign: "center",
+              }}
+            >
+              <Image src="/icons/yaycay-glyph.png" alt="" width={72} height={72} />
+              <p style={{ margin: 0 }}>
+                No trips yet - let&apos;s plan your first adventure.{" "}
+                <Link href="/demo">Try the demo</Link>.
+              </p>
+            </div>
           </CardBody>
         </Card>
       ) : null}

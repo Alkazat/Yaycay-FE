@@ -19,6 +19,8 @@ shared architecture.
 - **TanStack Query** for server-state.
 - **Supabase** (`@supabase/ssr`) for auth + realtime (wired in Phase 1).
 - **Design system**: vendored under `vendor/yaycay-ds` (see below).
+- **Brand assets**: see [`BRAND-ASSETS.md`](BRAND-ASSETS.md) — which logo mark goes in which
+  slot (favicon → glyph, install → app icon, top bar → glyph, hero → lockup).
 
 ## Getting started
 

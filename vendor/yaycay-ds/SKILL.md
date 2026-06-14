@@ -17,7 +17,10 @@ voice, visual foundations, iconography, and a file index). Then explore the othe
   from.
 - `guidelines/` — foundation specimen cards plus marketing samples (drip email, square + story ads)
   and the signature box-art lettering recipe.
-- `assets/` — the logo (full + transparent) and webfont binaries.
+- `assets/` — the **mark family** (lockup, wordmark, app icon, glyph, badge) and webfont binaries.
+- `BRAND-ASSETS.md` — **read before placing any logo**: which mark to use where, sizes, backgrounds,
+  do/don't, and the per-repo file map. Square slot → glyph/app icon; full-brand surface → lockup. Never
+  cram the wide lockup into an icon slot.
 
 If creating visual artifacts (slides, mocks, throwaway prototypes, emails, ad creative), copy assets
 out and produce static HTML files for the user to view. If working on production code, copy assets
