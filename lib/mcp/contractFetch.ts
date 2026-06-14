@@ -11,12 +11,18 @@ import { env, hasLiveApi } from "@/lib/env";
 
 export async function contractFetch(
   path: string,
-  opts: { origin: string; accessToken: string; method?: string; body?: unknown },
+  opts: {
+    origin: string;
+    accessToken: string;
+    method?: string;
+    body?: unknown;
+    headers?: Record<string, string>;
+  },
 ): Promise<Response> {
   const live = hasLiveApi();
   const url = live ? `${env.apiBase.replace(/\/$/, "")}${path}` : `${opts.origin}/api${path}`;
 
-  const headers = new Headers();
+  const headers = new Headers(opts.headers);
   if (opts.body !== undefined) headers.set("content-type", "application/json");
   if (live && env.supabaseAnonKey) {
     headers.set("apikey", env.supabaseAnonKey);
@@ -33,7 +39,13 @@ export async function contractFetch(
 /** Fetch + parse JSON, throwing a tool-friendly message on a non-2xx. */
 export async function contractJson<T>(
   path: string,
-  opts: { origin: string; accessToken: string; method?: string; body?: unknown },
+  opts: {
+    origin: string;
+    accessToken: string;
+    method?: string;
+    body?: unknown;
+    headers?: Record<string, string>;
+  },
 ): Promise<T> {
   const res = await contractFetch(path, opts);
   if (!res.ok) {

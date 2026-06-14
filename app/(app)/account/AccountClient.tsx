@@ -151,6 +151,26 @@ export function AccountClient() {
           </CardBody>
         </Card>
       ) : null}
+
+      <Card>
+        <CardBody title="Connected assistants">
+          <p style={{ margin: 0 }}>
+            Manage the AI assistants connected to your account, or connect a new one.
+          </p>
+          <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
+            <a href="/account/connections">
+              <Button variant="secondary" size="sm">
+                Manage assistants
+              </Button>
+            </a>
+            <a href="/connect">
+              <Button variant="primary" size="sm">
+                Connect your AI
+              </Button>
+            </a>
+          </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }

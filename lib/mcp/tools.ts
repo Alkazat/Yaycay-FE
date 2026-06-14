@@ -14,6 +14,7 @@ export interface ToolAuth {
   origin: string;
   accessToken: string;
   scopes: string[];
+  connectionId: string;
 }
 
 function authFrom(extra: unknown): ToolAuth {
@@ -24,6 +25,7 @@ function authFrom(extra: unknown): ToolAuth {
     origin: String(ctx.origin ?? ""),
     accessToken: String(ctx.accessToken ?? ""),
     scopes: info?.scopes ?? [],
+    connectionId: String(ctx.connectionId ?? ""),
   };
 }
 
@@ -124,10 +126,17 @@ export function registerYaycayTools(server: McpServer): void {
     async ({ trip_id, message }, extra) => {
       const auth = authFrom(extra);
       requireScope(auth, SCOPES.plan);
+      // Mark the call as connector-sourced so BE can log it to ai_jobs, count it
+      // against the daily cap, and route the written content through Content
+      // Review (an external model has no built-in guardrail). See handoff #08.
       const res = await contractFetch(`/trips/${encodeURIComponent(trip_id)}/plan/chat`, {
         ...auth,
         method: "POST",
         body: { messages: [{ role: "user", content: message }] },
+        headers: {
+          "x-yaycay-source": "connector",
+          "x-yaycay-connection-id": auth.connectionId,
+        },
       });
       const reply = await drainPlanStream(res);
       return ok({ reply });

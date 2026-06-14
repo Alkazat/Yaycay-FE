@@ -143,6 +143,11 @@ export function ConnectClient({ mcpUrl }: { mcpUrl: string }) {
           Plan trips with your own ChatGPT, Claude or Gemini. Your assistant talks to Yaycay through
           a secure connector and you approve access. We never see your AI subscription.
         </p>
+        <p style={{ margin: 0 }}>
+          <a href="/account/connections" style={{ fontWeight: 800 }}>
+            Manage connected assistants
+          </a>
+        </p>
       </header>
 
       <Card>
