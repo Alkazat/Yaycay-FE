@@ -1,11 +1,11 @@
-import { apiFetch, SERVED } from "@/lib/api/http";
+import { apiFetch, isLiveCall, SERVED } from "@/lib/api/http";
 import { getAccessToken } from "@/lib/auth/session";
 import type { SignUploadResponse } from "@/lib/contract-mock/types";
 
 /**
  * Sign a print-grade photo upload, returning where to PUT the bytes and the
  * `media_ref` to store on the journal entry. BE owns Storage + signing; the FE
- * compresses then uploads. Deferred on BE - mock-backed until it ships.
+ * compresses then uploads.
  */
 export async function signUpload(
   tripId: string,
@@ -22,4 +22,23 @@ export async function signUpload(
   });
   if (!res.ok) throw new Error(`Failed to sign upload (${res.status})`);
   return (await res.json()) as SignUploadResponse;
+}
+
+/**
+ * Sign + upload a photo for a trip, returning the `media_ref` to attach to a
+ * journal entry. On the live BE the file bytes are PUT to the short-lived signed
+ * Storage URL; in mock mode there is no real bucket, so we skip the PUT and just
+ * return the placeholder ref for preview.
+ */
+export async function uploadPhoto(tripId: string, file: File): Promise<string> {
+  const signed = await signUpload(tripId, file.type || "image/jpeg");
+  if (isLiveCall(SERVED.media)) {
+    const put = await fetch(signed.upload_url, {
+      method: "PUT",
+      headers: { "content-type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    if (!put.ok) throw new Error(`Failed to upload photo (${put.status})`);
+  }
+  return signed.media_ref;
 }

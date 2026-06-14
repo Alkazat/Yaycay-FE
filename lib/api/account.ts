@@ -3,6 +3,7 @@ import { getAccessToken } from "@/lib/auth/session";
 import { getAffiliateCode } from "@/lib/affiliate/code";
 import type {
   AccountSummary,
+  AccountUpdate,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
 } from "@/lib/contract-mock/types";
@@ -12,6 +13,23 @@ export async function getAccount(signal?: AbortSignal): Promise<AccountSummary> 
   const accessToken = await getAccessToken();
   const res = await apiFetch("/account", SERVED.account, { signal, accessToken });
   if (!res.ok) throw new Error(`Failed to load account (${res.status})`);
+  return (await res.json()) as AccountSummary;
+}
+
+/**
+ * Update the consumer-mutable account fields (recovery email). Send
+ * `secondary_email: null` to clear it. Returns the updated summary.
+ * Canonical path: `PATCH /account`.
+ */
+export async function updateAccount(update: AccountUpdate): Promise<AccountSummary> {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch("/account", SERVED.account, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(update),
+    accessToken,
+  });
+  if (!res.ok) throw new Error(`Failed to update account (${res.status})`);
   return (await res.json()) as AccountSummary;
 }
 

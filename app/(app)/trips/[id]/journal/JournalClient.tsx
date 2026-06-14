@@ -4,7 +4,7 @@ import { useState, type ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTripContent, listProfiles } from "@/lib/api/trips";
 import { listJournal, addJournalEntry } from "@/lib/api/journal";
-import { signUpload } from "@/lib/api/media";
+import { uploadPhoto } from "@/lib/api/media";
 import { averageStars } from "@/lib/journal";
 import { buildKeepsakeHtml, MOODS, moodLabel } from "@/lib/journalExport";
 import { formatHumanDate } from "@/lib/format";
@@ -47,9 +47,9 @@ export function JournalClient({ tripId }: { tripId: string }) {
     mutationFn: async (files: FileList) => {
       const out: PendingPhoto[] = [];
       for (const file of Array.from(files)) {
-        const { media_ref } = await signUpload(tripId, file.type || "image/jpeg");
-        // Real bytes would be PUT to the signed URL; for the mock we keep a
-        // local object URL for preview only.
+        // Signs + (on live BE) PUTs the bytes to Storage; mock keeps a local
+        // object URL for preview only.
+        const media_ref = await uploadPhoto(tripId, file);
         out.push({ media_ref, url: URL.createObjectURL(file) });
       }
       return out;
