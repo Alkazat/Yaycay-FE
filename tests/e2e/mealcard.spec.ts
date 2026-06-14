@@ -5,8 +5,12 @@ test("day 2 lunch renders the allergy meal card + bilingual ask-the-kitchen", as
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
-  // Jump to Day 2 ("Explorers"), the hero day.
-  await page.getByRole("button", { name: /explorers/i }).first().click();
+  // Jump to Day 2 ("Explorers"), the hero day. The day chips are tabs inside the
+  // "Trip days" tablist (scoped to avoid the kid-view "Explorers" tab).
+  await page
+    .getByRole("tablist", { name: /trip days/i })
+    .getByRole("tab", { name: /explorers/i })
+    .click();
 
   // Allergy state is a text label, never colour alone.
   await expect(page.getByText(/Tree-nut allergy: flagged/i).first()).toBeVisible();
