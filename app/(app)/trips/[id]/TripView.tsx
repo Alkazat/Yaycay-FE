@@ -59,12 +59,12 @@ export function TripView({ tripId }: { tripId: string }) {
   const profileId = activeProfileId ?? defaultProfileId;
   const activeProfile = profiles.find((p) => p.id === profileId) ?? null;
   // Render mode follows the active profile's band (a child's age band, or the
-  // guardian voice `standard`). The band is fixed per profile - no free toggle.
+  // parent/carer voice `standard`). The band is fixed per profile - no free toggle.
   const mode: ProfileMode = activeProfile ? modeForProfile(activeProfile) : "standard";
   // Which views this profile may enter; children are locked to Explorers.
   const allowedViews = activeProfile ? viewsForProfile(activeProfile) : ["kid"];
   // Never render a view the active profile can't access (e.g. after switching
-  // from a guardian to a child while in Grown-ups).
+  // from a parent/carer to a child while in Grown-ups).
   const effectiveView: RenderView = allowedViews.includes(view) ? view : "kid";
   const anaphylactic = profiles.filter((p) => p.medical.includes("anaphylaxis"));
 
@@ -76,7 +76,7 @@ export function TripView({ tripId }: { tripId: string }) {
     setPinOpen(false);
   }
 
-  // Tab change. Tapping Grown-ups prompts the PIN when the guardian has one set
+  // Tab change. Tapping Grown-ups prompts the PIN when the parent/carer has one set
   // and the session isn't already unlocked.
   function handleViewChange(next: RenderView) {
     if (next === "grownups") {
@@ -199,7 +199,7 @@ export function TripView({ tripId }: { tripId: string }) {
         </nav>
       </header>
 
-      {/* View toggle - only guardians get the Grown-ups tab; for a child it is
+      {/* View toggle - only parent/carers get the Grown-ups tab; for a child it is
           absent (not just disabled). */}
       {allowedViews.length > 1 ? (
         <Tabs

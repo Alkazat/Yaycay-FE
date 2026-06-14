@@ -12,7 +12,7 @@ import type {
 import { MODE_LABEL } from "@/lib/profile/access";
 import { Button, Card, CardBody, Input, Select } from "@/components/ds";
 
-/** The three child age bands (the guardian voice `standard` is set automatically). */
+/** The three child age bands (the parent/carer voice `standard` is set automatically). */
 const CHILD_BANDS: ExplorerMode[] = ["little", "explorer", "explorer_plus"];
 
 interface ProfileFormProps {
@@ -24,7 +24,7 @@ interface ProfileFormProps {
 
 /**
  * Create / edit a profile. `type` chooses who the profile is (child vs
- * guardian); a child also picks an age band, while a guardian always uses the
+ * parent/carer); a child also picks an age band, while a parent/carer always uses the
  * `standard` (Grown Ups) voice. PINs are managed separately (SetPinDialog).
  */
 export function ProfileForm({ profile, onDone, onCancel }: ProfileFormProps) {
@@ -38,8 +38,8 @@ export function ProfileForm({ profile, onDone, onCancel }: ProfileFormProps) {
     profile?.type === "child" && profile.mode ? profile.mode : "explorer",
   );
 
-  // A guardian always uses the Grown Ups voice; a child uses the chosen band.
-  const mode: ExplorerMode = type === "guardian" ? "standard" : band;
+  // A parent/carer always uses the Grown Ups voice; a child uses the chosen band.
+  const mode: ExplorerMode = type === "parent_carer" ? "standard" : band;
 
   const save = useMutation({
     mutationFn: () => {
@@ -91,7 +91,7 @@ export function ProfileForm({ profile, onDone, onCancel }: ProfileFormProps) {
             onChange={(e) => setType(e.target.value as ProfileType)}
             options={[
               { value: "child", label: "An explorer (child)" },
-              { value: "guardian", label: "A grown-up" },
+              { value: "parent_carer", label: "A grown-up" },
             ]}
           />
           {type === "child" ? (

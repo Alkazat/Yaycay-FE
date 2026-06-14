@@ -32,7 +32,7 @@ describe("endpointUrl (no API base configured)", () => {
     expect(SERVED.grownups).toBe(true);
     expect(SERVED.ingest).toBe(true);
     expect(SERVED.connectors).toBe(true);
-    // Adopted from contract @0.15: journal (day_id/mood/stars) + guardian PIN.
+    // Adopted from contract @0.15: journal (day_id/mood/stars) + parent/carer PIN.
     expect(SERVED.journal).toBe(true);
     expect(SERVED.profilesPin).toBe(true);
     // Still on the mock: account, media (no contract handler adopted yet).

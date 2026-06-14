@@ -70,7 +70,7 @@ export function deleteProfile(id: string): boolean {
 }
 
 /**
- * Set / change a guardian PIN (`POST /profiles/:id/pin`). Flips `pin_set` on the
+ * Set / change a parent/carer PIN (`POST /profiles/:id/pin`). Flips `pin_set` on the
  * record; the PIN value itself is stored separately and never returned. Returns
  * the updated profile, or `undefined` if the profile does not exist.
  */
@@ -83,7 +83,7 @@ export function setPin(id: string, pin: string): ChildProfile | undefined {
 }
 
 /**
- * Verify a guardian PIN (`POST /profiles/:id/pin/verify`). Returns `true` only
+ * Verify a parent/carer PIN (`POST /profiles/:id/pin/verify`). Returns `true` only
  * when a PIN is configured and matches. (Real BE adds hashing + rate limiting;
  * this mock just compares.)
  */

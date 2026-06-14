@@ -8,7 +8,7 @@ import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { SetPinDialog } from "@/components/profile/SetPinDialog";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
-import { MODE_LABEL, MODE_EMOJI, modeForProfile, isGuardian } from "@/lib/profile/access";
+import { MODE_LABEL, MODE_EMOJI, modeForProfile, isParentCarer } from "@/lib/profile/access";
 import type { ChildProfile } from "@/lib/contract-mock/types";
 import { Avatar, Badge, Button, Card, CardBody } from "@/components/ds";
 
@@ -63,7 +63,7 @@ export function ProfilesClient() {
         />
       ) : null}
 
-      {/* Management: edit who's in the family, their bands, and guardian PINs. */}
+      {/* Management: edit who's in the family, their bands, and parent/carer PINs. */}
       <section className="yc-stack" data-testid="manage-profiles">
         <div
           style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}
@@ -113,10 +113,10 @@ export function ProfilesClient() {
                       alignItems: "center",
                     }}
                   >
-                    <Badge tone={isGuardian(p) ? "ink" : "sun"}>
+                    <Badge tone={isParentCarer(p) ? "ink" : "sun"}>
                       {MODE_EMOJI[modeForProfile(p)]} {MODE_LABEL[modeForProfile(p)]}
                     </Badge>
-                    {isGuardian(p) ? (
+                    {isParentCarer(p) ? (
                       <Badge tone={p.pin_set ? "meadow" : "soft"}>
                         {p.pin_set ? "PIN set" : "No PIN"}
                       </Badge>
@@ -127,7 +127,7 @@ export function ProfilesClient() {
                   <Button variant="secondary" size="sm" onClick={() => setFormFor(p)}>
                     Edit
                   </Button>
-                  {isGuardian(p) ? (
+                  {isParentCarer(p) ? (
                     <Button
                       variant="secondary"
                       size="sm"
