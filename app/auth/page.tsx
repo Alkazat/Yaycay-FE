@@ -10,5 +10,7 @@ export default async function AuthPage({
   const params = await searchParams;
   const raw = params[PREFILL_EMAIL_PARAM];
   const email = Array.isArray(raw) ? raw[0] : (raw ?? "");
-  return <AuthClient prefillEmail={email} />;
+  const errRaw = params.error;
+  const error = Array.isArray(errRaw) ? errRaw[0] : (errRaw ?? "");
+  return <AuthClient prefillEmail={email} initialError={error} />;
 }
