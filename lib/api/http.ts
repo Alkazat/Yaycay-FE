@@ -79,6 +79,9 @@ export const SERVED = {
   ingest: true,
   connectors: true,
   // Deferred on the mock:
+  //  - profilesPin: guardian PIN set/verify (`POST /profiles/:id/pin[/verify]`).
+  //    User-types model targets contract @0.13; mock-served until published.
+  profilesPin: false,
   //  - journal: contract `JournalEntry` has no `day_id`, but the FE journal is
   //    day-scoped (picker, per-day badges, keepsake). Stays mock pending a BE
   //    contract field. See lib/contract-mock/journalStore.ts.

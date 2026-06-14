@@ -2,6 +2,7 @@
 
 import type { ChildProfile } from "@/lib/contract-mock/types";
 import { Avatar } from "@/components/ds";
+import { MODE_LABEL, modeForProfile } from "@/lib/profile/access";
 
 interface ProfileSwitcherProps {
   profiles: ChildProfile[];
@@ -9,14 +10,7 @@ interface ProfileSwitcherProps {
   onSelect: (id: string) => void;
 }
 
-const MODE_LABEL: Record<string, string> = {
-  standard: "Explorer",
-  little: "Little explorer",
-  explorer: "Big explorer",
-  explorer_plus: "Explorer+",
-};
-
-/** Pick the active child profile; the trip view renders variants by its mode. */
+/** Pick the active profile; the trip view renders variants by its mode. */
 export function ProfileSwitcher({ profiles, activeId, onSelect }: ProfileSwitcherProps) {
   return (
     <div
@@ -52,7 +46,7 @@ export function ProfileSwitcher({ profiles, activeId, onSelect }: ProfileSwitche
             <span style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
               <span>{p.name}</span>
               <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
-                {p.mode ? MODE_LABEL[p.mode] ?? p.mode : "Explorer"}
+                {MODE_LABEL[modeForProfile(p)]}
               </span>
             </span>
           </button>

@@ -12,7 +12,15 @@ import { TripComplete } from "@/components/trips/TripComplete";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
+import { PinGate } from "@/components/profile/PinGate";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
+import {
+  viewsForProfile,
+  canAccessGrownups,
+  grownupsNeedsPin,
+  modeForProfile,
+  isChild,
+} from "@/lib/profile/access";
 import { StarBank } from "@/components/stars/StarBank";
 import { GameLauncher } from "@/components/games/GameLauncher";
 import { GrownupsGuide } from "@/components/grownups/GrownupsGuide";
@@ -33,7 +41,10 @@ export function TripView({ tripId }: { tripId: string }) {
 
   const [view, setView] = useState<RenderView>("kid");
   const [activeDayId, setActiveDayId] = useState<string | null>(null);
-  const [modeOverride, setModeOverride] = useState<ProfileMode | null>(null);
+  // Grown-ups stays unlocked for the session until the active profile changes
+  // (or reload). `pinOpen` drives the PIN modal.
+  const [grownupsUnlocked, setGrownupsUnlocked] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
 
   const trip = tripQuery.data;
@@ -43,12 +54,42 @@ export function TripView({ tripId }: { tripId: string }) {
   // trip, otherwise day one.
   const todayId = trip ? todayDayId(trip.days, trip.trip.timezone) : null;
   const dayId = activeDayId ?? todayId ?? trip?.days[0]?.id ?? null;
-  const profileId = activeProfileId ?? profiles[0]?.id ?? null;
+  // Land on a kid-first experience: default to the first child explorer.
+  const defaultProfileId = profiles.find((p) => isChild(p))?.id ?? profiles[0]?.id ?? null;
+  const profileId = activeProfileId ?? defaultProfileId;
   const activeProfile = profiles.find((p) => p.id === profileId) ?? null;
-  // Render mode follows the active profile's default; a manual toggle overrides
-  // it, which is also how Explorer+ is reached (the prototype orphaned it).
-  const mode: ProfileMode = modeOverride ?? activeProfile?.mode ?? "standard";
+  // Render mode follows the active profile's band (a child's age band, or the
+  // guardian voice `standard`). The band is fixed per profile - no free toggle.
+  const mode: ProfileMode = activeProfile ? modeForProfile(activeProfile) : "standard";
+  // Which views this profile may enter; children are locked to Explorers.
+  const allowedViews = activeProfile ? viewsForProfile(activeProfile) : ["kid"];
+  // Never render a view the active profile can't access (e.g. after switching
+  // from a guardian to a child while in Grown-ups).
+  const effectiveView: RenderView = allowedViews.includes(view) ? view : "kid";
   const anaphylactic = profiles.filter((p) => p.medical.includes("anaphylaxis"));
+
+  // Switch the active profile: reset the view + re-lock Grown-ups for the session.
+  function selectProfile(id: string) {
+    setActiveProfileId(id);
+    setView("kid");
+    setGrownupsUnlocked(false);
+    setPinOpen(false);
+  }
+
+  // Tab change. Tapping Grown-ups prompts the PIN when the guardian has one set
+  // and the session isn't already unlocked.
+  function handleViewChange(next: RenderView) {
+    if (next === "grownups") {
+      if (!activeProfile || !canAccessGrownups(activeProfile)) return;
+      if (grownupsUnlocked || !grownupsNeedsPin(activeProfile)) {
+        setView("grownups");
+      } else {
+        setPinOpen(true);
+      }
+      return;
+    }
+    setView(next);
+  }
 
   const activeDay = useMemo(
     () => trip?.days.find((d) => d.id === dayId) ?? trip?.days[0],
@@ -158,55 +199,38 @@ export function TripView({ tripId }: { tripId: string }) {
         </nav>
       </header>
 
-      <Tabs
-        value={view}
-        onChange={(v: string) => setView(v as RenderView)}
-        tabs={[
-          { value: "kid", label: "Explorers" },
-          { value: "grownups", label: "Grown-ups" },
-        ]}
-      />
-
-      {view === "kid" && tripComplete ? (
-        <TripComplete destination={trip.trip.destination} />
-      ) : null}
-
-      {view === "kid" && profiles.length > 0 ? (
-        <ProfileSwitcher
-          profiles={profiles}
-          activeId={profileId}
-          onSelect={(id) => {
-            setActiveProfileId(id);
-            // New explorer, follow their default mode again.
-            setModeOverride(null);
-          }}
+      {/* View toggle - only guardians get the Grown-ups tab; for a child it is
+          absent (not just disabled). */}
+      {allowedViews.length > 1 ? (
+        <Tabs
+          value={effectiveView}
+          onChange={(v: string) => handleViewChange(v as RenderView)}
+          tabs={allowedViews.map((v) => ({
+            value: v,
+            label: v === "kid" ? "Explorers" : "Grown-ups",
+          }))}
         />
       ) : null}
 
-      {view === "kid" && activeProfile && activeDay ? (
+      {effectiveView === "kid" && tripComplete ? (
+        <TripComplete destination={trip.trip.destination} />
+      ) : null}
+
+      {effectiveView === "kid" && profiles.length > 0 ? (
+        <ProfileSwitcher profiles={profiles} activeId={profileId} onSelect={selectProfile} />
+      ) : null}
+
+      {effectiveView === "kid" && activeProfile && activeDay ? (
         <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
       ) : null}
 
-      {view === "kid" && activeProfile && activeDay?.game ? (
+      {effectiveView === "kid" && activeProfile && activeDay?.game ? (
         <div>
           <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
         </div>
       ) : null}
 
-      {view === "kid" ? (
-        <Tabs
-          value={mode}
-          onChange={(m: string) => setModeOverride(m as ProfileMode)}
-          tabs={[
-            { value: "standard", label: "Explorer" },
-            { value: "little", label: "Little" },
-            { value: "explorer", label: "Big explorer" },
-            { value: "explorer_plus", label: "Explorer+" },
-          ]}
-        />
-      ) : null}
-
-      {view === "grownups" && anaphylactic.length > 0 ? (
+      {effectiveView === "grownups" && anaphylactic.length > 0 ? (
         <Banner tone="danger" title="Allergy protocol">
           {anaphylactic
             .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
@@ -232,19 +256,32 @@ export function TripView({ tripId }: { tripId: string }) {
       {activeDay ? (
         <TripDayRenderer
           day={activeDay}
-          view={view}
+          view={effectiveView}
           mode={mode}
-          done={view === "kid" ? doneSet : undefined}
+          done={effectiveView === "kid" ? doneSet : undefined}
           onToggleActivity={
-            view === "kid" && profileId
+            effectiveView === "kid" && profileId
               ? (activityId, done) => toggle.mutate({ activityId, done })
               : undefined
           }
         />
       ) : null}
 
-      {view === "grownups" && trip.grownups ? (
+      {effectiveView === "grownups" && trip.grownups ? (
         <GrownupsGuide tripId={tripId} guide={trip.grownups} activeDayId={dayId} />
+      ) : null}
+
+      {pinOpen && activeProfile ? (
+        <PinGate
+          profileId={activeProfile.id}
+          profileName={activeProfile.name}
+          onUnlock={() => {
+            setGrownupsUnlocked(true);
+            setView("grownups");
+            setPinOpen(false);
+          }}
+          onCancel={() => setPinOpen(false)}
+        />
       ) : null}
     </div>
   );
