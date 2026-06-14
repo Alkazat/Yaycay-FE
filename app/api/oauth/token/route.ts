@@ -13,15 +13,6 @@ export function OPTIONS() {
   return corsPreflight();
 }
 
-function issue(base: Omit<Grant, "access_token" | "refresh_token" | "expires_at">): Grant {
-  return {
-    ...base,
-    access_token: randomToken(32),
-    refresh_token: randomToken(32),
-    expires_at: Date.now() + ACCESS_TTL_MS,
-  };
-}
-
 function tokenResponse(grant: Grant) {
   return corsJson({
     access_token: grant.access_token,
@@ -49,13 +40,23 @@ export async function POST(req: Request) {
       return corsJson({ error: "invalid_grant", error_description: "PKCE verification failed" }, { status: 400 });
     }
 
-    const grant = issue({
+    const client = await oauthStore.getClient(code.client_id);
+    const now = Date.now();
+    const grant: Grant = {
+      connection_id: `conn_${randomToken(16)}`,
+      access_token: randomToken(32),
+      refresh_token: randomToken(32),
       client_id: code.client_id,
+      client_name: client?.client_name,
       scope: code.scope,
       user_id: code.user_id,
       supabase_access_token: code.supabase_access_token,
       supabase_refresh_token: code.supabase_refresh_token,
-    });
+      status: "active",
+      created_at: now,
+      last_used_at: null,
+      expires_at: now + ACCESS_TTL_MS,
+    };
     await oauthStore.saveGrant(grant);
     return tokenResponse(grant);
   }
@@ -63,17 +64,14 @@ export async function POST(req: Request) {
   if (grantType === "refresh_token") {
     const existing = await oauthStore.getGrantByRefreshToken(form.refresh_token ?? "");
     if (!existing) return corsJson({ error: "invalid_grant" }, { status: 400 });
-    // Rotate both tokens.
-    await oauthStore.deleteGrant(existing.refresh_token);
-    const grant = issue({
-      client_id: existing.client_id,
-      scope: existing.scope,
-      user_id: existing.user_id,
-      supabase_access_token: existing.supabase_access_token,
-      supabase_refresh_token: existing.supabase_refresh_token,
+    // Rotate both tokens but keep the connection identity.
+    const rotated = await oauthStore.rotateTokens(existing.connection_id, {
+      access_token: randomToken(32),
+      refresh_token: randomToken(32),
+      expires_at: Date.now() + ACCESS_TTL_MS,
     });
-    await oauthStore.saveGrant(grant);
-    return tokenResponse(grant);
+    if (!rotated) return corsJson({ error: "invalid_grant" }, { status: 400 });
+    return tokenResponse(rotated);
   }
 
   return corsJson({ error: "unsupported_grant_type" }, { status: 400 });

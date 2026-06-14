@@ -96,3 +96,50 @@ Per-assistant deep links: where an official one exists we link to it
 emit the exact `claude mcp add` / Codex `config.toml` / `gemini mcp add` snippet.
 If any vendor ships a true one-click "add this MCP server" deep link, point us at
 it and we will wire the button.
+
+---
+
+## Round 2 - response to the Admin thread (2026-06-14)
+
+Acting on `HANDOFF-connectors-FE-response.md`. What the FE shipped in response and
+what is still on BE.
+
+### Shipped (FE)
+
+- **Parent self-service "Connected assistants" screen** at `/account/connections`
+  (linked from the account page and `/connect`): per-assistant list with
+  read / can-write badges, connected + last-used dates, and a **Disconnect** kill
+  switch. Backed by the OAuth grant store, which is exactly what `verifyMcpToken`
+  reads, so a parent revoke cuts access on the next call.
+- **Revocation is centrally effective.** Grants now carry `status` and a stable
+  `connection_id` (survives token refresh). `revokeConnection` flips status and
+  drops the token indexes; `getGrantByAccessToken` returns null for revoked or
+  expired grants, so `verifyMcpToken` rejects immediately.
+- **`plan_trip` is observable.** The tool now sends `x-yaycay-source: connector`
+  and `x-yaycay-connection-id: <id>` on its `POST /trips/:id/plan/chat` call.
+- **last-used tracking** stamped on every authenticated MCP call.
+
+### Still on BE (the coupling)
+
+1. **One shared revocation state across surfaces.** Parent (this screen) and
+   Admin (`GET /admin/connectors` + `POST /admin/connectors/{id}/revoke`) must
+   read/write the **same** grant records, and the contract `/connectors` +
+   `/connectors/{id}/revoke` should map to them. That requires the durable shared
+   `OAuthStore` (item 1 above). Until then, the FE in-memory store only makes
+   revoke effective within a single instance.
+2. **Honour the `plan_trip` markers.** On a request carrying
+   `x-yaycay-source: connector`, BE must write an `ai_jobs` row with
+   `source='connector'` (so it shows in Admin Jobs and counts against the daily
+   cap) and route the written `trip_content` through Content Review / flag it.
+   This is the child-safety item; the FE marker is in place and waiting on BE.
+3. **Token security (confirmed direction).** Per Admin, mint a dedicated scoped
+   service token per grant in the durable store and do not stash the parent's
+   Supabase refresh token. The grant model already isolates the token fields, so
+   this is a store-implementation change, not an API change.
+
+### Auth model - resolved
+
+Admin confirmed account-scoped OAuth as primary and does not need per-trip
+tokens. `/connectors/byo-ai` stays as the optional static-token alternative; both
+kinds must be listed + revocable through the shared store. `verifyMcpToken` is
+ready to also accept BE-issued connector tokens once they exist.
