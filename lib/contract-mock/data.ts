@@ -6,7 +6,15 @@
  * Swap target: live BE endpoints (list trips, get trip, list profiles).
  * See ./README.md.
  */
-import type { AccountSummary, ChildProfile, Trip, TripContent, TripSummary } from "./types";
+import type {
+  AccountSummary,
+  ChatHistoryMessage,
+  ChildProfile,
+  CompanionCard,
+  Trip,
+  TripContent,
+  TripSummary,
+} from "./types";
 
 export const MOCK_ACCOUNT: AccountSummary = {
   email: "family@example.com",
@@ -328,6 +336,105 @@ const SINGAPORE_TRIP: TripContent = {
 const TRIPS_BY_ID: Record<string, TripContent> = {
   t_sg: SINGAPORE_TRIP,
 };
+
+/**
+ * During-trip companion cards for the Walker Singapore trip. Pre-loaded "what's
+ * nearby" answers with tree-nut text flags + confirm-on-the-day notes already
+ * applied, plus a one-tap rain plan. Tree-nut allergy language never says "safe".
+ */
+const COMPANION_BY_TRIP: Record<string, CompanionCard[]> = {
+  t_sg: [
+    {
+      id: "comp_satay",
+      near_label: "Near Gardens by the Bay",
+      prompt: "What's good to eat near here?",
+      options: [
+        {
+          name: "Satay by the Bay - seafood stalls",
+          flags: ["Tree-nut allergy: flagged"],
+          note: "Satay sauce is peanut-based. Ask the kitchen and confirm on the day before ordering.",
+        },
+        {
+          name: "Supertree Food Hall - grilled chicken rice",
+          flags: ["Tree-nut allergy: lower risk"],
+          note: "No nut sauces on the standard dish. Still confirm with the stall before you order.",
+        },
+      ],
+      rain_plan: {
+        title: "If it rains: ArtScience Museum",
+        body: "A 10-minute covered walk. Pre-booked as your indoor anchor for the afternoon.",
+      },
+      created_at: "2025-09-15T03:00:00.000Z",
+    },
+  ],
+};
+
+/**
+ * Reopenable planning-chat transcript for the Walker trip: the opening
+ * three-question conversation plus a forwarded hotel-confirmation import chip.
+ */
+const CHAT_BY_TRIP: Record<string, ChatHistoryMessage[]> = {
+  t_sg: [
+    {
+      id: "m1",
+      role: "assistant",
+      kind: "text",
+      content: "Where are you headed, and who's coming along?",
+      seq: 1,
+      created_at: "2025-08-01T09:00:00.000Z",
+    },
+    {
+      id: "m2",
+      role: "user",
+      kind: "text",
+      content: "Singapore in September - two grown-ups and three kids (9, 6 and 3).",
+      seq: 2,
+      created_at: "2025-08-01T09:00:30.000Z",
+    },
+    {
+      id: "m3",
+      role: "user",
+      kind: "import_chip",
+      content: "Hotel confirmation - Marina Bay, 14-18 Sep",
+      meta: { source: "email", kind: "hotel_confirmation" },
+      seq: 3,
+      created_at: "2025-08-01T09:01:00.000Z",
+    },
+    {
+      id: "m4",
+      role: "assistant",
+      kind: "text",
+      content: "Got it. Anything we should plan around - allergies, nap times, must-dos?",
+      seq: 4,
+      created_at: "2025-08-01T09:01:20.000Z",
+    },
+    {
+      id: "m5",
+      role: "user",
+      kind: "text",
+      content: "Pip has a tree-nut allergy. Theo (3) still naps after lunch.",
+      seq: 5,
+      created_at: "2025-08-01T09:01:50.000Z",
+    },
+    {
+      id: "m6",
+      role: "assistant",
+      kind: "text",
+      content:
+        "Perfect - I'll flag tree nuts on every meal and keep Theo's afternoons gentle. Building your Singapore days now.",
+      seq: 6,
+      created_at: "2025-08-01T09:02:10.000Z",
+    },
+  ],
+};
+
+export function getMockCompanion(tripId: string): CompanionCard[] {
+  return COMPANION_BY_TRIP[tripId] ?? [];
+}
+
+export function getMockChatHistory(tripId: string): ChatHistoryMessage[] {
+  return CHAT_BY_TRIP[tripId] ?? [];
+}
 
 export function getMockTrip(id: string): TripContent | undefined {
   return TRIPS_BY_ID[id];
