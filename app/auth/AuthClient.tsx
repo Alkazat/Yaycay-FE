@@ -44,7 +44,15 @@ export function AuthClient({ prefillEmail }: { prefillEmail: string }) {
       // Second factor on every sign-in.
       const { verified } = await verifyTwoFactor(email, code);
       if (!verified) throw new Error("That code did not check out.");
-      router.push("/trips");
+      // Honour a same-origin `next` (e.g. returning to an OAuth connector
+      // authorization). Reject anything that is not a local path to avoid an
+      // open redirect; API routes need a full navigation, not client routing.
+      const next = new URLSearchParams(window.location.search).get("next");
+      if (next && next.startsWith("/") && !next.startsWith("//")) {
+        window.location.href = next;
+      } else {
+        router.push("/trips");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed.");
     } finally {
