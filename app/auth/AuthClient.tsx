@@ -13,13 +13,26 @@ import { Button, Card, CardBody, Input, Banner } from "@/components/ds";
  * configured; otherwise this shows a clear notice (and the app stays open on the
  * mock). Route guards (middleware) are likewise gated on configuration.
  */
-export function AuthClient({ prefillEmail }: { prefillEmail: string }) {
+/** Friendly copy for an error handed back by the magic-link callback. */
+function callbackError(code: string): string | null {
+  if (code === "link_expired") return "That sign-in link has expired. Enter your email for a fresh one.";
+  if (code === "missing_code") return "That sign-in link looked off. Let's try again.";
+  return null;
+}
+
+export function AuthClient({
+  prefillEmail,
+  initialError = "",
+}: {
+  prefillEmail: string;
+  initialError?: string;
+}) {
   const router = useRouter();
   const configured = hasSupabase();
   const [email, setEmail] = useState(prefillEmail);
   const [step, setStep] = useState<"email" | "code">("email");
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(callbackError(initialError));
   const [busy, setBusy] = useState(false);
 
   const sendLink = async () => {
@@ -27,7 +40,13 @@ export function AuthClient({ prefillEmail }: { prefillEmail: string }) {
     if (!supabase) return;
     setBusy(true);
     setError(null);
-    const { error: e } = await supabase.auth.signInWithOtp({ email });
+    // Point the magic link at our callback so clicking it exchanges the code for
+    // a session and lands in the app; carry any `next` so it returns there.
+    const next = new URLSearchParams(window.location.search).get("next");
+    const emailRedirectTo = `${window.location.origin}/auth/callback${
+      next ? `?next=${encodeURIComponent(next)}` : ""
+    }`;
+    const { error: e } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo } });
     setBusy(false);
     if (e) setError(e.message);
     else setStep("code");

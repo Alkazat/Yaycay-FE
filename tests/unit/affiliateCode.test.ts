@@ -25,6 +25,12 @@ describe("affiliate code capture", () => {
     expect(getAffiliateCode()).toBeUndefined();
   });
 
+  it("ignores a Supabase magic-link UUID code (not an affiliate code)", () => {
+    window.history.replaceState({}, "", "/?code=673090f7-4341-4694-8c97-6e20ea166dd5");
+    captureAffiliateCode();
+    expect(getAffiliateCode()).toBeUndefined();
+  });
+
   it("keeps a previously captured code when a later page has none", () => {
     window.history.replaceState({}, "", "/?code=KEEP10");
     captureAffiliateCode();
