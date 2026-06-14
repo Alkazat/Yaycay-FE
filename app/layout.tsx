@@ -5,6 +5,7 @@ import "../vendor/yaycay-ds/styles.css";
 import "./ds-components.css";
 import "./globals.css";
 import { Providers } from "./providers";
+import { AffiliateCodeCapture } from "@/components/affiliate/AffiliateCodeCapture";
 
 export const metadata: Metadata = {
   title: "Yaycay - For families making memories",
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <AffiliateCodeCapture />
         <Providers>{children}</Providers>
       </body>
     </html>
