@@ -35,8 +35,8 @@ describe("endpointUrl (no API base configured)", () => {
     // Adopted from contract @0.15: journal (day_id/mood/stars) + parent/carer PIN.
     expect(SERVED.journal).toBe(true);
     expect(SERVED.profilesPin).toBe(true);
-    // Still on the mock: account, media (no contract handler adopted yet).
-    expect(SERVED.account).toBe(false);
-    expect(SERVED.media).toBe(false);
+    // Adopted from contract @0.18: account summary + media sign-upload.
+    expect(SERVED.account).toBe(true);
+    expect(SERVED.media).toBe(true);
   });
 });
