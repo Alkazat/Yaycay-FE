@@ -2,13 +2,14 @@ import { apiFetch, SERVED } from "@/lib/api/http";
 import { getAccessToken } from "@/lib/auth/session";
 import type { ChildProfile } from "@/lib/contract-mock/types";
 
-/** Result of a Grown-ups PIN verification (contract v0.15). */
+/** Result of a Grown-ups PIN verification (contract v0.17). */
 export interface PinVerifyResult {
-  ok: boolean;
-  /** Attempts left before the gate locks out. */
-  attempts_remaining?: number | null;
-  /** When the gate unlocks again after too many failed attempts. */
-  locked_until?: string | null;
+  /** Whether the submitted PIN matched. */
+  verified: boolean;
+  /** Attempts left before the gate locks out; 0 when locked. */
+  attempts_remaining: number;
+  /** When the gate unlocks again after too many failed attempts, else null. */
+  locked_until: string | null;
 }
 
 /** Set or change a parent/carer profile's Grown-ups PIN. */

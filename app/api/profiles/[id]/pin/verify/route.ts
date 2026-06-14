@@ -16,10 +16,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   const body = (await req.json().catch(() => ({}))) as { pin?: unknown };
   const pin = typeof body.pin === "string" ? body.pin : "";
-  const ok = profile.type === "parent_carer" && profile.pin_set && pin === MOCK_PIN;
+  const verified = profile.type === "parent_carer" && profile.pin_set && pin === MOCK_PIN;
   return NextResponse.json({
-    ok,
-    attempts_remaining: ok ? 5 : 4,
+    verified,
+    attempts_remaining: verified ? 5 : 4,
     locked_until: null,
   });
 }

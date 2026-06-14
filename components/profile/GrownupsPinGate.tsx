@@ -30,7 +30,7 @@ export function GrownupsPinGate({
     setError(null);
     try {
       const res = await verifyProfilePin(profileId, pin);
-      if (res.ok) {
+      if (res.verified) {
         onUnlock();
         return;
       }
