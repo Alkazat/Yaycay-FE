@@ -26,7 +26,7 @@ const pinInputStyle: React.CSSProperties = {
 };
 
 /**
- * Set or change a guardian's 4-digit Grown-ups PIN. Asks for the PIN twice to
+ * Set or change a parent/carer's 4-digit Grown-ups PIN. Asks for the PIN twice to
  * avoid typos, then writes it via `POST /profiles/:id/pin` (write-only; the PIN
  * is never returned, only `pin_set` flips true).
  */

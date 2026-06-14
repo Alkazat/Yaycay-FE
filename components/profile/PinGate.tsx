@@ -6,7 +6,7 @@ import { verifyProfilePin } from "@/lib/api/profiles";
 import { Button, Card, CardBody } from "@/components/ds";
 
 interface PinGateProps {
-  /** Guardian profile whose PIN unlocks the Grown-ups view. */
+  /** Parent/carer profile whose PIN unlocks the Grown-ups view. */
   profileId: string;
   profileName: string;
   /** Called once a correct PIN is entered. */
@@ -15,7 +15,7 @@ interface PinGateProps {
 }
 
 /**
- * The Grown-ups child-safety gate. Prompts for the guardian's 4-digit PIN and
+ * The Grown-ups child-safety gate. Prompts for the parent/carer's 4-digit PIN and
  * verifies it server-side (mock today). This is a UX speed-bump, not a hardened
  * boundary - 4-digit PINs are low-entropy by design. On success the caller
  * unlocks Grown-ups for the session.

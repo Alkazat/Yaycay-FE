@@ -15,7 +15,7 @@ export const MOCK_ACCOUNT: AccountSummary = {
 };
 
 /**
- * One family across all four user types: a guardian (Grown Ups, PIN-locked)
+ * One family across all four user types: a parent/carer (Grown Ups, PIN-locked)
  * plus three children at the three explorer bands. `type` gates the views;
  * `mode` drives the renderer voice. See the user-types handoff.
  */
@@ -24,7 +24,7 @@ export const MOCK_PROFILES: ChildProfile[] = [
     id: "p_mum",
     name: "Mum",
     age: 38,
-    type: "guardian",
+    type: "parent_carer",
     mode: "standard",
     pin_set: true,
     interests: [],
@@ -77,7 +77,7 @@ export const MOCK_PROFILES: ChildProfile[] = [
 ];
 
 /**
- * Guardian PINs (profile id -> 4-digit PIN). Kept separate from the profile
+ * Parent/carer PINs (profile id -> 4-digit PIN). Kept separate from the profile
  * records, mirroring the contract rule that a PIN is never returned by the API.
  * Demo PIN for the Grown-ups gate is `1234`.
  */

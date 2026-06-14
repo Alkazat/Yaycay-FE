@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   profileType,
-  isGuardian,
+  isParentCarer,
   isChild,
   viewsForProfile,
   canAccessGrownups,
@@ -30,13 +30,13 @@ function profile(p: Partial<ChildProfile>): ChildProfile {
 
 describe("profileType", () => {
   it("defaults an absent type to child (safe, no Grown-ups)", () => {
-    // A standard-mode legacy profile must NOT be auto-promoted to guardian.
+    // A standard-mode legacy profile must NOT be auto-promoted to parent/carer.
     expect(profileType(profile({ mode: "standard" }))).toBe("child");
     expect(isChild(profile({}))).toBe(true);
   });
 
   it("honours an explicit type", () => {
-    expect(isGuardian(profile({ type: "guardian" }))).toBe(true);
+    expect(isParentCarer(profile({ type: "parent_carer" }))).toBe(true);
     expect(isChild(profile({ type: "child" }))).toBe(true);
   });
 });
@@ -46,23 +46,23 @@ describe("viewsForProfile", () => {
     expect(viewsForProfile(profile({ type: "child" }))).toEqual(["kid"]);
   });
 
-  it("gives guardians both views", () => {
-    expect(viewsForProfile(profile({ type: "guardian" }))).toEqual(["kid", "grownups"]);
+  it("gives parent/carers both views", () => {
+    expect(viewsForProfile(profile({ type: "parent_carer" }))).toEqual(["kid", "grownups"]);
   });
 
   it("canAccessGrownups follows the type", () => {
-    expect(canAccessGrownups(profile({ type: "guardian" }))).toBe(true);
+    expect(canAccessGrownups(profile({ type: "parent_carer" }))).toBe(true);
     expect(canAccessGrownups(profile({ type: "child" }))).toBe(false);
   });
 });
 
 describe("grownupsNeedsPin", () => {
-  it("gates a guardian with a configured PIN", () => {
-    expect(grownupsNeedsPin(profile({ type: "guardian", pin_set: true }))).toBe(true);
+  it("gates a parent/carer with a configured PIN", () => {
+    expect(grownupsNeedsPin(profile({ type: "parent_carer", pin_set: true }))).toBe(true);
   });
 
-  it("does not gate a guardian without a PIN", () => {
-    expect(grownupsNeedsPin(profile({ type: "guardian", pin_set: false }))).toBe(false);
+  it("does not gate a parent/carer without a PIN", () => {
+    expect(grownupsNeedsPin(profile({ type: "parent_carer", pin_set: false }))).toBe(false);
   });
 
   it("never gates a child (they cannot reach Grown-ups anyway)", () => {
@@ -75,7 +75,7 @@ describe("modeForProfile", () => {
     expect(modeForProfile(profile({ mode: "explorer_plus" }))).toBe("explorer_plus");
   });
 
-  it("defaults to standard (the guardian voice)", () => {
+  it("defaults to standard (the parent/carer voice)", () => {
     expect(modeForProfile(profile({}))).toBe("standard");
   });
 });

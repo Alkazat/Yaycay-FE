@@ -78,7 +78,7 @@ export const SERVED = {
   grownups: true,
   ingest: true,
   connectors: true,
-  // Guardian PIN set/verify (`POST /profiles/:id/pin[/verify]`) - the user-types
+  // Parent/carer PIN set/verify (`POST /profiles/:id/pin[/verify]`) - the user-types
   // model is live as of contract @0.15 (PinRequest/PinVerifyResponse).
   profilesPin: true,
   // Journal - live as of contract @0.15: JournalEntry/JournalEntryInput carry

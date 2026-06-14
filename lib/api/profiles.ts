@@ -43,7 +43,7 @@ export async function deleteProfile(id: string): Promise<void> {
 }
 
 /**
- * Set / change a guardian PIN (`POST /profiles/:id/pin`). The PIN is write-only;
+ * Set / change a parent/carer PIN (`POST /profiles/:id/pin`). The PIN is write-only;
  * the response carries the updated profile (with `pin_set: true`).
  */
 export async function setProfilePin(id: string, pin: string): Promise<ChildProfile> {
@@ -59,7 +59,7 @@ export async function setProfilePin(id: string, pin: string): Promise<ChildProfi
 }
 
 /**
- * Verify a guardian PIN to unlock the Grown-ups view
+ * Verify a parent/carer PIN to unlock the Grown-ups view
  * (`POST /profiles/:id/pin/verify`). Resolves to `true` on a correct PIN.
  */
 export async function verifyProfilePin(id: string, pin: string): Promise<boolean> {
