@@ -59,6 +59,8 @@ export type {
   CheckoutSessionResponse,
   // Account (v0.18): the owner account summary (email, secondary_email, tier, ...).
   AccountSummary,
+  // Account update (v0.18): the recovery email is the only consumer-mutable field.
+  AccountUpdate,
   JournalEntry,
   JournalEntryInput,
   JournalListResponse,
