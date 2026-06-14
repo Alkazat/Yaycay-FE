@@ -7,14 +7,14 @@ import type { Tier } from "@/lib/contract-mock/types";
 import { PlanChat } from "@/components/chat/PlanChat";
 import { Button, Card, CardBody, Badge, Banner } from "@/components/ds";
 
-/** BYO-AI connector status screen (mock - real MCP connect lives in BE). */
+/** BYO-AI connector entry point. The connect flow lives at /connect. */
 function ByoConnector() {
   return (
     <Card>
       <CardBody title="Bring your own AI">
         <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
-          <Badge tone="coral" dot>
-            Not connected
+          <Badge tone="meadow" dot>
+            Ready to connect
           </Badge>
         </div>
         <p style={{ margin: 0 }}>
@@ -22,13 +22,13 @@ function ByoConnector() {
           through a secure connector - we never see your subscription.
         </p>
         <ol style={{ margin: 0, paddingLeft: "var(--space-5)", color: "var(--text-body)" }}>
-          <li>Open your AI assistant&apos;s connector settings.</li>
-          <li>Add the Yaycay connector and approve access to this trip.</li>
-          <li>Come back here - we&apos;ll show it as connected.</li>
+          <li>Open the connect page and pick your assistant.</li>
+          <li>Paste the Yaycay MCP URL into its connector settings.</li>
+          <li>Sign in once and approve - then plan right from your assistant.</li>
         </ol>
-        <Button variant="primary" disabled>
-          Connect (coming soon)
-        </Button>
+        <a href="/connect">
+          <Button variant="primary">Connect your AI</Button>
+        </a>
       </CardBody>
     </Card>
   );
