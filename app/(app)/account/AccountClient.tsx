@@ -1,13 +1,68 @@
 "use client";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { getAccount, createCheckoutSession } from "@/lib/api/account";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAccount, createCheckoutSession, updateAccount } from "@/lib/api/account";
 import { listTrips } from "@/lib/api/trips";
-import { getAffiliateCode } from "@/lib/affiliate/code";
 import { retentionStatus } from "@/lib/retention";
 import { formatHumanDate } from "@/lib/format";
 import type { Tier, TripSummary } from "@/lib/contract-mock/types";
-import { Card, CardBody, Button, Badge, Banner } from "@/components/ds";
+import { Card, CardBody, Button, Badge, Banner, Input } from "@/components/ds";
+
+/** Edit / clear the recovery email (`PATCH /account`). */
+function RecoveryEmailEditor({ current }: { current: string | null }) {
+  const qc = useQueryClient();
+  const [value, setValue] = useState(current ?? "");
+  const save = useMutation({
+    mutationFn: (secondary_email: string | null) => updateAccount({ secondary_email }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["account"] }),
+  });
+  const trimmed = value.trim();
+  const dirty = trimmed !== (current ?? "");
+
+  return (
+    <div className="yc-stack" style={{ gap: "var(--space-2)" }}>
+      <Input
+        label="Recovery email"
+        type="email"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="you@example.com"
+      />
+      <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => save.mutate(trimmed || null)}
+          disabled={save.isPending || !dirty}
+        >
+          {save.isPending ? "Saving..." : "Save"}
+        </Button>
+        {current ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setValue("");
+              save.mutate(null);
+            }}
+            disabled={save.isPending}
+          >
+            Clear
+          </Button>
+        ) : null}
+      </div>
+      {save.isError ? (
+        <p style={{ margin: 0, color: "var(--coral-500)", fontWeight: 700 }}>
+          Couldn&apos;t save that. Check the address and try again.
+        </p>
+      ) : null}
+      {save.isSuccess && !dirty ? (
+        <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>Saved.</p>
+      ) : null}
+    </div>
+  );
+}
 
 const TIER_NAME: Record<Tier, string> = {
   free: "Free demo",
@@ -66,7 +121,6 @@ export function AccountClient() {
       createCheckoutSession({
         price_id: "price_datakeep_annual",
         trip_id: trip.id,
-        code: getAffiliateCode(),
       }),
     onSuccess: ({ url }) => {
       window.location.href = url;
@@ -142,12 +196,7 @@ export function AccountClient() {
             <p style={{ margin: 0 }}>
               <strong>Email:</strong> {account.email}
             </p>
-            <p style={{ margin: 0 }}>
-              <strong>Recovery email:</strong> {account.secondary_email ?? "Not set"}
-            </p>
-            <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
-              Sign-in and email management arrive with auth.
-            </p>
+            <RecoveryEmailEditor current={account.secondary_email ?? null} />
           </CardBody>
         </Card>
       ) : null}
