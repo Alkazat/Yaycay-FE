@@ -84,8 +84,10 @@ export const SERVED = {
   // Journal - live as of contract @0.15: JournalEntry/JournalEntryInput carry
   // day_id, mood and stars, so the day-scoped FE journal maps wholesale.
   journal: true,
-  // Deferred on the mock:
-  //  - account / media: no contract handler adopted yet.
-  account: false,
-  media: false,
+  // Account summary (`GET /account`) - live as of contract @0.18 (AccountSummary
+  // carries email, secondary_email, tier, role, two_factor_enrolled, ...).
+  account: true,
+  // Media sign-upload (`POST /media/sign-upload` -> live fn `media-sign-upload`);
+  // journal reads resolve media_ref ids to signed URLs. Live as of contract @0.18.
+  media: true,
 } as const;
