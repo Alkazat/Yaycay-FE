@@ -1,0 +1,31 @@
+<!-- @dsCard group="Brand" viewport="760x300" name="The mark family" subtitle="Lockup · Wordmark · App icon · Badge · Glyph. Pick by space + how much brand you need. See BRAND-ASSETS.md." -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px; background: var(--cream-100); }
+  .row { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 14px; align-items: end; }
+  .cell { background: var(--white); border: 2.5px solid var(--royal-500); border-radius: var(--radius-xl);
+          box-shadow: var(--shadow-md); padding: 14px; display: grid; place-items: center; height: 150px; }
+  .cell img { max-width: 100%; max-height: 104px; filter: drop-shadow(0 6px 12px rgba(7,61,114,.18)); }
+  .cap { margin-top: 8px; text-align: center; font: 700 12px/1.2 var(--font-ui, system-ui); color: var(--royal-600); }
+  .cap small { display: block; font-weight: 600; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div><div class="cell"><img src="../assets/brand/yaycay-logo-transparent.png" alt="Yaycay lockup" /></div>
+      <div class="cap">Lockup<small>heroes · OG · email</small></div></div>
+    <div><div class="cell"><img src="../assets/brand/yaycay-wordmark.png" alt="Yaycay wordmark" /></div>
+      <div class="cap">Wordmark<small>tight bars</small></div></div>
+    <div><div class="cell"><img src="../assets/brand/yaycay-app-icon.png" alt="Yay! app icon" /></div>
+      <div class="cap">App icon<small>install ≥40px</small></div></div>
+    <div><div class="cell"><img src="../assets/brand/yaycay-badge.png" alt="Yay! badge" /></div>
+      <div class="cap">Badge<small>rewards · fun</small></div></div>
+    <div><div class="cell"><img src="../assets/brand/yaycay-glyph.png" alt="Yaycay glyph" /></div>
+      <div class="cap">Glyph<small>favicon ≥16px</small></div></div>
+  </div>
+</body>
+</html>
