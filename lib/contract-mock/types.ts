@@ -100,6 +100,15 @@ export type {
   ChecklistItem,
   ChecklistResponse,
   ChecklistUpdateRequest,
+  // During-trip companion + reopenable planning chat (contract v0.21/0.22).
+  ChatRole,
+  ChatHistoryMessageKind,
+  ChatHistoryMessage,
+  ChatHistory,
+  CompanionOption,
+  CompanionRainPlan,
+  CompanionCard,
+  CompanionResponse,
 } from "@alkazat/contracts";
 
 // ===========================================================================

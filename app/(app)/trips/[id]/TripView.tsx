@@ -196,6 +196,13 @@ export function TripView({ tripId }: { tripId: string }) {
           >
             Map
           </Link>
+          <Link
+            href={`/trips/${tripId}/companion`}
+            className="yc-btn yc-btn--secondary yc-btn--sm"
+            style={{ textDecoration: "none" }}
+          >
+            While you&apos;re there
+          </Link>
         </nav>
       </header>
 
