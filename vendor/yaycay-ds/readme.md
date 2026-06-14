@@ -164,20 +164,25 @@ Full effect tokens: `tokens/effects.css`.
 **Root**
 - `styles.css` — global entry point (import this). `@import`s the token files below.
 - `readme.md` — this guide.
+- `BRAND-ASSETS.md` — **which logo mark to use where** (the mark family, decision table, do/don't, per-repo file map). Read it before placing any logo.
 - `SKILL.md` — Agent-Skill front-matter wrapper.
 
 **Tokens** (`tokens/`)
 - `fonts.css` — `@font-face` for Fredoka & Nunito (binaries in `assets/fonts/`).
 - `colors.css` · `typography.css` · `spacing.css` · `effects.css` · `base.css`.
 
-**Assets** (`assets/`)
+**Assets** (`assets/`) — the **mark family**; pick with `BRAND-ASSETS.md`.
 - `yaycay-logo.png` — master box-art lockup (white bg).
-- `brand/yaycay-logo-transparent.png` — trimmed, transparent lockup for any surface.
+- `brand/yaycay-logo-transparent.png` — the **lockup** (wordmark + diamond scene + ribbon), transparent, for any surface.
+- `brand/yaycay-wordmark.png` — **wordmark** only ("Yaycay"), for tight horizontal bars.
+- `brand/yaycay-app-icon.png` — square **app icon** ("Yay!" squircle) for install / home-screen slots.
+- `brand/yaycay-glyph.png` — square palm-diamond **glyph** (no text) for favicons / tiny slots.
+- `brand/yaycay-badge.png` — "Yay!" diamond **badge** for rewards / playful spots.
 - `fonts/` — Fredoka + Nunito webfont binaries (woff2).
 
 **Foundations / specimens** (`guidelines/`) — populate the Design System tab:
 - *Colors:* sky, royal, sunshine, accents, coral, cream, semantic. *Type:* Fredoka, Nunito, scale.
-- *Spacing:* scale, radii, shadows. *Brand:* logo, logo-on-backgrounds, box-art lettering, gradients.
+- *Spacing:* scale, radii, shadows. *Brand:* logo, logo-on-backgrounds, **the mark family** (`brand-marks.html`), box-art lettering, gradients.
 - *Marketing:* `marketing-email.html`, `ad-square.html`, `ad-story.html`.
 
 **Components** (`components/`) — React primitives, each `.jsx` + `.d.ts` + `.prompt.md` + a card:
