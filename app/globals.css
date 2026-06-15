@@ -52,6 +52,19 @@ body {
   gap: var(--space-6);
 }
 
+/* Two-up layout that collapses to a single column on tablet/mobile. */
+.yc-grid-5050 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .yc-grid-5050 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Responsive gutters: tighten the edge padding as the viewport narrows.
    Breakpoints at 1000 / 768 / mobile cascade via --gutter to the container
    and the app bar. */
