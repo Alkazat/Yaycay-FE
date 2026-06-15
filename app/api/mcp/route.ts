@@ -8,7 +8,11 @@
  * in turn advertises Yaycay as the authorization server.
  */
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
-import { registerYaycayTools, registerYaycayPrompts, registerYaycayResources } from "@/lib/mcp/tools";
+import {
+  registerYaycayTools,
+  registerYaycayPrompts,
+  registerYaycayResources,
+} from "@/lib/mcp/tools";
 import { verifyMcpToken } from "@/lib/mcp/auth";
 
 // Returned to the assistant on `initialize`. This is where the Yaycay
@@ -30,10 +34,10 @@ const INSTRUCTIONS = [
   "- Planning is an ongoing, inductive loop, not a one-shot: plan a day, surface what's nearby, fold in bookings and reservations, and keep refining as the family reacts. Revisit and improve - never treat the itinerary as fixed.",
   "",
   "Working style:",
-  "- Start with get_trip_brief (who's travelling) and get_trip_content (what's there) so every idea fits THIS family.",
+  "- Start with get_trip_brief - it's the whole picture in one call (who's travelling, the saved brief, tracked bookings, and an outline of the plan). Pull get_trip_content when you need the full day-by-day to edit it.",
   "- Plan relaxed and realistic: a few great moments a day beat an over-stuffed schedule; respect nap windows and stated avoids; balance kid/shared/adult.",
   "- Be proactive without being asked: a nearby gem, a rainy-day backup, a 'did you know' for the kids.",
-  "- For nearby ideas: lead with whats_nearby (Yaycay's curated picks), then add your own real-world knowledge of the area, age-appropriately.",
+  "- For nearby ideas: lead with whats_nearby (Yaycay's curated picks, plus live real-world picks when available), then add your own real-world knowledge of the area, age-appropriately.",
   "- SAVE, don't just suggest: edit_itinerary persists real changes to the plan (days/moments/activities, per-person notes, meal ideas, rainy-day alternatives, bookings); set_trip_brief remembers the family's brief (allergies, dietary needs, must-dos, pace). The trip is the living source of truth - never ask the family to copy things in by hand.",
   "- Track bookings as the family goes: add_reservation records a hotel/activity/flight (it only tracks it - no payment), confirm_reservation marks it locked in. Keep the plan and the bookings in sync.",
   "- Dietary/medical details aren't shared through the connector; ask the family if they could matter.",
