@@ -86,12 +86,12 @@ body {
   text-decoration: none;
 }
 .yc-appbar__brand img {
-  height: 58px;
+  height: 72px;
   width: auto;
   transition: height 0.18s ease;
 }
 .yc-appbar--scrolled .yc-appbar__brand img {
-  height: 34px;
+  height: 40px;
 }
 .yc-appbar__actions {
   display: inline-flex;

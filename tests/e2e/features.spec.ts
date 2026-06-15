@@ -4,12 +4,19 @@ import { test, expect } from "@playwright/test";
 test("progress: ticking activities completes the day", async ({ page }) => {
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
+  await expect(page.getByTestId("done-check").first()).toBeVisible();
 
-  const checks = page.getByTestId("done-check").locator("input[type=checkbox]");
-  const n = await checks.count();
-  for (let i = 0; i < n; i++) await checks.nth(i).check();
-
-  await expect(page.getByTestId("day-complete")).toBeVisible();
+  // Retry the whole tick-and-check: a controlled checkbox can ignore an early
+  // click before React has wired its onChange (hydration race).
+  await expect(async () => {
+    const checks = page.getByTestId("done-check").locator("input[type=checkbox]");
+    const n = await checks.count();
+    for (let i = 0; i < n; i++) {
+      const box = checks.nth(i);
+      if (!(await box.isChecked())) await box.click();
+    }
+    await expect(page.getByTestId("day-complete")).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15000 });
 });
 
 // The mock stars/packing stores are shared across the 3 viewport projects on one
