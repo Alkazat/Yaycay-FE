@@ -117,16 +117,99 @@ function localSearch(query: string, limit = 8): City[] {
   return scored.slice(0, limit).map((s) => s.c);
 }
 
+export interface Geocoder {
+  search(query: string, signal?: AbortSignal): Promise<City[]>;
+}
+
 /**
- * The active geocoder. Defaults to the local curated set; point this at a live
- * provider (returning the same `City[]`) to get every city in the world.
+ * Photon (https://photon.komoot.io) is an OpenStreetMap-backed geocoder built
+ * for type-ahead: free, keyless and CORS-enabled, so it runs straight from the
+ * browser. We bias toward populated places (city/town/village/...) so the picker
+ * returns real destinations rather than streets or shops.
  */
-export const GEOCODER: { search(query: string): Promise<City[]> } = {
-  search: async (query) => localSearch(query),
+const PHOTON_URL = "https://photon.komoot.io/api/";
+const PLACE_TYPES = new Set(["city", "town", "village", "hamlet", "municipality", "locality", "island"]);
+
+function featureToCity(f: {
+  properties?: Record<string, string | undefined>;
+}): City | null {
+  const p = f.properties ?? {};
+  const name = p.name?.trim();
+  const country = p.country?.trim();
+  if (!name || !country) return null;
+  const cc = (p.countrycode ?? "").trim().toUpperCase();
+  const region = (p.state ?? p.county ?? p.region ?? "").trim();
+  return { name, region, country, cc };
+}
+
+/** De-dupe by name+country+region, keeping first-seen order. */
+function dedupe(cities: City[]): City[] {
+  const seen = new Set<string>();
+  const out: City[] = [];
+  for (const c of cities) {
+    const key = `${c.name}|${c.cc}|${c.region}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
+  }
+  return out;
+}
+
+export const photonGeocoder: Geocoder = {
+  async search(query, signal) {
+    const url = `${PHOTON_URL}?q=${encodeURIComponent(query)}&limit=10&lang=en`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) return [];
+    const json = (await res.json()) as { features?: { properties?: Record<string, string> }[] };
+    const feats = json.features ?? [];
+    const cities = feats
+      .filter((f) => {
+        const t = f.properties?.osm_value ?? f.properties?.type ?? "";
+        // Keep populated places; also keep when the type is unknown but it reads
+        // like a place (has a country code), rather than dropping good matches.
+        return PLACE_TYPES.has(t) || (!f.properties?.osm_value && !!f.properties?.countrycode);
+      })
+      .map(featureToCity)
+      .filter((c): c is City => c !== null);
+    return cities;
+  },
 };
 
-export function searchCities(query: string): Promise<City[]> {
-  return GEOCODER.search(query);
+/**
+ * The active geocoder. Live Photon search with the curated set as an instant,
+ * always-available fallback (offline, CI, or if Photon is slow/unreachable).
+ */
+export const GEOCODER: Geocoder = photonGeocoder;
+
+/** Abort the live lookup if it outruns this budget; the local set still answers. */
+const REMOTE_TIMEOUT_MS = 4000;
+
+/**
+ * Search for cities. Curated favourites surface first (instant, offline), then
+ * the long tail of every city in the world from the live geocoder. A network
+ * failure or timeout simply leaves the curated matches — the picker never blocks.
+ */
+export async function searchCities(query: string, signal?: AbortSignal): Promise<City[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  const local = localSearch(q, 6);
+
+  let remote: City[] = [];
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), REMOTE_TIMEOUT_MS);
+    if (signal) signal.addEventListener("abort", () => ctrl.abort(), { once: true });
+    try {
+      remote = await GEOCODER.search(q, ctrl.signal);
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    remote = [];
+  }
+
+  return dedupe([...local, ...remote]).slice(0, 10);
 }
 
 /** Best-effort flag for a destination string by matching its trailing country. */
