@@ -75,9 +75,15 @@ function brand(err: unknown, auth: ToolAuth): ToolResult {
         true,
       );
     }
-    if (err.status === 401 || err.status === 403) {
+    if (err.status === 401) {
       return say(
-        `This Yaycay connection isn't allowed to do that. Try disconnecting and reconnecting Yaycay (with planning enabled) from your assistant's settings.`,
+        `Your Yaycay connection's sign-in has expired. Please reconnect Yaycay from your assistant's settings, then we can carry on right where we left off.`,
+        true,
+      );
+    }
+    if (err.status === 403) {
+      return say(
+        `Yaycay couldn't authorise that on your account. If it keeps happening, try reconnecting Yaycay from your assistant's settings.`,
         true,
       );
     }
@@ -190,6 +196,50 @@ export function registerYaycayTools(server: McpServer): void {
   );
 
   server.tool(
+    "get_trip_brief",
+    "Get the planning brief for a trip: the trip header plus the family's travellers (names, ages, interests) so you can plan to THIS family. Call this (with list_trips) before planning. Note: dietary and medical details are NOT shared through the connector - if they could affect plans, ask the family directly.",
+    { trip_id: z.string().describe("The trip id (see list_trips).") },
+    async ({ trip_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) => {
+        type ProfileRow = { name?: string; age?: number | null; interests?: string[] };
+        const [trip, raw] = await Promise.all([
+          contractJson<Record<string, unknown>>(`/trips/${encodeURIComponent(trip_id)}`, auth),
+          contractJson<{ profiles?: ProfileRow[] } | ProfileRow[]>("/profiles", auth),
+        ]);
+        const list = Array.isArray(raw) ? raw : (raw.profiles ?? []);
+        // Minimise to low-sensitivity planning fields - never export dietary or
+        // medical off-platform (mirrors the BE brief; BE migration/PR #90).
+        const travellers = list.map((p) => ({
+          name: p.name ?? "",
+          ...(typeof p.age === "number" ? { age: p.age } : {}),
+          interests: p.interests ?? [],
+        }));
+        return ok({
+          trip,
+          travellers,
+          note: "Plan warmly to this family and trip. Dietary and medical details aren't shared through the connector - if they could affect food or activity choices, ask the family directly.",
+        });
+      }),
+  );
+
+  server.tool(
+    "whats_nearby",
+    "Yaycay's pre-curated 'what's nearby' companion ideas for a trip (places worth a look + rainy-day backups). Use it to surface things to do near the family, then add a couple of proactive, age-appropriate ideas of your own.",
+    { trip_id: z.string().describe("The trip id (see list_trips).") },
+    async ({ trip_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) => {
+        const nearby = await contractJson(
+          `/trips/${encodeURIComponent(trip_id)}/companion`,
+          auth,
+        );
+        return ok({
+          nearby,
+          note: "A warm starting point - now proactively offer 1-2 more ideas the whole family would enjoy (something for the kids, something shared) plus a rainy-day backup.",
+        });
+      }),
+  );
+
+  server.tool(
     "request_new_trip",
     "Use when the family wants a NEW destination that isn't in their trips yet. Trips can't be created through this connector - they're added in the Yaycay app - so this returns the friendly steps + the family's dashboard link. Relay it warmly and pause planning until they confirm the trip is added.",
     { destination: z.string().describe("Where the family wants to go, e.g. 'Gold Coast'.") },
@@ -234,5 +284,74 @@ export function registerYaycayTools(server: McpServer): void {
         const reply = await drainPlanStream(res);
         return ok({ reply });
       }),
+  );
+}
+
+/** A prompt message in Yaycay's voice for the connecting assistant to run. */
+function promptText(text: string) {
+  return { messages: [{ role: "user" as const, content: { type: "text" as const, text } }] };
+}
+
+/**
+ * Branded, one-click flows the family can pick inside their AI client. Prompts
+ * are how the Yaycay *experience* (not just the API) shows up in Claude / Gemini
+ * / ChatGPT: each encodes the house style and the worldview so "plan a day"
+ * needs no re-explaining.
+ */
+export function registerYaycayPrompts(server: McpServer): void {
+  server.prompt(
+    "plan_a_day",
+    "Plan one day of the trip in Yaycay's style - relaxed, age-appropriate, something for everyone.",
+    {
+      trip_id: z.string().optional().describe("Trip id (see list_trips)."),
+      focus: z.string().optional().describe("Optional focus, e.g. 'beach' or 'dinosaurs'."),
+    },
+    ({ trip_id, focus }) =>
+      promptText(
+        `Help me plan a day for our Yaycay trip${trip_id ? ` (${trip_id})` : ""}.\n` +
+          `Start with get_trip_brief (who's travelling) and get_trip_content (what's already there).\n` +
+          `Then shape ONE relaxed, realistic day: a few great moments, paced for kids, with a clear win for each child, for the grown-ups, and for time together${focus ? `, leaning into ${focus}` : ""}.\n` +
+          `Bring the yay - warm, specific, never generic. Add 1-2 proactive touches: a nearby gem (whats_nearby), a rainy-day backup, and a "did you know" the kids will love.`,
+      ),
+  );
+
+  server.prompt(
+    "something_for_everyone",
+    "Check the trip so each child, each grown-up, and shared time all get a win - and fix any lopsided day.",
+    { trip_id: z.string().optional().describe("Trip id (see list_trips).") },
+    ({ trip_id }) =>
+      promptText(
+        `Review our Yaycay trip${trip_id ? ` (${trip_id})` : ""} through Yaycay's lens: does everyone get something they'll love?\n` +
+          `Use get_trip_brief + get_trip_content. For each day, check there's a moment for the kids, a moment for the grown-ups, and a shared one.\n` +
+          `Call out any day that's lopsided and suggest one small, upbeat tweak so nobody's left out. Keep it positive and specific.`,
+      ),
+  );
+
+  server.prompt(
+    "whats_nearby",
+    "Surface great things to do nearby for the family, with a rainy-day backup.",
+    {
+      trip_id: z.string().optional().describe("Trip id (see list_trips)."),
+      day: z.string().optional().describe("Optional day to focus on."),
+    },
+    ({ trip_id, day }) =>
+      promptText(
+        `Show us great things to do nearby on our Yaycay trip${trip_id ? ` (${trip_id})` : ""}${day ? `, around ${day}` : ""}.\n` +
+          `Call whats_nearby for Yaycay's curated ideas and get_trip_content for context, then proactively add a couple of age-appropriate, low-faff suggestions the whole family would enjoy - and a rainy-day alternative. Positive and practical.`,
+      ),
+  );
+
+  server.prompt(
+    "rainy_day",
+    "Pivot a day to a fun indoor plan, keeping spirits high.",
+    {
+      trip_id: z.string().optional().describe("Trip id (see list_trips)."),
+      day: z.string().optional().describe("Optional day it might rain."),
+    },
+    ({ trip_id, day }) =>
+      promptText(
+        `Rain's looking likely${day ? ` on ${day}` : ""} for our Yaycay trip${trip_id ? ` (${trip_id})` : ""} - help us pivot to something cosy and memorable.\n` +
+          `Use whats_nearby (rain_plan) and get_trip_content. Keep spirits high and suggest an indoor plan everyone - kids and grown-ups - will still enjoy.`,
+      ),
   );
 }

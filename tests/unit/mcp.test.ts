@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { s256, verifyPkce, randomToken } from "@/lib/mcp/pkce";
 import { oauthStore, type Grant } from "@/lib/mcp/store";
 import { validateAuthRequest } from "@/lib/mcp/oauthFlow";
-import { registerYaycayTools, type ToolAuth } from "@/lib/mcp/tools";
+import { registerYaycayTools, registerYaycayPrompts, type ToolAuth } from "@/lib/mcp/tools";
 import { SCOPES } from "@/lib/mcp/config";
 
 function grant(over: Partial<Grant> = {}): Grant {
@@ -103,6 +103,15 @@ describe("in-memory OAuth store", () => {
     expect(list[0].client_name).toBe("Test Assistant");
     expect(list[0].scopes).toContain(SCOPES.plan);
     expect(list[0].last_used_at).not.toBeNull();
+  });
+
+  it("updates the captured parent Supabase tokens (the connector's refresh path)", async () => {
+    const g = grant({ user_id: "u-pt" });
+    await oauthStore.saveGrant(g);
+    await oauthStore.updateParentTokens(g.connection_id, "new-sat", "new-srt");
+    const got = await oauthStore.getGrantByAccessToken(g.access_token);
+    expect(got?.supabase_access_token).toBe("new-sat");
+    expect(got?.supabase_refresh_token).toBe("new-srt");
   });
 });
 
@@ -290,6 +299,80 @@ describe("MCP tools", () => {
     expect(out.isError).toBe(true);
     expect(out.content[0].text).toMatch(/Yaycay app|dashboard/i);
     expect(out.content[0].text).not.toContain("500");
+  });
+
+  it("builds a brief from trip + travellers without leaking dietary/medical", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) =>
+      String(url).includes("/profiles")
+        ? new Response(
+            JSON.stringify({
+              profiles: [
+                {
+                  name: "Lenny",
+                  age: 6,
+                  interests: ["dinosaurs"],
+                  dietary: ["nut-free"],
+                  medical: ["epipen"],
+                },
+              ],
+            }),
+            { status: 200 },
+          )
+        : new Response(JSON.stringify({ id: "t_1", destination: "Singapore" }), { status: 200 }),
+    );
+    const out = await tools.get_trip_brief({ trip_id: "t_1" }, extraFor({ scopes: [SCOPES.read] }));
+    const text = out.content[0].text;
+    expect(text).toContain("Lenny");
+    expect(text).toContain("dinosaurs");
+    expect(text).not.toContain("nut-free"); // dietary never exported off-platform
+    expect(text).not.toContain("epipen"); // medical never exported off-platform
+  });
+
+  it("surfaces curated nearby ideas with a proactive nudge", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ cards: [{ near_label: "Gardens by the Bay" }] }), {
+        status: 200,
+      }),
+    );
+    const out = await tools.whats_nearby({ trip_id: "t_1" }, extraFor({ scopes: [SCOPES.read] }));
+    expect(out.content[0].text).toContain("Gardens by the Bay");
+    expect(out.content[0].text).toContain("rainy-day");
+  });
+});
+
+describe("MCP prompts", () => {
+  function fakePromptServer() {
+    const prompts: Record<
+      string,
+      (args: Record<string, string | undefined>) => { messages: { content: { text: string } }[] }
+    > = {};
+    return {
+      server: {
+        prompt: (name: string, _d: string, _s: unknown, cb: (typeof prompts)[string]) =>
+          (prompts[name] = cb),
+      },
+      prompts,
+    };
+  }
+
+  it("registers branded prompts that carry the house style", () => {
+    const { server, prompts } = fakePromptServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayPrompts(server as any);
+    expect(Object.keys(prompts)).toEqual(
+      expect.arrayContaining(["plan_a_day", "something_for_everyone", "whats_nearby", "rainy_day"]),
+    );
+    const day = prompts.plan_a_day({ trip_id: "t_1", focus: "beach" });
+    const text = day.messages[0].content.text;
+    expect(text).toContain("t_1");
+    expect(text).toContain("beach");
+    expect(text).toMatch(/yay/i);
   });
 });
 
