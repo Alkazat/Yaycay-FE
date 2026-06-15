@@ -13,6 +13,17 @@ export const ASSISTANT_LABEL: Record<AssistantBrand, string> = {
   gemini: "Gemini",
 };
 
+/** Infer a partner brand from a dynamically-registered assistant's name. */
+export function brandFromName(name: string | null | undefined): AssistantBrand | null {
+  const n = (name ?? "").toLowerCase();
+  if (n.includes("claude") || n.includes("anthropic")) return "claude";
+  if (n.includes("gemini") || n.includes("google")) return "gemini";
+  if (n.includes("chatgpt") || n.includes("openai") || n.includes("codex") || n.includes("gpt")) {
+    return "openai";
+  }
+  return null;
+}
+
 function ClaudeMark({ size }: { size: number }) {
   // Anthropic-style radial burst.
   const rays = Array.from({ length: 12 });

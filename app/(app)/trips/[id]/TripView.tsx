@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTripContent, listProfiles } from "@/lib/api/trips";
 import { getProgress, setActivityDone } from "@/lib/api/progress";
@@ -11,7 +12,6 @@ import { DayNav } from "@/components/trips/DayNav";
 import { TripComplete } from "@/components/trips/TripComplete";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
-import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { PinGate } from "@/components/profile/PinGate";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import {
@@ -24,14 +24,14 @@ import {
 import { StarBank } from "@/components/stars/StarBank";
 import { GameLauncher } from "@/components/games/GameLauncher";
 import { GrownupsGuide } from "@/components/grownups/GrownupsGuide";
-import { Countdown } from "@/components/Countdown";
-import { Tabs, Card, CardBody, Banner, ProgressMeter } from "@/components/ds";
+import { Tabs, Card, CardBody, Banner } from "@/components/ds";
 import type { ProfileMode, TripProgress } from "@/lib/contract-mock/types";
-import { formatDateRange } from "@/lib/format";
 import { useTripPlanning } from "@/components/trips/useTripPlanning";
 import { useTripFeatures } from "@/components/trips/useTripFeatures";
 import { ExplorePlanSwitch } from "@/components/trips/ExplorePlanSwitch";
 import { PlanningPanel } from "@/components/trips/PlanningPanel";
+import { TripStickyHeader } from "@/components/trips/TripStickyHeader";
+import { BrandLoading } from "@/components/shell/BrandLoading";
 import { resolveFeatures } from "@/lib/features";
 
 export function TripView({ tripId }: { tripId: string }) {
@@ -55,6 +55,18 @@ export function TripView({ tripId }: { tripId: string }) {
   // feature overrides (BE-backed, synced across devices).
   const planning = useTripPlanning(tripId);
   const featureToggles = useTripFeatures(tripId);
+
+  // Honour the mode chosen at the trip tile (?mode=explore|plan), once per entry.
+  const searchParams = useSearchParams();
+  const modeParam = searchParams.get("mode");
+  const appliedMode = useRef(false);
+  useEffect(() => {
+    if (appliedMode.current) return;
+    if (modeParam === "plan" || modeParam === "explore") {
+      planning.setMode(modeParam);
+      appliedMode.current = true;
+    }
+  }, [modeParam, planning]);
 
   const trip = tripQuery.data;
   const profiles = profilesQuery.data ?? [];
@@ -149,7 +161,7 @@ export function TripView({ tripId }: { tripId: string }) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: progressKey }),
   });
 
-  if (tripQuery.isLoading) return <p>Loading your trip...</p>;
+  if (tripQuery.isLoading) return <BrandLoading label="Opening your trip…" />;
   if (tripQuery.isError || !trip) {
     return (
       <Card variant="soft">
@@ -171,21 +183,19 @@ export function TripView({ tripId }: { tripId: string }) {
 
   return (
     <div className="yc-stack" data-testid="trip-view">
+      <TripStickyHeader
+        tripId={tripId}
+        title={trip.trip.destination}
+        startDate={trip.trip.start_date}
+        endDate={trip.trip.end_date}
+        daysComplete={tp.daysComplete}
+        totalDays={tp.totalDays}
+        profiles={profiles}
+        activeProfileId={profileId}
+        onSelectProfile={selectProfile}
+        showPocketMoney={effectiveView === "kid" && features.pocket_money}
+      />
       <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
-        <h1 style={{ margin: 0 }}>{trip.trip.destination}</h1>
-        <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
-          {formatDateRange(trip.trip.start_date, trip.trip.end_date)}
-        </p>
-        <div>
-          <Countdown startDate={trip.trip.start_date} timezone={trip.trip.timezone} />
-        </div>
-        <ProgressMeter
-          value={tp.daysComplete}
-          max={Math.max(tp.totalDays, 1)}
-          label="Days explored"
-          valueText={`${tp.daysComplete} / ${tp.totalDays}`}
-          tone="meadow"
-        />
         {canPlan ? <ExplorePlanSwitch mode={planning.mode} onChange={planning.setMode} /> : null}
         {/* Exploring tools. Per-explorer links honour the active explorer's
             toggles; Map and While-you're-there are trip-wide. Hidden in Plan. */}
@@ -253,10 +263,6 @@ export function TripView({ tripId }: { tripId: string }) {
 
           {effectiveView === "kid" && tripComplete ? (
             <TripComplete destination={trip.trip.destination} />
-          ) : null}
-
-          {effectiveView === "kid" && profiles.length > 0 ? (
-            <ProfileSwitcher profiles={profiles} activeId={profileId} onSelect={selectProfile} />
           ) : null}
 
           {effectiveView === "kid" && features.pocket_money && activeProfile && activeDay ? (

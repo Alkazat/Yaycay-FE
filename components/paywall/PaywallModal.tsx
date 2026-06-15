@@ -1,7 +1,8 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createCheckoutSession } from "@/lib/api/account";
+import { getCatalogue, priceOf } from "@/lib/api/catalogue";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ds";
 import type { Product } from "@/lib/paywall";
@@ -20,6 +21,9 @@ export function PaywallModal({
   tripId?: string;
   onClose: () => void;
 }) {
+  const catalogue = useQuery({ queryKey: ["catalogue"], queryFn: ({ signal }) => getCatalogue(signal) });
+  const price = priceOf(catalogue.data, product.id, product.priceUsd);
+
   const checkout = useMutation({
     mutationFn: () => createCheckoutSession({ price_id: product.id, trip_id: tripId }),
     onSuccess: ({ url }) => {
@@ -30,11 +34,9 @@ export function PaywallModal({
   return (
     <Modal title={product.name} onClose={onClose}>
       <p style={{ margin: 0 }}>{product.blurb}</p>
-      <p style={{ margin: "var(--space-3) 0", fontSize: "var(--fs-h3)", fontWeight: 800 }}>
-        US${product.priceUsd}
-      </p>
+      <p style={{ margin: "var(--space-3) 0", fontSize: "var(--fs-h3)", fontWeight: 800 }}>US${price}</p>
       <Button variant="cta" block onClick={() => checkout.mutate()} disabled={checkout.isPending}>
-        {checkout.isPending ? "Opening checkout..." : `Continue - US$${product.priceUsd}`}
+        {checkout.isPending ? "Opening checkout..." : `Continue - US$${price}`}
       </Button>
       {checkout.isError ? (
         <p style={{ margin: "var(--space-2) 0 0", color: "var(--coral-500)", fontWeight: 700 }}>
