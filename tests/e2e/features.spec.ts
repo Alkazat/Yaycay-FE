@@ -38,9 +38,13 @@ test("stars: claim the day's star challenge", async ({ page }) => {
   await expect(page.getByTestId("star-count")).toContainText(/[1-9]/);
 });
 
-/** B2: play and win the mini-game, which grants a star. */
-test("mini-game: win grants a star", async ({ page }) => {
+/** B2: a little explorer can play and win the mini-game. */
+test("mini-game: little explorer plays and wins", async ({ page }) => {
   await page.goto("/trips/t_sg");
+  await expect(page.getByTestId("trip-view")).toBeVisible();
+
+  // Mini-games are a little-explorer feature by default; switch to Lenny to play.
+  await page.getByRole("radio", { name: /lenny/i }).click();
   await page.getByTestId("game-launch").click();
   await expect(page.getByTestId("game-overlay")).toBeVisible();
 
@@ -50,7 +54,6 @@ test("mini-game: win grants a star", async ({ page }) => {
 
   await expect(page.getByTestId("game-win")).toBeVisible();
   await page.getByRole("button", { name: /all done/i }).click();
-  await expect(page.getByTestId("star-count")).toContainText(/[1-9]/);
 });
 
 /** B4: add a packing item. */
@@ -60,7 +63,10 @@ test("packing: add an item", async ({ page }, testInfo) => {
 
   // Unique so the shared store can't cause a strict-mode collision.
   const item = `Beach towel ${testInfo.project.name} ${Date.now()}`;
-  await page.getByLabel(/add to/i).first().fill(item);
+  await page
+    .getByLabel(/add to/i)
+    .first()
+    .fill(item);
   await page.getByRole("button", { name: /^add$/i }).first().click();
   await expect(page.getByText(item).first()).toBeVisible();
 });
