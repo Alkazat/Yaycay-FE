@@ -225,7 +225,7 @@ export function registerYaycayTools(server: McpServer): void {
 
   server.tool(
     "whats_nearby",
-    "Yaycay's pre-curated 'what's nearby' companion ideas for a trip (places worth a look + rainy-day backups). Use it to surface things to do near the family, then add a couple of proactive, age-appropriate ideas of your own.",
+    "Yaycay's curated 'what's nearby' for a trip (places worth a look + rainy-day backups). Lead with these, then layer in your own real-world knowledge of the area for more ideas - always through Yaycay's lens.",
     { trip_id: z.string().describe("The trip id (see list_trips).") },
     async ({ trip_id }, extra) =>
       safe(extra, SCOPES.read, async (auth) => {
@@ -235,9 +235,66 @@ export function registerYaycayTools(server: McpServer): void {
         );
         return ok({
           nearby,
-          note: "A warm starting point - now proactively offer 1-2 more ideas the whole family would enjoy (something for the kids, something shared) plus a rainy-day backup.",
+          note: "These are Yaycay's curated picks - lead with them, then add a couple of your own well-judged nearby ideas (something for the kids, something shared) and a rainy-day backup. Keep it age-appropriate and low-faff.",
         });
       }),
+  );
+
+  server.tool(
+    "list_reservations",
+    "List the family's tracked bookings for a trip (hotel / activity / flight / transport / dining) with each one's status (planned / booked / confirmed).",
+    { trip_id: z.string().describe("The trip id (see list_trips).") },
+    async ({ trip_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) =>
+        ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}/reservations`, auth)),
+      ),
+  );
+
+  server.tool(
+    "add_reservation",
+    "Record a booking the family has made (or plans to) onto the trip. This TRACKS it in their itinerary - it does not pay or book with any supplier. Status defaults to 'planned'.",
+    {
+      trip_id: z.string().describe("The trip id (see list_trips)."),
+      title: z.string().describe("What it's for, e.g. 'Sea World tickets' or 'Beachside Hotel'."),
+      kind: z.enum(["hotel", "activity", "flight", "transport", "dining", "other"]).optional(),
+      when: z.string().optional().describe("When, in plain words, e.g. 'Fri 2pm' or 'day 3'."),
+      location: z.string().optional(),
+      ref: z.string().optional().describe("Any confirmation / booking reference."),
+      status: z.enum(["planned", "booked", "confirmed"]).optional(),
+      notes: z.string().optional(),
+    },
+    async ({ trip_id, ...body }, extra) =>
+      safe(extra, SCOPES.plan, async (auth) => {
+        // Confirm the trip exists so a new/unknown destination returns the
+        // friendly "add it in the app" guidance instead of an FK error.
+        await contractJson(`/trips/${encodeURIComponent(trip_id)}`, auth);
+        return ok(
+          await contractJson(`/trips/${encodeURIComponent(trip_id)}/reservations`, {
+            ...auth,
+            method: "POST",
+            body,
+          }),
+        );
+      }),
+  );
+
+  server.tool(
+    "confirm_reservation",
+    "Mark a tracked reservation as confirmed (optionally with its confirmation reference), once the family has it locked in.",
+    {
+      trip_id: z.string().describe("The trip id."),
+      reservation_id: z.string().describe("The reservation id (see list_reservations)."),
+      ref: z.string().optional().describe("Confirmation reference, if any."),
+    },
+    async ({ trip_id, reservation_id, ref }, extra) =>
+      safe(extra, SCOPES.plan, async (auth) =>
+        ok(
+          await contractJson(
+            `/trips/${encodeURIComponent(trip_id)}/reservations/${encodeURIComponent(reservation_id)}`,
+            { ...auth, method: "PATCH", body: { status: "confirmed", ...(ref ? { ref } : {}) } },
+          ),
+        ),
+      ),
   );
 
   server.tool(
