@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Card, CardBody, Input, Banner } from "@/components/ds";
+import { safeNextPath } from "@/lib/auth/safeNext";
 
 /**
  * Second factor, enforced on every sign-in. Both the 6-digit OTP form
@@ -15,15 +16,11 @@ import { Button, Card, CardBody, Input, Banner } from "@/components/ds";
  * there is no BE round-trip and no credential leaves the device.
  */
 
-/** Only same-origin local paths are safe redirect targets. */
-function safeNext(next: string): string {
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/trips";
-}
-
 type Phase = "loading" | "enroll" | "verify" | "error";
 
 export function MfaClient({ next }: { next: string }) {
-  const dest = safeNext(next);
+  // Same-origin only (relative path, or the absolute OAuth authorize hand-back).
+  const dest = safeNextPath(next, typeof window !== "undefined" ? window.location.origin : "");
   const [phase, setPhase] = useState<Phase>("loading");
   const [factorId, setFactorId] = useState("");
   const [qr, setQr] = useState("");

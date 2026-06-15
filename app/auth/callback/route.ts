@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/auth/safeNext";
 
 /**
  * Magic-link callback. Supabase emails a PKCE link that lands here with a
@@ -14,16 +15,11 @@ function originOf(request: Request): string {
   return `${proto}://${host}`;
 }
 
-/** Only same-origin local paths are safe redirect targets. */
-function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/trips";
-}
-
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const origin = originOf(request);
-  const dest = safeNext(url.searchParams.get("next"));
+  const dest = safeNextPath(url.searchParams.get("next"), origin);
 
   if (!code) {
     return NextResponse.redirect(new URL("/auth?error=missing_code", origin));

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { hasSupabase } from "@/lib/env";
+import { safeNextPath } from "@/lib/auth/safeNext";
 import { Button, Card, CardBody, Input, Banner } from "@/components/ds";
 
 /**
@@ -63,7 +64,7 @@ export function AuthClient({
       // sign-in, or step up an existing authenticator), carrying any `next` so
       // it returns there once the session reaches AAL2.
       const next = new URLSearchParams(window.location.search).get("next");
-      const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/trips";
+      const safe = safeNextPath(next, window.location.origin);
       router.push(`/auth/mfa?next=${encodeURIComponent(safe)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed.");
