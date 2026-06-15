@@ -65,6 +65,20 @@ body {
   }
 }
 
+/* First-run floating checklist: bottom-right, clearing the mobile tab bar. */
+.yc-firstrun {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 16px);
+  z-index: 50;
+}
+@media (max-width: 640px) {
+  .yc-firstrun {
+    bottom: calc(var(--safe-bottom) + 92px);
+    right: 12px;
+  }
+}
+
 /* Responsive gutters: tighten the edge padding as the viewport narrows.
    Breakpoints at 1000 / 768 / mobile cascade via --gutter to the container
    and the app bar. */
