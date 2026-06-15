@@ -98,6 +98,20 @@ body {
   box-shadow: var(--shadow-sm, 0 4px 12px rgba(16, 24, 40, 0.08));
 }
 
+/* Planning workspace: tabbed main + right sidebar; stacks on tablet/mobile. */
+@media (min-width: 921px) {
+  .yc-planning-grid > [data-testid="planning-sidebar"] {
+    position: sticky;
+    top: calc(var(--appbar-h, 64px) + 12px);
+    align-self: start;
+  }
+}
+@media (max-width: 920px) {
+  .yc-planning-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* First-run floating checklist: bottom-right, clearing the mobile tab bar. */
 .yc-firstrun {
   position: fixed;
