@@ -16,6 +16,9 @@ interface TripDayRendererProps {
   view: RenderView;
   /** Active render mode (kid view). Defaults to standard. */
   mode?: ProfileMode;
+  /** Whether quizzes (typed challenges + bonus) show for this explorer. Defaults
+   * to on; the parent can turn them off per explorer in Planning. */
+  quizzes?: boolean;
   /** Stable ids of ticked activities (kid view). */
   done?: ReadonlySet<string>;
   /** Tick/untick an activity. When provided, done-check rows render. */
@@ -51,6 +54,7 @@ export function TripDayRenderer({
   day,
   view,
   mode = "standard",
+  quizzes = true,
   done,
   onToggleActivity,
 }: TripDayRendererProps) {
@@ -166,13 +170,14 @@ export function TripDayRenderer({
                       />
                     ) : null}
 
-                    {/* Typed challenge - kid view, hidden in little mode. */}
-                    {isKid && showsChallenge(mode) && activity.challenge ? (
+                    {/* Typed challenge - kid view, hidden in little mode, and
+                        suppressed when the parent turns quizzes off for this explorer. */}
+                    {isKid && quizzes && showsChallenge(mode) && activity.challenge ? (
                       <ChallengeBlock challenge={activity.challenge} />
                     ) : null}
 
                     {/* Bonus quiz - Big Explorer (explorer_plus) only. */}
-                    {isKid && showsBonus(mode) && copy.quiz ? (
+                    {isKid && quizzes && showsBonus(mode) && copy.quiz ? (
                       <div
                         style={{
                           marginTop: "var(--space-2)",
