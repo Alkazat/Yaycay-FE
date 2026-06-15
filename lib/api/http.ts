@@ -65,6 +65,7 @@ export const SERVED = {
   demoGenerateDay: true,
   signupCapture: true,
   listTrips: true,
+  createTrip: true,
   getTrip: true,
   content: true,
   auth2fa: true,
