@@ -68,7 +68,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="yc-app" data-section={section}>
+    <div
+      className="yc-app"
+      data-section={section}
+      style={{ ["--appbar-h" as string]: scrolled ? "62px" : "104px" }}
+    >
       <OfflineBanner />
       <header className={`yc-appbar${scrolled ? " yc-appbar--scrolled" : ""}`}>
         <Link href="/trips" className="yc-appbar__brand" aria-label="Yaycay home">
