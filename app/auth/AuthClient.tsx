@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { verifyTwoFactor } from "@/lib/api/auth";
 import { hasSupabase } from "@/lib/env";
 import { Button, Card, CardBody, Input, Banner } from "@/components/ds";
 
@@ -60,18 +59,12 @@ export function AuthClient({
     try {
       const { error: e } = await supabase.auth.verifyOtp({ email, token: code, type: "email" });
       if (e) throw e;
-      // Second factor on every sign-in.
-      const { verified } = await verifyTwoFactor(email, code);
-      if (!verified) throw new Error("That code did not check out.");
-      // Honour a same-origin `next` (e.g. returning to an OAuth connector
-      // authorization). Reject anything that is not a local path to avoid an
-      // open redirect; API routes need a full navigation, not client routing.
+      // First factor done. Hand off to the second factor (enrol on first
+      // sign-in, or step up an existing authenticator), carrying any `next` so
+      // it returns there once the session reaches AAL2.
       const next = new URLSearchParams(window.location.search).get("next");
-      if (next && next.startsWith("/") && !next.startsWith("//")) {
-        window.location.href = next;
-      } else {
-        router.push("/trips");
-      }
+      const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/trips";
+      router.push(`/auth/mfa?next=${encodeURIComponent(safe)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed.");
     } finally {

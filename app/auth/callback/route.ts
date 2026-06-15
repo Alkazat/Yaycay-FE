@@ -37,5 +37,9 @@ export async function GET(request: Request) {
   if (error) {
     return NextResponse.redirect(new URL("/auth?error=link_expired", origin));
   }
-  return NextResponse.redirect(new URL(dest, origin));
+  // First factor established (AAL1). Route through the second factor so 2FA is
+  // enforced however the user signed in; /auth/mfa continues to `dest`.
+  const mfa = new URL("/auth/mfa", origin);
+  mfa.searchParams.set("next", dest);
+  return NextResponse.redirect(mfa);
 }

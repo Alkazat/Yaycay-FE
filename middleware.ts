@@ -14,6 +14,21 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+/** Read the `aal` claim from a Supabase access token (JWT), or null. */
+function aalOf(token: string | undefined): string | null {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4 ? "=".repeat(4 - (b64.length % 4)) : "";
+    const claims = JSON.parse(atob(b64 + pad)) as { aal?: string };
+    return claims.aal ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Go-live route guard. The root domain IS the app: an unauthenticated request to
  * any non-public path is redirected to /auth (carrying a `next` so sign-in
@@ -43,10 +58,25 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) return response;
+  const { pathname, search } = request.nextUrl;
+
+  if (user) {
+    // Authenticated. Enforce the second factor: a session must reach AAL2 before
+    // it can touch the app. Public pages (including /auth/mfa, where the step-up
+    // runs) pass through so the user can actually complete it.
+    if (isPublic(pathname)) return response;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (aalOf(session?.access_token) === "aal2") return response;
+    const stepUp = request.nextUrl.clone();
+    stepUp.pathname = "/auth/mfa";
+    stepUp.search = "";
+    stepUp.searchParams.set("next", pathname === "/" ? "/trips" : `${pathname}${search}`);
+    return NextResponse.redirect(stepUp);
+  }
 
   // Unauthenticated: allow the public pages, bounce everything else to /auth.
-  const { pathname, search } = request.nextUrl;
   if (isPublic(pathname)) return response;
 
   const redirect = request.nextUrl.clone();
