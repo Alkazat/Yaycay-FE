@@ -104,6 +104,15 @@ describe("in-memory OAuth store", () => {
     expect(list[0].scopes).toContain(SCOPES.plan);
     expect(list[0].last_used_at).not.toBeNull();
   });
+
+  it("updates the captured parent Supabase tokens (the connector's refresh path)", async () => {
+    const g = grant({ user_id: "u-pt" });
+    await oauthStore.saveGrant(g);
+    await oauthStore.updateParentTokens(g.connection_id, "new-sat", "new-srt");
+    const got = await oauthStore.getGrantByAccessToken(g.access_token);
+    expect(got?.supabase_access_token).toBe("new-sat");
+    expect(got?.supabase_refresh_token).toBe("new-srt");
+  });
 });
 
 describe("validateAuthRequest", () => {

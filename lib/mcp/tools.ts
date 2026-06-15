@@ -75,9 +75,15 @@ function brand(err: unknown, auth: ToolAuth): ToolResult {
         true,
       );
     }
-    if (err.status === 401 || err.status === 403) {
+    if (err.status === 401) {
       return say(
-        `This Yaycay connection isn't allowed to do that. Try disconnecting and reconnecting Yaycay (with planning enabled) from your assistant's settings.`,
+        `Your Yaycay connection's sign-in has expired. Please reconnect Yaycay from your assistant's settings, then we can carry on right where we left off.`,
+        true,
+      );
+    }
+    if (err.status === 403) {
+      return say(
+        `Yaycay couldn't authorise that on your account. If it keeps happening, try reconnecting Yaycay from your assistant's settings.`,
         true,
       );
     }
