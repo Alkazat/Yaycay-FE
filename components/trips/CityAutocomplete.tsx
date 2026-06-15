@@ -24,7 +24,7 @@ export function CityAutocomplete({
 
   const { data } = useQuery({
     queryKey: ["cities", value],
-    queryFn: () => searchCities(value),
+    queryFn: ({ signal }) => searchCities(value, signal),
     enabled: open && value.trim().length >= 2,
   });
   const results = data ?? [];
