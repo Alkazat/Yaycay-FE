@@ -6,6 +6,7 @@ import { Card, CardBody, CardFooter, Badge, Button } from "@/components/ds";
 import { Countdown } from "@/components/Countdown";
 import { formatDateRange } from "@/lib/format";
 import { tripPrimaryMode } from "@/lib/tripMode";
+import { flagForDestination } from "@/lib/geo";
 
 const STATUS_TONE: Record<TripSummary["status"], "sun" | "meadow" | "aqua" | "sky" | "soft"> = {
   draft: "soft",
@@ -31,12 +32,13 @@ const TIER_LABEL: Record<TripSummary["tier"], string> = {
 export function TripCard({ trip }: { trip: TripSummary }) {
   const primary = tripPrimaryMode(trip);
   const exploreFirst = primary === "explore";
+  const flag = flagForDestination(trip.destination);
 
   return (
     <Card interactive>
       <Link href={`/trips/${trip.id}`} style={{ textDecoration: "none", color: "inherit" }}>
         <CardBody
-          title={trip.destination}
+          title={flag ? `${flag} ${trip.destination}` : trip.destination}
           subtitle={
             trip.start_date && trip.end_date ? formatDateRange(trip.start_date, trip.end_date) : undefined
           }
