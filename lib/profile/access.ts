@@ -29,6 +29,20 @@ export const MODE_EMOJI: Record<ExplorerMode, string> = {
   standard: "🛡️",
 };
 
+/** Age range per band, shown on the band selector + chips. */
+export const MODE_AGES: Record<ExplorerMode, string> = {
+  little: "Ages 3-5",
+  explorer: "Ages 6-8",
+  explorer_plus: "Ages 9-12",
+  standard: "Grown-up",
+};
+
+/** Avatar emoji choices for the profile picker (stored on `avatar`). */
+export const AVATAR_EMOJIS = [
+  "🦁", "🐯", "🦊", "🐼", "🐸", "🦄", "🐙", "🐢",
+  "🦖", "🐝", "🌟", "🚀", "🐬", "🦉", "🐧", "🦕",
+] as const;
+
 /**
  * A profile's type. An absent `type` (a pre-@0.13 payload) defaults to `child` -
  * the safe default, since it never auto-grants Grown-ups access.
