@@ -27,6 +27,28 @@ export const MOCK_ACCOUNT: AccountSummary = {
   created_at: "2026-01-01T00:00:00.000Z",
 };
 
+/** MOCK pricing catalogue (BE sources live amounts from Stripe). */
+export const MOCK_CATALOGUE = [
+  {
+    price_id: "price_holiday_ai" as const,
+    name: "Full holiday - our AI",
+    price_usd: 129,
+    blurb: "Plan with our guardrailed AI chat. Every day unlocked, journal, photos and offline.",
+  },
+  {
+    price_id: "price_holiday_byo" as const,
+    name: "Full holiday - your own AI",
+    price_usd: 59,
+    blurb: "Connect your own ChatGPT, Claude or Gemini. Every day unlocked, journal and offline.",
+  },
+  {
+    price_id: "price_datakeep_annual" as const,
+    name: "Keep your memories",
+    price_usd: 9,
+    blurb: "Hold onto this trip's memories for another 12 months.",
+  },
+];
+
 /** MOCK billing history (no contract endpoint yet; USD, US$129/US$59 pricing). */
 export const MOCK_TRANSACTIONS: Transaction[] = [
   {
