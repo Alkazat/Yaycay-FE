@@ -15,6 +15,7 @@ import type {
   TripContent,
   TripSummary,
 } from "./types";
+import type { Transaction } from "@/lib/api/transactions";
 
 export const MOCK_ACCOUNT: AccountSummary = {
   email: "family@example.com",
@@ -25,6 +26,31 @@ export const MOCK_ACCOUNT: AccountSummary = {
   deletion_requested_at: null,
   created_at: "2026-01-01T00:00:00.000Z",
 };
+
+/** MOCK billing history (no contract endpoint yet; USD, US$129/US$59 pricing). */
+export const MOCK_TRANSACTIONS: Transaction[] = [
+  {
+    id: "txn_3",
+    date: "2026-05-20T09:14:00.000Z",
+    description: "Keep my memories - Singapore (12 months)",
+    amount_usd: 19,
+    status: "paid",
+  },
+  {
+    id: "txn_2",
+    date: "2026-05-02T18:40:00.000Z",
+    description: "Holiday - full (our AI planning)",
+    amount_usd: 129,
+    status: "paid",
+  },
+  {
+    id: "txn_1",
+    date: "2026-04-15T11:05:00.000Z",
+    description: "Holiday - bring your own AI",
+    amount_usd: 59,
+    status: "refunded",
+  },
+];
 
 /**
  * One family across all four user types: a parent/carer (Grown Ups, PIN-locked)

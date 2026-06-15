@@ -65,6 +65,7 @@ export const SERVED = {
   demoGenerateDay: true,
   signupCapture: true,
   listTrips: true,
+  createTrip: true,
   getTrip: true,
   content: true,
   auth2fa: true,
@@ -94,4 +95,7 @@ export const SERVED = {
   // planning chat history (`GET /trips/:id/chat`). Live as of contract @0.21/0.22.
   companion: true,
   chatHistory: true,
+  // Billing/transaction history. NOT in the contract yet (no /account/transactions
+  // endpoint) - mock-backed until BE ships it. See docs/handoffs.
+  transactions: false,
 } as const;
