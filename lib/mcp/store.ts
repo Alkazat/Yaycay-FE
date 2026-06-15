@@ -97,6 +97,12 @@ export interface OAuthStore {
   listConnectionsByUser(userId: string): Promise<ConnectionView[]>;
   /** Revoke a connection. Returns true if one was revoked for this user. */
   revokeConnection(connectionId: string, userId: string): Promise<boolean>;
+  /** Replace the captured parent Supabase tokens after a refresh. */
+  updateParentTokens(
+    connectionId: string,
+    supabaseAccessToken: string,
+    supabaseRefreshToken: string,
+  ): Promise<void>;
 }
 
 class InMemoryOAuthStore implements OAuthStore {
@@ -192,6 +198,18 @@ class InMemoryOAuthStore implements OAuthStore {
     this.accessIndex.delete(g.access_token);
     this.refreshIndex.delete(g.refresh_token);
     return true;
+  }
+
+  async updateParentTokens(
+    connectionId: string,
+    supabaseAccessToken: string,
+    supabaseRefreshToken: string,
+  ): Promise<void> {
+    const g = this.grants.get(connectionId);
+    if (g) {
+      g.supabase_access_token = supabaseAccessToken;
+      g.supabase_refresh_token = supabaseRefreshToken;
+    }
   }
 }
 

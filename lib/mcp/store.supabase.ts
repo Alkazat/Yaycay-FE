@@ -18,7 +18,7 @@
 // be reconciled to this shape. Until then this store stays inert (see
 // hasDurableOAuthStore) and the in-memory default is used.
 
-import { serviceClient } from "@/lib/supabase/service";
+import { serviceClient, hasServiceRole } from "@/lib/supabase/service";
 import { decryptSecret, encryptSecret, sha256Hex } from "@/lib/mcp/crypto";
 import type {
   AuthCode,
@@ -286,14 +286,28 @@ class SupabaseOAuthStore implements OAuthStore {
     if (error) throw new Error(error.message);
     return Boolean(data);
   }
+
+  async updateParentTokens(
+    connectionId: string,
+    supabaseAccessToken: string,
+    supabaseRefreshToken: string,
+  ): Promise<void> {
+    const [sat, srt] = await Promise.all([
+      encryptSecret(supabaseAccessToken),
+      encryptSecret(supabaseRefreshToken),
+    ]);
+    const { error } = await serviceClient()
+      .from(GRANTS)
+      .update({ supabase_access_token: sat, supabase_refresh_token: srt })
+      .eq("connection_id", connectionId);
+    if (error) throw new Error(error.message);
+  }
 }
 
-/** True when the durable store can run (service role + encryption key present). */
+/** True when the durable store can run: a usable privileged client (scoped
+ * oauth_store key + anon, or service role) plus the at-rest encryption key. */
 export function hasDurableOAuthStore(): boolean {
-  return (
-    (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").length > 0 &&
-    (process.env.OAUTH_ENC_KEY ?? "").length > 0
-  );
+  return hasServiceRole() && (process.env.OAUTH_ENC_KEY ?? "").length > 0;
 }
 
 export function createSupabaseOAuthStore(): OAuthStore {

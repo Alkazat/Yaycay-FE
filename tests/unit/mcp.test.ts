@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { s256, verifyPkce, randomToken } from "@/lib/mcp/pkce";
 import { oauthStore, type Grant } from "@/lib/mcp/store";
 import { validateAuthRequest } from "@/lib/mcp/oauthFlow";
-import { registerYaycayTools, type ToolAuth } from "@/lib/mcp/tools";
+import { registerYaycayTools, registerYaycayPrompts, type ToolAuth } from "@/lib/mcp/tools";
+import { fetchNearbyPlaces, placesConfigured } from "@/lib/mcp/places";
 import { SCOPES } from "@/lib/mcp/config";
 
 function grant(over: Partial<Grant> = {}): Grant {
@@ -104,6 +105,15 @@ describe("in-memory OAuth store", () => {
     expect(list[0].scopes).toContain(SCOPES.plan);
     expect(list[0].last_used_at).not.toBeNull();
   });
+
+  it("updates the captured parent Supabase tokens (the connector's refresh path)", async () => {
+    const g = grant({ user_id: "u-pt" });
+    await oauthStore.saveGrant(g);
+    await oauthStore.updateParentTokens(g.connection_id, "new-sat", "new-srt");
+    const got = await oauthStore.getGrantByAccessToken(g.access_token);
+    expect(got?.supabase_access_token).toBe("new-sat");
+    expect(got?.supabase_refresh_token).toBe("new-srt");
+  });
 });
 
 describe("validateAuthRequest", () => {
@@ -176,13 +186,33 @@ describe("authorization-code token exchange", () => {
       });
 
     await saveCode("good1");
-    const bad = await POST(form({ grant_type: "authorization_code", code: "good1", code_verifier: "wrong", client_id: "cl_tok", redirect_uri: "https://c/cb" }));
+    const bad = await POST(
+      form({
+        grant_type: "authorization_code",
+        code: "good1",
+        code_verifier: "wrong",
+        client_id: "cl_tok",
+        redirect_uri: "https://c/cb",
+      }),
+    );
     expect(bad.status).toBe(400);
 
     await saveCode("good2");
-    const res = await POST(form({ grant_type: "authorization_code", code: "good2", code_verifier: verifier, client_id: "cl_tok", redirect_uri: "https://c/cb" }));
+    const res = await POST(
+      form({
+        grant_type: "authorization_code",
+        code: "good2",
+        code_verifier: verifier,
+        client_id: "cl_tok",
+        redirect_uri: "https://c/cb",
+      }),
+    );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { access_token: string; refresh_token: string; scope: string };
+    const body = (await res.json()) as {
+      access_token: string;
+      refresh_token: string;
+      scope: string;
+    };
     expect(body.scope).toBe(SCOPES.read);
 
     const issued = await oauthStore.getGrantByAccessToken(body.access_token);
@@ -190,7 +220,9 @@ describe("authorization-code token exchange", () => {
     expect(issued?.client_name).toBe("Codey");
 
     // Refresh rotates the tokens but keeps one connection.
-    const refreshed = await POST(form({ grant_type: "refresh_token", refresh_token: body.refresh_token }));
+    const refreshed = await POST(
+      form({ grant_type: "refresh_token", refresh_token: body.refresh_token }),
+    );
     expect(refreshed.status).toBe(200);
     const rbody = (await refreshed.json()) as { access_token: string };
     expect(rbody.access_token).not.toBe(body.access_token);
@@ -201,9 +233,15 @@ describe("authorization-code token exchange", () => {
 
 describe("MCP tools", () => {
   function fakeServer() {
-    const tools: Record<string, (args: unknown, extra: unknown) => Promise<{ content: { text: string }[] }>> = {};
+    const tools: Record<
+      string,
+      (args: unknown, extra: unknown) => Promise<{ content: { text: string }[]; isError?: boolean }>
+    > = {};
     return {
-      server: { tool: (name: string, _d: string, _s: unknown, h: (typeof tools)[string]) => (tools[name] = h) },
+      server: {
+        tool: (name: string, _d: string, _s: unknown, h: (typeof tools)[string]) =>
+          (tools[name] = h),
+      },
       tools,
     };
   }
@@ -220,12 +258,15 @@ describe("MCP tools", () => {
     vi.restoreAllMocks();
   });
 
-  it("blocks a read tool without the read scope and allows it with the scope", async () => {
+  it("blocks a read tool without the read scope (branded, not thrown) and allows it with the scope", async () => {
     const { server, tools } = fakeServer();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerYaycayTools(server as any);
 
-    await expect(tools.list_trips({}, extraFor({ scopes: [] }))).rejects.toThrow(/scope/);
+    // Missing scope returns warm guidance, never a raw throw.
+    const denied = await tools.list_trips({}, extraFor({ scopes: [] }));
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/reconnect/i);
 
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ trips: [{ id: "t_1" }] }), { status: 200 }),
@@ -239,21 +280,350 @@ describe("MCP tools", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerYaycayTools(server as any);
 
-    await expect(
-      tools.plan_trip({ trip_id: "t_1", message: "hi" }, extraFor({ scopes: [SCOPES.read] })),
-    ).rejects.toThrow(/plan/);
+    const denied = await tools.plan_trip(
+      { trip_id: "t_1", message: "hi" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
 
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(sseResponse("howdy"));
+    // plan_trip first confirms the trip exists (GET), then streams the planner.
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (url) =>
+        String(url).includes("/plan/chat")
+          ? sseResponse("howdy")
+          : new Response(JSON.stringify({ id: "t_1" }), { status: 200 }),
+      );
     const out = await tools.plan_trip(
       { trip_id: "t_1", message: "plan my trip" },
       extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
     );
     expect(out.content[0].text).toContain("howdy");
 
-    const init = fetchSpy.mock.calls[0][1] as RequestInit;
-    const headers = new Headers(init.headers);
+    const planCall = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/plan/chat"));
+    const headers = new Headers((planCall?.[1] as RequestInit).headers);
     expect(headers.get("x-yaycay-source")).toBe("connector");
     expect(headers.get("x-yaycay-connection-id")).toBe("conn_x");
+  });
+
+  it("guides the family to the app for a brand-new trip instead of erroring", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const out = await tools.request_new_trip(
+      { destination: "Gold Coast" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(out.isError).toBeFalsy();
+    expect(out.content[0].text).toContain("Gold Coast");
+    expect(out.content[0].text).toContain("/trips"); // dashboard link
+    expect(out.content[0].text).toContain("can_create_here");
+  });
+
+  it("turns a missing trip into friendly branded guidance (no raw 500)", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("nope", { status: 404 }));
+    const out = await tools.get_trip_content(
+      { trip_id: "missing" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(out.isError).toBe(true);
+    expect(out.content[0].text).toMatch(/Yaycay app|dashboard/i);
+    expect(out.content[0].text).not.toContain("500");
+  });
+
+  it("builds a brief from trip + travellers without leaking dietary/medical", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) =>
+      String(url).includes("/profiles")
+        ? new Response(
+            JSON.stringify({
+              profiles: [
+                {
+                  name: "Lenny",
+                  age: 6,
+                  interests: ["dinosaurs"],
+                  dietary: ["nut-free"],
+                  medical: ["epipen"],
+                },
+              ],
+            }),
+            { status: 200 },
+          )
+        : new Response(JSON.stringify({ id: "t_1", destination: "Singapore" }), { status: 200 }),
+    );
+    const out = await tools.get_trip_brief({ trip_id: "t_1" }, extraFor({ scopes: [SCOPES.read] }));
+    const text = out.content[0].text;
+    expect(text).toContain("Lenny");
+    expect(text).toContain("dinosaurs");
+    expect(text).not.toContain("nut-free"); // dietary never exported off-platform
+    expect(text).not.toContain("epipen"); // medical never exported off-platform
+  });
+
+  it("surfaces curated nearby ideas with a proactive nudge", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    // whats_nearby reads the companion picks AND the trip (for the destination),
+    // so hand back a fresh Response per call (a body can only be read once).
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) =>
+      String(url).includes("/companion")
+        ? new Response(JSON.stringify({ cards: [{ near_label: "Gardens by the Bay" }] }), {
+            status: 200,
+          })
+        : new Response(JSON.stringify({ id: "t_1", destination: "Singapore" }), { status: 200 }),
+    );
+    const out = await tools.whats_nearby({ trip_id: "t_1" }, extraFor({ scopes: [SCOPES.read] }));
+    expect(out.content[0].text).toContain("Gardens by the Bay");
+    expect(out.content[0].text).toContain("rainy-day");
+  });
+
+  it("tracks a reservation (pre-checks the trip) and confirms it", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+      const u = String(url);
+      const method = (init as RequestInit | undefined)?.method ?? "GET";
+      if (u.endsWith("/reservations") && method === "POST") {
+        return new Response(JSON.stringify({ reservation: { id: "r_1", status: "planned" } }), {
+          status: 200,
+        });
+      }
+      if (u.includes("/reservations/")) {
+        return new Response(JSON.stringify({ reservation: { id: "r_1", status: "confirmed" } }), {
+          status: 200,
+        });
+      }
+      return new Response(JSON.stringify({ id: "t_1" }), { status: 200 }); // trip pre-check
+    });
+
+    const added = await tools.add_reservation(
+      { trip_id: "t_1", title: "Sea World tickets", kind: "activity" },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(added.content[0].text).toContain("r_1");
+    // Branded, and explicit that nothing was paid/booked on the family's behalf.
+    expect(added.content[0].text).toMatch(/Tracked it/i);
+    expect(added.content[0].text).toMatch(/no payment/i);
+    const post = fetchSpy.mock.calls.find(
+      (c) => String(c[0]).endsWith("/reservations") && (c[1] as RequestInit)?.method === "POST",
+    );
+    expect(String((post?.[1] as RequestInit)?.body)).toContain("Sea World tickets");
+
+    const confirmed = await tools.confirm_reservation(
+      { trip_id: "t_1", reservation_id: "r_1", ref: "ABC123" },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(confirmed.content[0].text).toContain("confirmed");
+    expect(confirmed.content[0].text).toMatch(/Locked in/i);
+  });
+
+  it("blocks add_reservation without the plan scope (no payment, just tracking)", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const denied = await tools.add_reservation(
+      { trip_id: "t_1", title: "x" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
+  });
+
+  it("persists structural edits via edit_itinerary (connector write)", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ days: [{ id: "d1" }] }), { status: 200 }));
+    const out = await tools.edit_itinerary(
+      {
+        trip_id: "t_1",
+        ops: [{ op: "update_activity", activity_id: "a1", set: { body: "Pip's nut allergy" } }],
+      },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(out.content[0].text).toContain("saved");
+    expect(out.content[0].text).toMatch(/Saved to your Yaycay trip/i);
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/content/patch"));
+    expect((call?.[1] as RequestInit)?.method).toBe("POST");
+    expect(new Headers((call?.[1] as RequestInit)?.headers).get("x-yaycay-source")).toBe(
+      "connector",
+    );
+  });
+
+  it("blocks edit_itinerary without the plan scope", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const denied = await tools.edit_itinerary(
+      { trip_id: "t_1", ops: [] },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
+  });
+
+  it("saves the family's brief (allergies etc.) via set_trip_brief", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ intent: { constraints: { allergies: ["nuts"] } } }), {
+        status: 200,
+      }),
+    );
+    const out = await tools.set_trip_brief(
+      { trip_id: "t_1", constraints: { allergies: ["nuts"] }, must_do: ["Sea World"] },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(out.content[0].text).toContain("nuts");
+    expect(out.content[0].text).toMatch(/remember/i);
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/intent"));
+    expect((call?.[1] as RequestInit)?.method).toBe("PUT");
+    expect(String((call?.[1] as RequestInit)?.body)).toContain("Sea World");
+  });
+
+  it("exposes a lean, curated tool set (folded reads removed)", () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const names = Object.keys(tools).sort();
+    expect(names).toEqual(
+      [
+        "add_reservation",
+        "confirm_reservation",
+        "edit_itinerary",
+        "get_trip_brief",
+        "get_trip_content",
+        "list_trips",
+        "plan_trip",
+        "request_new_trip",
+        "set_trip_brief",
+        "whats_nearby",
+      ].sort(),
+    );
+    // The reads folded into get_trip_brief are gone, keeping the client focused.
+    expect(tools.get_trip).toBeUndefined();
+    expect(tools.get_packing_list).toBeUndefined();
+    expect(tools.list_reservations).toBeUndefined();
+  });
+
+  it("folds bookings, packing and a plan outline into a single get_trip_brief call", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const u = String(url);
+      if (u.includes("/profiles"))
+        return new Response(JSON.stringify({ profiles: [] }), { status: 200 });
+      if (u.includes("/reservations"))
+        return new Response(JSON.stringify({ reservations: [{ id: "r_1" }] }), { status: 200 });
+      if (u.includes("/packing"))
+        return new Response(JSON.stringify({ lists: ["sunscreen"] }), { status: 200 });
+      if (u.endsWith("/content"))
+        return new Response(JSON.stringify({ days: [{ label: "Day 1", moments: [1, 2] }] }), {
+          status: 200,
+        });
+      if (u.includes("/intent"))
+        return new Response(JSON.stringify({ intent: {} }), { status: 200 });
+      return new Response(JSON.stringify({ id: "t_1", destination: "Singapore" }), { status: 200 });
+    });
+    const out = await tools.get_trip_brief({ trip_id: "t_1" }, extraFor({ scopes: [SCOPES.read] }));
+    const text = out.content[0].text;
+    expect(text).toContain("r_1"); // reservations folded in
+    expect(text).toContain("sunscreen"); // packing folded in
+    expect(text).toContain("Day 1"); // plan outline
+    expect(text).toContain('"moments": 2'); // outline counts how full each day is
+  });
+});
+
+describe("MCP prompts", () => {
+  function fakePromptServer() {
+    const prompts: Record<
+      string,
+      (args: Record<string, string | undefined>) => { messages: { content: { text: string } }[] }
+    > = {};
+    return {
+      server: {
+        prompt: (name: string, _d: string, _s: unknown, cb: (typeof prompts)[string]) =>
+          (prompts[name] = cb),
+      },
+      prompts,
+    };
+  }
+
+  it("registers branded prompts that carry the house style", () => {
+    const { server, prompts } = fakePromptServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayPrompts(server as any);
+    expect(Object.keys(prompts)).toEqual(
+      expect.arrayContaining(["plan_a_day", "something_for_everyone", "whats_nearby", "rainy_day"]),
+    );
+    const day = prompts.plan_a_day({ trip_id: "t_1", focus: "beach" });
+    const text = day.messages[0].content.text;
+    expect(text).toContain("t_1");
+    expect(text).toContain("beach");
+    expect(text).toMatch(/yay/i);
+  });
+});
+
+describe("live places provider", () => {
+  const KEY = "PLACES_API_KEY";
+  const PROVIDER = "PLACES_PROVIDER";
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    delete process.env[KEY];
+    delete process.env[PROVIDER];
+  });
+
+  it("is unavailable (and makes no network call) when no key is configured", async () => {
+    const spy = vi.spyOn(globalThis, "fetch");
+    expect(placesConfigured()).toBe(false);
+    const out = await fetchNearbyPlaces("Singapore");
+    expect(out.available).toBe(false);
+    expect(out.places).toEqual([]);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("maps Google Places results into branded, family-lens picks", async () => {
+    process.env[KEY] = "test-key";
+    process.env[PROVIDER] = "google";
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          places: [
+            {
+              displayName: { text: "Gardens by the Bay" },
+              formattedAddress: "18 Marina Gardens Dr",
+              rating: 4.7,
+              primaryTypeDisplayName: { text: "Park" },
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const out = await fetchNearbyPlaces("Singapore");
+    expect(out.available).toBe(true);
+    expect(out.source).toBe("google");
+    expect(out.places[0].name).toBe("Gardens by the Bay");
+    expect(out.places[0].for_the_family).toMatch(/outdoor/i); // a Park gets the outdoor lens
+  });
+
+  it("degrades to unavailable (never throws) when the provider errors", async () => {
+    process.env[KEY] = "test-key";
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
+    const out = await fetchNearbyPlaces("Singapore");
+    expect(out.available).toBe(false);
+    expect(out.places).toEqual([]);
   });
 });
 

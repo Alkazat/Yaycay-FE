@@ -74,12 +74,13 @@ The contract already has `ByoConnectorRequest`/`ByoConnectorResponse`
 (`{ connector_id, token, mcp_url }`), i.e. a **per-trip scoped token** model.
 The shipped OAuth flow is **account-scoped** (all the parent's trips, gated by
 read/plan scopes) which is what general MCP clients expect. Two options:
-   - keep OAuth as the primary path and treat `/connectors/byo-ai` as a
-     power-user "static token" alternative (the MCP endpoint can accept either a
-     grant token or a BE-issued connector token in `verifyMcpToken`), or
-   - make `/connectors/byo-ai` mint a per-trip OAuth grant.
-Our recommendation: OAuth as primary; have `verifyMcpToken` also accept connector
-tokens once BE issues them. Flag your preference.
+
+- keep OAuth as the primary path and treat `/connectors/byo-ai` as a
+  power-user "static token" alternative (the MCP endpoint can accept either a
+  grant token or a BE-issued connector token in `verifyMcpToken`), or
+- make `/connectors/byo-ai` mint a per-trip OAuth grant.
+  Our recommendation: OAuth as primary; have `verifyMcpToken` also accept connector
+  tokens once BE issues them. Flag your preference.
 
 ### 4. Scopes + revocation
 
@@ -143,3 +144,49 @@ Admin confirmed account-scoped OAuth as primary and does not need per-trip
 tokens. `/connectors/byo-ai` stays as the optional static-token alternative; both
 kinds must be listed + revocable through the shared store. `verifyMcpToken` is
 ready to also accept BE-issued connector tokens once they exist.
+
+---
+
+## Round 3 - curated tools, branded responses, live nearby (2026-06-15)
+
+Polishing the connector into a tighter, more on-brand experience. FE-only; no
+contract changes, no new BE work required.
+
+### Tool surface curated (13 -> 10)
+
+The read tools `get_trip`, `get_packing_list` and `list_reservations` were folded
+into **`get_trip_brief`**, which is now the single "load the trip" call: it
+returns the trip header, travellers (dietary/medical still omitted), the saved
+brief, the tracked reservations, the packing lists, and a `plan_outline` (each
+day + how many moments it holds). `get_trip_content` stays for the full
+day-by-day when editing. Fewer, clearer tools keep the connecting client decisive.
+
+Final tool set: `list_trips`, `get_trip_brief`, `get_trip_content`,
+`whats_nearby`, `add_reservation`, `confirm_reservation`, `edit_itinerary`,
+`set_trip_brief`, `request_new_trip`, `plan_trip`.
+
+### Branded responses + a "front door" resource
+
+- Write tools now return warm, in-voice confirmations the assistant can relay
+  verbatim (e.g. add_reservation: "Tracked it ... no payment, nothing booked on
+  your behalf"), not just raw JSON. Errors were already branded (Round 1).
+- New static MCP resource **`yaycay://welcome`** (text/markdown): the Yaycay
+  worldview + how to plan here, as ambient context a client can read without a
+  tool call. The itinerary resource (`yaycay://trip/{id}/itinerary`) is unchanged.
+
+### Live "what's nearby" (optional, graceful)
+
+`whats_nearby` now layers real, current places over Yaycay's curated picks **when
+a maps provider is configured** (server-only `PLACES_API_KEY`, `PLACES_PROVIDER` =
+`google` (default) | `foursquare`; see `lib/mcp/places.ts`). With no key set it
+degrades silently to curated + the assistant's own knowledge - the existing
+behaviour - and it never throws into the tool path. Results are returned already
+framed through the family lens (`for_the_family`).
+
+### MCP impact
+
+Tool list changed (3 read tools removed, 1 expanded); 1 new resource; 1 new
+optional server-only env pair. No auth, scope, or contract changes; no child-data
+exposure change (dietary/medical still never leave the platform). Covered by the
+`mcp.test.ts` suite (curated tool set, folded brief, branded writes, places
+provider mapping + graceful fallback).

@@ -28,6 +28,10 @@ import { Countdown } from "@/components/Countdown";
 import { Tabs, Card, CardBody, Banner, ProgressMeter } from "@/components/ds";
 import type { ProfileMode, TripProgress } from "@/lib/contract-mock/types";
 import { formatDateRange } from "@/lib/format";
+import { useTripPlanning } from "@/components/trips/useTripPlanning";
+import { ExplorePlanSwitch } from "@/components/trips/ExplorePlanSwitch";
+import { PlanningPanel } from "@/components/trips/PlanningPanel";
+import { resolveFeatures } from "@/lib/features";
 
 export function TripView({ tripId }: { tripId: string }) {
   const tripQuery = useQuery({
@@ -46,6 +50,8 @@ export function TripView({ tripId }: { tripId: string }) {
   const [grownupsUnlocked, setGrownupsUnlocked] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
+  // Explore (default) vs Plan mode + the parent's per-explorer feature overrides.
+  const planning = useTripPlanning(tripId);
 
   const trip = tripQuery.data;
   const profiles = profilesQuery.data ?? [];
@@ -61,6 +67,13 @@ export function TripView({ tripId }: { tripId: string }) {
   // Render mode follows the active profile's band (a child's age band, or the
   // parent/carer voice `standard`). The band is fixed per profile - no free toggle.
   const mode: ProfileMode = activeProfile ? modeForProfile(activeProfile) : "standard";
+  // Resolved per-explorer features for the active profile (band preset + the
+  // parent's overrides). Drives what shows in the Exploring experience.
+  const features = resolveFeatures(mode, profileId ? planning.overridesFor(profileId) : undefined);
+  // Planning is a grown-up activity: only parent/carers get the switch, and a
+  // plan-mode flag left in storage is ignored while a child is active.
+  const canPlan = !!activeProfile && canAccessGrownups(activeProfile);
+  const showPlan = canPlan && planning.mode === "plan";
   // Which views this profile may enter; children are locked to Explorers.
   const allowedViews = activeProfile ? viewsForProfile(activeProfile) : ["kid"];
   // Never render a view the active profile can't access (e.g. after switching
@@ -167,129 +180,145 @@ export function TripView({ tripId }: { tripId: string }) {
           valueText={`${tp.daysComplete} / ${tp.totalDays}`}
           tone="meadow"
         />
-        <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
-          <Link
-            href={`/trips/${tripId}/plan`}
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            style={{ textDecoration: "none" }}
-          >
-            Plan
-          </Link>
-          <Link
-            href={`/trips/${tripId}/journal`}
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            style={{ textDecoration: "none" }}
-          >
-            Journal
-          </Link>
-          <Link
-            href={`/trips/${tripId}/packing`}
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            style={{ textDecoration: "none" }}
-          >
-            Packing
-          </Link>
-          <Link
-            href={`/trips/${tripId}/map`}
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            style={{ textDecoration: "none" }}
-          >
-            Map
-          </Link>
-          <Link
-            href={`/trips/${tripId}/companion`}
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            style={{ textDecoration: "none" }}
-          >
-            While you&apos;re there
-          </Link>
-        </nav>
+        {canPlan ? <ExplorePlanSwitch mode={planning.mode} onChange={planning.setMode} /> : null}
+        {/* Exploring tools. Per-explorer links honour the active explorer's
+            toggles; Map and While-you're-there are trip-wide. Hidden in Plan. */}
+        {!showPlan ? (
+          <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+            {features.journal ? (
+              <Link
+                href={`/trips/${tripId}/journal`}
+                className="yc-btn yc-btn--secondary yc-btn--sm"
+                style={{ textDecoration: "none" }}
+              >
+                Journal
+              </Link>
+            ) : null}
+            {features.packing ? (
+              <Link
+                href={`/trips/${tripId}/packing`}
+                className="yc-btn yc-btn--secondary yc-btn--sm"
+                style={{ textDecoration: "none" }}
+              >
+                Packing
+              </Link>
+            ) : null}
+            <Link
+              href={`/trips/${tripId}/map`}
+              className="yc-btn yc-btn--secondary yc-btn--sm"
+              style={{ textDecoration: "none" }}
+            >
+              Map
+            </Link>
+            <Link
+              href={`/trips/${tripId}/companion`}
+              className="yc-btn yc-btn--secondary yc-btn--sm"
+              style={{ textDecoration: "none" }}
+            >
+              While you&apos;re there
+            </Link>
+          </nav>
+        ) : null}
       </header>
 
-      {/* View toggle - only parent/carers get the Grown-ups tab; for a child it is
+      {showPlan ? (
+        <PlanningPanel
+          tripId={tripId}
+          trip={trip}
+          profiles={profiles}
+          overridesFor={planning.overridesFor}
+          setOverride={planning.setOverride}
+          resetProfile={planning.resetProfile}
+        />
+      ) : (
+        <>
+          {/* View toggle - only parent/carers get the Grown-ups tab; for a child it is
           absent (not just disabled). */}
-      {allowedViews.length > 1 ? (
-        <Tabs
-          value={effectiveView}
-          onChange={(v: string) => handleViewChange(v as RenderView)}
-          tabs={allowedViews.map((v) => ({
-            value: v,
-            label: v === "kid" ? "Explorers" : "Grown-ups",
-          }))}
-        />
-      ) : null}
+          {allowedViews.length > 1 ? (
+            <Tabs
+              value={effectiveView}
+              onChange={(v: string) => handleViewChange(v as RenderView)}
+              tabs={allowedViews.map((v) => ({
+                value: v,
+                label: v === "kid" ? "Explorers" : "Grown-ups",
+              }))}
+            />
+          ) : null}
 
-      {effectiveView === "kid" && tripComplete ? (
-        <TripComplete destination={trip.trip.destination} />
-      ) : null}
+          {effectiveView === "kid" && tripComplete ? (
+            <TripComplete destination={trip.trip.destination} />
+          ) : null}
 
-      {effectiveView === "kid" && profiles.length > 0 ? (
-        <ProfileSwitcher profiles={profiles} activeId={profileId} onSelect={selectProfile} />
-      ) : null}
+          {effectiveView === "kid" && profiles.length > 0 ? (
+            <ProfileSwitcher profiles={profiles} activeId={profileId} onSelect={selectProfile} />
+          ) : null}
 
-      {effectiveView === "kid" && activeProfile && activeDay ? (
-        <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
-      ) : null}
+          {effectiveView === "kid" && features.pocket_money && activeProfile && activeDay ? (
+            <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
+          ) : null}
 
-      {effectiveView === "kid" && activeProfile && activeDay?.game ? (
-        <div>
-          <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
-        </div>
-      ) : null}
+          {effectiveView === "kid" && features.games && activeProfile && activeDay?.game ? (
+            <div>
+              <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
+            </div>
+          ) : null}
 
-      {effectiveView === "grownups" && anaphylactic.length > 0 ? (
-        <Banner tone="danger" title="Allergy protocol">
-          {anaphylactic
-            .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
-            .join("; ")}
-          . Carry the EpiPen at all times and confirm every dish with the kitchen.
-        </Banner>
-      ) : null}
+          {effectiveView === "grownups" && anaphylactic.length > 0 ? (
+            <Banner tone="danger" title="Allergy protocol">
+              {anaphylactic
+                .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
+                .join("; ")}
+              . Carry the EpiPen at all times and confirm every dish with the kitchen.
+            </Banner>
+          ) : null}
 
-      {/* Day navigation: progress rings, today halo, completion discs. */}
-      <DayNav days={dayItems} activeId={dayId} todayId={todayId} onSelect={setActiveDayId} />
-      {todayId && todayId !== dayId ? (
-        <div>
-          <button
-            type="button"
-            className="yc-btn yc-btn--secondary yc-btn--sm"
-            onClick={() => setActiveDayId(todayId)}
-          >
-            Jump to today
-          </button>
-        </div>
-      ) : null}
+          {/* Day navigation: progress rings, today halo, completion discs. */}
+          <DayNav days={dayItems} activeId={dayId} todayId={todayId} onSelect={setActiveDayId} />
+          {todayId && todayId !== dayId ? (
+            <div>
+              <button
+                type="button"
+                className="yc-btn yc-btn--secondary yc-btn--sm"
+                onClick={() => setActiveDayId(todayId)}
+              >
+                Jump to today
+              </button>
+            </div>
+          ) : null}
 
-      {activeDay ? (
-        <TripDayRenderer
-          day={activeDay}
-          view={effectiveView}
-          mode={mode}
-          done={effectiveView === "kid" ? doneSet : undefined}
-          onToggleActivity={
-            effectiveView === "kid" && profileId
-              ? (activityId, done) => toggle.mutate({ activityId, done })
-              : undefined
-          }
-        />
-      ) : null}
+          {activeDay ? (
+            <TripDayRenderer
+              day={activeDay}
+              view={effectiveView}
+              mode={mode}
+              quizzes={features.quizzes}
+              done={effectiveView === "kid" ? doneSet : undefined}
+              onToggleActivity={
+                effectiveView === "kid" && profileId
+                  ? (activityId, done) => toggle.mutate({ activityId, done })
+                  : undefined
+              }
+            />
+          ) : null}
 
-      {effectiveView === "grownups" && trip.grownups ? (
-        <GrownupsGuide tripId={tripId} guide={trip.grownups} activeDayId={dayId} />
-      ) : null}
+          {effectiveView === "grownups" && trip.grownups ? (
+            <GrownupsGuide tripId={tripId} guide={trip.grownups} activeDayId={dayId} />
+          ) : null}
 
-      {pinOpen && activeProfile ? (
-        <PinGate
-          profileId={activeProfile.id}
-          profileName={activeProfile.name}
-          onUnlock={() => {
-            setGrownupsUnlocked(true);
-            setView("grownups");
-            setPinOpen(false);
-          }}
-          onCancel={() => setPinOpen(false)}
-        />
-      ) : null}
+          {pinOpen && activeProfile ? (
+            <PinGate
+              profileId={activeProfile.id}
+              profileName={activeProfile.name}
+              onUnlock={() => {
+                setGrownupsUnlocked(true);
+                setView("grownups");
+                setPinOpen(false);
+              }}
+              onCancel={() => setPinOpen(false)}
+            />
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
