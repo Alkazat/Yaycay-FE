@@ -395,3 +395,27 @@ export interface IngestResponse {
   /** The full trip content after applying the patch. */
   content: TripContent;
 }
+
+/* --------------------------------------------------------------------------
+ * Per-explorer feature toggles (FE view-model; BE `/trips/:id/features`).
+ *
+ * Sparse OVERRIDES of `lib/features` keys on top of each explorer's age-band
+ * defaults, one row per (trip, profile). Kept local (like the other per-trip
+ * view-models) rather than in the published contract.
+ * ------------------------------------------------------------------------ */
+
+export interface TripFeatureRow {
+  profile_id: string;
+  /** Sparse map of feature key -> bool; absent keys fall back to the band preset. */
+  overrides: Record<string, boolean>;
+  updated_at?: string;
+}
+
+export interface TripFeaturesResponse {
+  features: TripFeatureRow[];
+}
+
+export interface FeaturesUpdateRequest {
+  profile_id: string;
+  overrides: Record<string, boolean>;
+}
