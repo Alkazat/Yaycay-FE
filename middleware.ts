@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { isMfaExempt } from "@/lib/auth/mfaExempt";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -84,6 +85,9 @@ export async function middleware(request: NextRequest) {
     // it can touch the app. Public pages (including /auth/mfa, where the step-up
     // runs) pass through so the user can actually complete it.
     if (isPublic(pathname)) return response;
+    // Protected demo/seed accounts skip the step-up so an AAL1 session reaches
+    // content directly (unblocks automated screenshot capture).
+    if (isMfaExempt(user.id)) return response;
     const {
       data: { session },
     } = await supabase.auth.getSession();
