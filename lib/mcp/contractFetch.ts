@@ -36,7 +36,20 @@ export async function contractFetch(
   });
 }
 
-/** Fetch + parse JSON, throwing a tool-friendly message on a non-2xx. */
+/** A non-2xx from the Yaycay contract, carrying the status so MCP tools can map
+ * it to a friendly, on-brand message (404 -> "add the trip in the app", etc.). */
+export class ContractError extends Error {
+  constructor(
+    readonly status: number,
+    readonly path: string,
+    readonly method: string,
+  ) {
+    super(`Yaycay API ${method} ${path} failed (${status})`);
+    this.name = "ContractError";
+  }
+}
+
+/** Fetch + parse JSON, throwing a status-bearing ContractError on a non-2xx. */
 export async function contractJson<T>(
   path: string,
   opts: {
@@ -49,7 +62,7 @@ export async function contractJson<T>(
 ): Promise<T> {
   const res = await contractFetch(path, opts);
   if (!res.ok) {
-    throw new Error(`Yaycay API ${opts.method ?? "GET"} ${path} failed (${res.status})`);
+    throw new ContractError(res.status, path, opts.method ?? "GET");
   }
   return (await res.json()) as T;
 }

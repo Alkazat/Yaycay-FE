@@ -201,7 +201,7 @@ describe("authorization-code token exchange", () => {
 
 describe("MCP tools", () => {
   function fakeServer() {
-    const tools: Record<string, (args: unknown, extra: unknown) => Promise<{ content: { text: string }[] }>> = {};
+    const tools: Record<string, (args: unknown, extra: unknown) => Promise<{ content: { text: string }[]; isError?: boolean }>> = {};
     return {
       server: { tool: (name: string, _d: string, _s: unknown, h: (typeof tools)[string]) => (tools[name] = h) },
       tools,
@@ -220,12 +220,15 @@ describe("MCP tools", () => {
     vi.restoreAllMocks();
   });
 
-  it("blocks a read tool without the read scope and allows it with the scope", async () => {
+  it("blocks a read tool without the read scope (branded, not thrown) and allows it with the scope", async () => {
     const { server, tools } = fakeServer();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerYaycayTools(server as any);
 
-    await expect(tools.list_trips({}, extraFor({ scopes: [] }))).rejects.toThrow(/scope/);
+    // Missing scope returns warm guidance, never a raw throw.
+    const denied = await tools.list_trips({}, extraFor({ scopes: [] }));
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/reconnect/i);
 
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ trips: [{ id: "t_1" }] }), { status: 200 }),
@@ -239,21 +242,54 @@ describe("MCP tools", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerYaycayTools(server as any);
 
-    await expect(
-      tools.plan_trip({ trip_id: "t_1", message: "hi" }, extraFor({ scopes: [SCOPES.read] })),
-    ).rejects.toThrow(/plan/);
+    const denied = await tools.plan_trip(
+      { trip_id: "t_1", message: "hi" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
 
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(sseResponse("howdy"));
+    // plan_trip first confirms the trip exists (GET), then streams the planner.
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) =>
+      String(url).includes("/plan/chat")
+        ? sseResponse("howdy")
+        : new Response(JSON.stringify({ id: "t_1" }), { status: 200 }),
+    );
     const out = await tools.plan_trip(
       { trip_id: "t_1", message: "plan my trip" },
       extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
     );
     expect(out.content[0].text).toContain("howdy");
 
-    const init = fetchSpy.mock.calls[0][1] as RequestInit;
-    const headers = new Headers(init.headers);
+    const planCall = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/plan/chat"));
+    const headers = new Headers((planCall?.[1] as RequestInit).headers);
     expect(headers.get("x-yaycay-source")).toBe("connector");
     expect(headers.get("x-yaycay-connection-id")).toBe("conn_x");
+  });
+
+  it("guides the family to the app for a brand-new trip instead of erroring", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const out = await tools.request_new_trip(
+      { destination: "Gold Coast" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(out.isError).toBeFalsy();
+    expect(out.content[0].text).toContain("Gold Coast");
+    expect(out.content[0].text).toContain("/trips"); // dashboard link
+    expect(out.content[0].text).toContain("can_create_here");
+  });
+
+  it("turns a missing trip into friendly branded guidance (no raw 500)", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("nope", { status: 404 }));
+    const out = await tools.get_trip({ trip_id: "missing" }, extraFor({ scopes: [SCOPES.read] }));
+    expect(out.isError).toBe(true);
+    expect(out.content[0].text).toMatch(/Yaycay app|dashboard/i);
+    expect(out.content[0].text).not.toContain("500");
   });
 });
 
