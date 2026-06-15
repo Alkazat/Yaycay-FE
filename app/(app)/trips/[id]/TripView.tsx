@@ -29,6 +29,7 @@ import { Tabs, Card, CardBody, Banner, ProgressMeter } from "@/components/ds";
 import type { ProfileMode, TripProgress } from "@/lib/contract-mock/types";
 import { formatDateRange } from "@/lib/format";
 import { useTripPlanning } from "@/components/trips/useTripPlanning";
+import { useTripFeatures } from "@/components/trips/useTripFeatures";
 import { ExplorePlanSwitch } from "@/components/trips/ExplorePlanSwitch";
 import { PlanningPanel } from "@/components/trips/PlanningPanel";
 import { resolveFeatures } from "@/lib/features";
@@ -50,8 +51,10 @@ export function TripView({ tripId }: { tripId: string }) {
   const [grownupsUnlocked, setGrownupsUnlocked] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
-  // Explore (default) vs Plan mode + the parent's per-explorer feature overrides.
+  // Explore (default) vs Plan mode (device-local) + the parent's per-explorer
+  // feature overrides (BE-backed, synced across devices).
   const planning = useTripPlanning(tripId);
+  const featureToggles = useTripFeatures(tripId);
 
   const trip = tripQuery.data;
   const profiles = profilesQuery.data ?? [];
@@ -69,7 +72,10 @@ export function TripView({ tripId }: { tripId: string }) {
   const mode: ProfileMode = activeProfile ? modeForProfile(activeProfile) : "standard";
   // Resolved per-explorer features for the active profile (band preset + the
   // parent's overrides). Drives what shows in the Exploring experience.
-  const features = resolveFeatures(mode, profileId ? planning.overridesFor(profileId) : undefined);
+  const features = resolveFeatures(
+    mode,
+    profileId ? featureToggles.overridesFor(profileId) : undefined,
+  );
   // Planning is a grown-up activity: only parent/carers get the switch, and a
   // plan-mode flag left in storage is ignored while a child is active.
   const canPlan = !!activeProfile && canAccessGrownups(activeProfile);
@@ -226,9 +232,9 @@ export function TripView({ tripId }: { tripId: string }) {
           tripId={tripId}
           trip={trip}
           profiles={profiles}
-          overridesFor={planning.overridesFor}
-          setOverride={planning.setOverride}
-          resetProfile={planning.resetProfile}
+          overridesFor={featureToggles.overridesFor}
+          setOverride={featureToggles.setOverride}
+          resetProfile={featureToggles.resetProfile}
         />
       ) : (
         <>
