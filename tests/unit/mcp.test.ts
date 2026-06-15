@@ -291,6 +291,36 @@ describe("MCP tools", () => {
     expect(out.content[0].text).toMatch(/Yaycay app|dashboard/i);
     expect(out.content[0].text).not.toContain("500");
   });
+
+  it("builds a brief from trip + travellers without leaking dietary/medical", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) =>
+      String(url).includes("/profiles")
+        ? new Response(
+            JSON.stringify({
+              profiles: [
+                {
+                  name: "Lenny",
+                  age: 6,
+                  interests: ["dinosaurs"],
+                  dietary: ["nut-free"],
+                  medical: ["epipen"],
+                },
+              ],
+            }),
+            { status: 200 },
+          )
+        : new Response(JSON.stringify({ id: "t_1", destination: "Singapore" }), { status: 200 }),
+    );
+    const out = await tools.get_trip_brief({ trip_id: "t_1" }, extraFor({ scopes: [SCOPES.read] }));
+    const text = out.content[0].text;
+    expect(text).toContain("Lenny");
+    expect(text).toContain("dinosaurs");
+    expect(text).not.toContain("nut-free"); // dietary never exported off-platform
+    expect(text).not.toContain("epipen"); // medical never exported off-platform
+  });
 });
 
 /** Build a form-encoded Request for the token endpoint. */

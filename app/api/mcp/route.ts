@@ -27,7 +27,7 @@ const INSTRUCTIONS = [
   "",
   "Planning style: relaxed and realistic - a few good moments a day beat an over-stuffed schedule. Balance kid, shared and grown-up time, respect nap windows and any dietary/medical notes, and honour anything the family says they'd rather avoid.",
   "",
-  "Start by calling list_trips to see what the family already has, then get_trip_content to build on it. If a tool returns guidance (for example, asking the family to add a trip in the app), relay it warmly in your own words.",
+  "Start by calling list_trips to see what the family already has, then get_trip_brief for the chosen trip (who's travelling + the trip header) and get_trip_content to build on what's there. If a tool returns guidance (for example, asking the family to add a trip in the app), relay it warmly in your own words.",
 ].join("\n");
 
 const handler = createMcpHandler(

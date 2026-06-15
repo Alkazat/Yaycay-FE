@@ -190,6 +190,33 @@ export function registerYaycayTools(server: McpServer): void {
   );
 
   server.tool(
+    "get_trip_brief",
+    "Get the planning brief for a trip: the trip header plus the family's travellers (names, ages, interests) so you can plan to THIS family. Call this (with list_trips) before planning. Note: dietary and medical details are NOT shared through the connector - if they could affect plans, ask the family directly.",
+    { trip_id: z.string().describe("The trip id (see list_trips).") },
+    async ({ trip_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) => {
+        type ProfileRow = { name?: string; age?: number | null; interests?: string[] };
+        const [trip, raw] = await Promise.all([
+          contractJson<Record<string, unknown>>(`/trips/${encodeURIComponent(trip_id)}`, auth),
+          contractJson<{ profiles?: ProfileRow[] } | ProfileRow[]>("/profiles", auth),
+        ]);
+        const list = Array.isArray(raw) ? raw : (raw.profiles ?? []);
+        // Minimise to low-sensitivity planning fields - never export dietary or
+        // medical off-platform (mirrors the BE brief; BE migration/PR #90).
+        const travellers = list.map((p) => ({
+          name: p.name ?? "",
+          ...(typeof p.age === "number" ? { age: p.age } : {}),
+          interests: p.interests ?? [],
+        }));
+        return ok({
+          trip,
+          travellers,
+          note: "Plan warmly to this family and trip. Dietary and medical details aren't shared through the connector - if they could affect food or activity choices, ask the family directly.",
+        });
+      }),
+  );
+
+  server.tool(
     "request_new_trip",
     "Use when the family wants a NEW destination that isn't in their trips yet. Trips can't be created through this connector - they're added in the Yaycay app - so this returns the friendly steps + the family's dashboard link. Relay it warmly and pause planning until they confirm the trip is added.",
     { destination: z.string().describe("Where the family wants to go, e.g. 'Gold Coast'.") },
