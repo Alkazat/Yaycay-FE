@@ -98,4 +98,7 @@ export const SERVED = {
   // Billing/transaction history. NOT in the contract yet (no /account/transactions
   // endpoint) - mock-backed until BE ships it. See docs/handoffs.
   transactions: false,
+  // Per-explorer feature toggles (`GET|PUT /trips/:id/features`) - live as of
+  // BE migration 0031. Reads degrade to "no overrides" if not yet deployed.
+  features: true,
 } as const;
