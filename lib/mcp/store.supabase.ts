@@ -288,12 +288,13 @@ class SupabaseOAuthStore implements OAuthStore {
   }
 }
 
-/** True when the durable store can run (service role + encryption key present). */
+/** True when the durable store can run: a privileged DB key (scoped oauth_store
+ * key preferred, service role accepted) plus the at-rest encryption key. */
 export function hasDurableOAuthStore(): boolean {
-  return (
-    (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").length > 0 &&
-    (process.env.OAUTH_ENC_KEY ?? "").length > 0
-  );
+  const hasDbKey =
+    (process.env.OAUTH_DB_KEY ?? "").length > 0 ||
+    (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").length > 0;
+  return hasDbKey && (process.env.OAUTH_ENC_KEY ?? "").length > 0;
 }
 
 export function createSupabaseOAuthStore(): OAuthStore {
