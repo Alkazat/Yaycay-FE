@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { OfflineBanner } from "@/components/shell/OfflineBanner";
 
 interface NavItem {
@@ -37,8 +37,9 @@ const ICONS = {
 const NAV: NavItem[] = [
   { href: "/trips", label: "Trips", icon: ICONS.trips },
   { href: "/profiles", label: "Explorers", icon: ICONS.explorers },
-  { href: "/account", label: "Account", icon: ICONS.account },
 ];
+
+const ACCOUNT: NavItem = { href: "/account", label: "Account", icon: ICONS.account };
 
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -48,33 +49,50 @@ function isActive(pathname: string, href: string): boolean {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
 
+  // The brand mark is large at the top of a page and shrinks once you scroll.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
       <OfflineBanner />
-      <header className="yc-appbar">
+      <header className={`yc-appbar${scrolled ? " yc-appbar--scrolled" : ""}`}>
         <Link href="/trips" className="yc-appbar__brand" aria-label="Yaycay home">
-          <Image
-            src="/icons/yaycay-wordmark.png"
-            alt="Yaycay"
-            width={132}
-            height={76}
-            priority
-          />
+          <Image src="/icons/yaycay-wordmark.png" alt="Yaycay" width={132} height={76} priority />
         </Link>
-        <nav className="yc-appnav" aria-label="Primary">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(pathname, item.href) ? "page" : undefined}
-              className={
-                "yc-appnav__link" + (isActive(pathname, item.href) ? " yc-appnav__link--active" : "")
-              }
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="yc-appbar__actions">
+          <nav className="yc-appnav" aria-label="Primary">
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(pathname, item.href) ? "page" : undefined}
+                className={
+                  "yc-appnav__link" + (isActive(pathname, item.href) ? " yc-appnav__link--active" : "")
+                }
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <Link
+            href={ACCOUNT.href}
+            aria-label={ACCOUNT.label}
+            aria-current={isActive(pathname, ACCOUNT.href) ? "page" : undefined}
+            className={
+              "yc-appnav__link yc-appbar__account" +
+              (isActive(pathname, ACCOUNT.href) ? " yc-appnav__link--active" : "")
+            }
+          >
+            {ACCOUNT.icon}
+            <span className="yc-appbar__account-label">{ACCOUNT.label}</span>
+          </Link>
+        </div>
       </header>
 
       <main className="yc-shell">

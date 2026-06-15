@@ -7,12 +7,17 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
  * Paths reachable without signing in. Everything else (including the root) is
  * the signed-in app and bounces to /auth. `/connect` stays public so the BYO-AI
  * connector setup + its OAuth consent (which does its own sign-in handoff) work.
+ * `/auth/*` (including /auth/mfa and /auth/callback) is public so the step-up
+ * and magic-link exchange can run.
  */
 const PUBLIC_PREFIXES = ["/auth", "/demo", "/connect"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
+
+/** Supabase magic-link auth codes are UUIDs (distinct from affiliate `?code=` slugs). */
+const AUTH_CODE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Read the `aal` claim from a Supabase access token (JWT), or null. */
 function aalOf(token: string | undefined): string | null {
@@ -32,10 +37,26 @@ function aalOf(token: string | undefined): string | null {
 /**
  * Go-live route guard. The root domain IS the app: an unauthenticated request to
  * any non-public path is redirected to /auth (carrying a `next` so sign-in
- * returns there). Auth is enforced ONLY when Supabase is configured; without
+ * returns there). Signed-in sessions must reach the second factor (AAL2) before
+ * touching the app. Auth is enforced ONLY when Supabase is configured; without
  * credentials (CI / local mock) this passes through so the app stays open.
  */
 export async function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+
+  // Magic-link safety net: if Supabase's Site URL drops the auth code on our app
+  // root (or anywhere but the callback), forward it to /auth/callback to be
+  // exchanged. UUID-only so it never hijacks an affiliate `?code=` slug.
+  const codeParam = request.nextUrl.searchParams.get("code");
+  if (codeParam && AUTH_CODE_RE.test(codeParam) && pathname !== "/auth/callback") {
+    const cb = request.nextUrl.clone();
+    cb.pathname = "/auth/callback";
+    cb.search = "";
+    cb.searchParams.set("code", codeParam);
+    if (pathname !== "/") cb.searchParams.set("next", pathname);
+    return NextResponse.redirect(cb);
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) return NextResponse.next();
@@ -57,8 +78,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname, search } = request.nextUrl;
 
   if (user) {
     // Authenticated. Enforce the second factor: a session must reach AAL2 before
