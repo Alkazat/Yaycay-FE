@@ -14,6 +14,9 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+/** Supabase magic-link auth codes are UUIDs (distinct from affiliate `?code=` slugs). */
+const AUTH_CODE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Go-live route guard. The root domain IS the app: an unauthenticated request to
  * any non-public path is redirected to /auth (carrying a `next` so sign-in
@@ -21,6 +24,20 @@ function isPublic(pathname: string): boolean {
  * credentials (CI / local mock) this passes through so the app stays open.
  */
 export async function middleware(request: NextRequest) {
+  // Magic-link safety net: if Supabase's Site URL drops the auth code on our app
+  // root (or anywhere but the callback), forward it to /auth/callback to be
+  // exchanged. UUID-only so it never hijacks an affiliate `?code=` slug.
+  const { pathname, search } = request.nextUrl;
+  const codeParam = request.nextUrl.searchParams.get("code");
+  if (codeParam && AUTH_CODE_RE.test(codeParam) && pathname !== "/auth/callback") {
+    const cb = request.nextUrl.clone();
+    cb.pathname = "/auth/callback";
+    cb.search = "";
+    cb.searchParams.set("code", codeParam);
+    if (pathname !== "/") cb.searchParams.set("next", pathname);
+    return NextResponse.redirect(cb);
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) return NextResponse.next();
@@ -46,7 +63,6 @@ export async function middleware(request: NextRequest) {
   if (user) return response;
 
   // Unauthenticated: allow the public pages, bounce everything else to /auth.
-  const { pathname, search } = request.nextUrl;
   if (isPublic(pathname)) return response;
 
   const redirect = request.nextUrl.clone();
