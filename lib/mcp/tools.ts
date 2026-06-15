@@ -123,6 +123,21 @@ async function safe(
   }
 }
 
+/** Apply structured edit ops to the saved itinerary (persists via the BE). */
+async function applyTripOps(
+  auth: ToolAuth,
+  tripId: string,
+  ops: unknown[],
+): Promise<ToolResult> {
+  const content = await contractJson(`/trips/${encodeURIComponent(tripId)}/content/patch`, {
+    ...auth,
+    method: "POST",
+    body: { ops },
+    headers: { "x-yaycay-source": "connector", "x-yaycay-connection-id": auth.connectionId },
+  });
+  return ok({ saved: true, content });
+}
+
 /** Drain a `text/event-stream` planning reply into one aggregated string. */
 async function drainPlanStream(res: Response): Promise<string> {
   if (!res.ok || !res.body) throw new ContractError(res.status, "/plan/chat", "POST");
@@ -203,13 +218,15 @@ export function registerYaycayTools(server: McpServer): void {
     async ({ trip_id }, extra) =>
       safe(extra, SCOPES.read, async (auth) => {
         type ProfileRow = { name?: string; age?: number | null; interests?: string[] };
-        const [trip, raw] = await Promise.all([
+        const [trip, raw, intentRes] = await Promise.all([
           contractJson<Record<string, unknown>>(`/trips/${encodeURIComponent(trip_id)}`, auth),
           contractJson<{ profiles?: ProfileRow[] } | ProfileRow[]>("/profiles", auth),
+          contractJson<{ intent?: unknown }>(`/trips/${encodeURIComponent(trip_id)}/intent`, auth),
         ]);
         const list = Array.isArray(raw) ? raw : (raw.profiles ?? []);
-        // Minimise to low-sensitivity planning fields - never export dietary or
-        // medical off-platform (mirrors the BE brief; BE migration/PR #90).
+        // Minimise the account profiles to low-sensitivity fields - never export
+        // dietary or medical off-platform (mirrors the BE brief; PR #90). The
+        // family's own trip brief (intent) is included as-is: they authored it.
         const travellers = list.map((p) => ({
           name: p.name ?? "",
           ...(typeof p.age === "number" ? { age: p.age } : {}),
@@ -218,7 +235,8 @@ export function registerYaycayTools(server: McpServer): void {
         return ok({
           trip,
           travellers,
-          note: "Plan warmly to this family and trip. Dietary and medical details aren't shared through the connector - if they could affect food or activity choices, ask the family directly.",
+          intent: intentRes?.intent ?? null,
+          note: "Plan warmly to this family and trip. Account profiles here omit dietary/medical - if those could affect food or activity choices and aren't already in the brief, ask the family and save them with set_trip_brief.",
         });
       }),
   );
@@ -312,6 +330,59 @@ export function registerYaycayTools(server: McpServer): void {
           next_step: `After the family adds "${destination}" in the app, call list_trips to pick it up, then plan_trip to build it.`,
         });
       }),
+  );
+
+  server.tool(
+    "edit_itinerary",
+    [
+      "Save structural changes to the trip's day-by-day plan so they PERSIST (not just chat). Pass one or more ops, applied in order:",
+      "- {op:'add_day', day:{label, date?}}",
+      "- {op:'set_day_summary', day_id, summary}",
+      "- {op:'add_moment', day_id, moment:{slot:'morning|midday|afternoon|evening|night|anytime', title}}",
+      "- {op:'add_activity', day_id, moment_id, activity:{kind:'kid|shared|adult', title, body?, facts?, safety?, variants?}}",
+      "- {op:'update_activity', activity_id, set:{...fields}} (e.g. body for per-person notes, safety for an allergy reminder, variants for a rainy-day alternative)",
+      "- {op:'move_activity', activity_id, to_moment_id}",
+      "- {op:'set_booking', activity_id, booking:{name, time?}}",
+      "ids come from get_trip_content; ids for new items are auto-filled. Yaycay validates the result and queues it for kid-safe review.",
+    ].join("\n"),
+    {
+      trip_id: z.string().describe("The trip id (see list_trips)."),
+      ops: z.array(z.record(z.unknown())).describe("The edit ops to apply, in order."),
+    },
+    async ({ trip_id, ops }, extra) =>
+      safe(extra, SCOPES.plan, async (auth) => applyTripOps(auth, trip_id, ops)),
+  );
+
+  server.tool(
+    "set_trip_brief",
+    "Save what the family tells you about the trip into Yaycay's memory (the brief): pace, budget, interests, must-dos, things to avoid, free-form constraints (allergies, dietary needs, meal ideas, nap windows), and the travellers. Only the fields you pass change. This is how the family's words become durable Yaycay data.",
+    {
+      trip_id: z.string().describe("The trip id (see list_trips)."),
+      pace: z.string().optional(),
+      budget: z.string().optional(),
+      interests: z.array(z.string()).optional(),
+      must_do: z.array(z.string()).optional(),
+      avoid: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+      constraints: z
+        .record(z.unknown())
+        .optional()
+        .describe("Free-form, e.g. {allergies:['nuts'], meals:'kid-friendly dinners', nap:'1-3pm'}."),
+      travellers: z
+        .array(z.record(z.unknown()))
+        .optional()
+        .describe("[{name, age?, kind:'kid'|'adult', interests?, dietary?}]"),
+    },
+    async ({ trip_id, ...patch }, extra) =>
+      safe(extra, SCOPES.plan, async (auth) =>
+        ok(
+          await contractJson(`/trips/${encodeURIComponent(trip_id)}/intent`, {
+            ...auth,
+            method: "PUT",
+            body: patch,
+          }),
+        ),
+      ),
   );
 
   server.tool(
