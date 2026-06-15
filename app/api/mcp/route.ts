@@ -8,7 +8,7 @@
  * in turn advertises Yaycay as the authorization server.
  */
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
-import { registerYaycayTools, registerYaycayPrompts } from "@/lib/mcp/tools";
+import { registerYaycayTools, registerYaycayPrompts, registerYaycayResources } from "@/lib/mcp/tools";
 import { verifyMcpToken } from "@/lib/mcp/auth";
 
 // Returned to the assistant on `initialize`. This is where the Yaycay
@@ -43,6 +43,7 @@ const handler = createMcpHandler(
   (server) => {
     registerYaycayTools(server);
     registerYaycayPrompts(server);
+    registerYaycayResources(server);
   },
   { instructions: INSTRUCTIONS },
   // The transport is mounted at /api/mcp, so the handler's streamable endpoint

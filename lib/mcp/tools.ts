@@ -13,6 +13,7 @@
  */
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { contractFetch, contractJson, ContractError } from "@/lib/mcp/contractFetch";
 import { SCOPES } from "@/lib/mcp/config";
 import { env } from "@/lib/env";
@@ -353,5 +354,50 @@ export function registerYaycayPrompts(server: McpServer): void {
         `Rain's looking likely${day ? ` on ${day}` : ""} for our Yaycay trip${trip_id ? ` (${trip_id})` : ""} - help us pivot to something cosy and memorable.\n` +
           `Use whats_nearby (rain_plan) and get_trip_content. Keep spirits high and suggest an indoor plan everyone - kids and grown-ups - will still enjoy.`,
       ),
+  );
+}
+
+/**
+ * MCP resources: the live itinerary as ambient context. A connected assistant
+ * can read `yaycay://trip/{trip_id}/itinerary` without spending a tool call, so
+ * the plan is always in view as the conversation evolves.
+ */
+export function registerYaycayResources(server: McpServer): void {
+  server.registerResource(
+    "trip_itinerary",
+    new ResourceTemplate("yaycay://trip/{trip_id}/itinerary", {
+      list: async (extra) => {
+        const auth = authFrom(extra);
+        try {
+          const data = await contractJson<{ trips?: { id: string; destination?: string }[] }>(
+            "/trips",
+            auth,
+          );
+          return {
+            resources: (data.trips ?? []).map((t) => ({
+              uri: `yaycay://trip/${t.id}/itinerary`,
+              name: `Itinerary: ${t.destination ?? t.id}`,
+              mimeType: "application/json",
+            })),
+          };
+        } catch {
+          return { resources: [] };
+        }
+      },
+    }),
+    {
+      description: "The live day-by-day itinerary for a Yaycay trip (ambient planning context).",
+      mimeType: "application/json",
+    },
+    async (uri, variables, extra) => {
+      const auth = authFrom(extra);
+      const tripId = String(variables.trip_id);
+      const content = await contractJson(`/trips/${encodeURIComponent(tripId)}/content`, auth);
+      return {
+        contents: [
+          { uri: uri.href, mimeType: "application/json", text: JSON.stringify(content, null, 2) },
+        ],
+      };
+    },
   );
 }
