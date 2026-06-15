@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 
-/** Account page shows plan + data-keep, and the keep CTA opens checkout. */
+/** Account page shows the assistants hero + data-keep, and the keep CTA opens checkout. */
 test("data-keep opens the checkout flow", async ({ page }) => {
   await page.goto("/account");
   await expect(page.getByTestId("account")).toBeVisible();
-  await expect(page.getByRole("heading", { name: /your plan/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /connected assistants/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: /your data/i })).toBeVisible();
 
   await page.getByRole("button", { name: /keep my memories/i }).first().click();
