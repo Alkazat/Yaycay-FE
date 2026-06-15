@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTripContent, listProfiles } from "@/lib/api/trips";
 import { getProgress, setActivityDone } from "@/lib/api/progress";
@@ -52,6 +53,18 @@ export function TripView({ tripId }: { tripId: string }) {
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
   // Explore (default) vs Plan mode + the parent's per-explorer feature overrides.
   const planning = useTripPlanning(tripId);
+
+  // Honour the mode chosen at the trip tile (?mode=explore|plan), once per entry.
+  const searchParams = useSearchParams();
+  const modeParam = searchParams.get("mode");
+  const appliedMode = useRef(false);
+  useEffect(() => {
+    if (appliedMode.current) return;
+    if (modeParam === "plan" || modeParam === "explore") {
+      planning.setMode(modeParam);
+      appliedMode.current = true;
+    }
+  }, [modeParam, planning]);
 
   const trip = tripQuery.data;
   const profiles = profilesQuery.data ?? [];
