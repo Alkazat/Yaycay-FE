@@ -85,6 +85,19 @@ body {
   }
 }
 
+/* Trip sub-header: one compact bar (title/dates/days/profile/pocket money) that
+   sticks just beneath the app bar. */
+.yc-tripbar {
+  position: sticky;
+  top: var(--appbar-h, 64px);
+  z-index: 8;
+  background: var(--surface-card, #fff);
+  border: 2px solid var(--sand-200, #e7e2d8);
+  border-radius: var(--radius-lg, 16px);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-sm, 0 4px 12px rgba(16, 24, 40, 0.08));
+}
+
 /* First-run floating checklist: bottom-right, clearing the mobile tab bar. */
 .yc-firstrun {
   position: fixed;
