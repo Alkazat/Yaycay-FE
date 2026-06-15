@@ -28,9 +28,29 @@ body {
   background: var(--grad-scene);
 }
 
+/* Subtle per-section accent. Each app area gets a quiet, distinct hue (not
+   candy) applied to the app-bar underline and a thin strip atop the content,
+   so explorers / grown-ups / planning / account feel different without shouting. */
+.yc-app {
+  --accent: var(--royal-500);
+}
+.yc-app[data-section="trips"] {
+  --accent: var(--meadow-500, #3aa657);
+}
+.yc-app[data-section="planning"] {
+  --accent: var(--aqua-500, #1f9fb0);
+}
+.yc-app[data-section="explorers"] {
+  --accent: var(--sun-500, #e7a008);
+}
+.yc-app[data-section="account"] {
+  --accent: var(--royal-500);
+}
+
 /* App shell: full-width page, a single centered column capped to the content
    width. Chrome (app bar) spans 100%; content sits inside --content-max. */
 .yc-shell {
+  border-top: 3px solid var(--accent);
   min-height: 100dvh;
   padding-block: calc(var(--safe-top) + var(--space-4)) calc(var(--safe-bottom) + var(--space-8));
   padding-inline: 0;
@@ -125,7 +145,7 @@ body {
   padding-inline: max(calc(var(--safe-left) + var(--gutter)), calc((100% - var(--content-max)) / 2))
     max(calc(var(--safe-right) + var(--gutter)), calc((100% - var(--content-max)) / 2));
   background: var(--surface-card);
-  border-bottom: 2.5px solid var(--royal-500);
+  border-bottom: 2.5px solid var(--accent, var(--royal-500));
   transition: padding 0.18s ease;
 }
 /* Compact state once the page is scrolled. */
