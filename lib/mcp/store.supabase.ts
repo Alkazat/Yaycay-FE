@@ -18,7 +18,7 @@
 // be reconciled to this shape. Until then this store stays inert (see
 // hasDurableOAuthStore) and the in-memory default is used.
 
-import { serviceClient } from "@/lib/supabase/service";
+import { serviceClient, hasServiceRole } from "@/lib/supabase/service";
 import { decryptSecret, encryptSecret, sha256Hex } from "@/lib/mcp/crypto";
 import type {
   AuthCode,
@@ -288,13 +288,10 @@ class SupabaseOAuthStore implements OAuthStore {
   }
 }
 
-/** True when the durable store can run: a privileged DB key (scoped oauth_store
- * key preferred, service role accepted) plus the at-rest encryption key. */
+/** True when the durable store can run: a usable privileged client (scoped
+ * oauth_store key + anon, or service role) plus the at-rest encryption key. */
 export function hasDurableOAuthStore(): boolean {
-  const hasDbKey =
-    (process.env.OAUTH_DB_KEY ?? "").length > 0 ||
-    (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").length > 0;
-  return hasDbKey && (process.env.OAUTH_ENC_KEY ?? "").length > 0;
+  return hasServiceRole() && (process.env.OAUTH_ENC_KEY ?? "").length > 0;
 }
 
 export function createSupabaseOAuthStore(): OAuthStore {
