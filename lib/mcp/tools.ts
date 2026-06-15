@@ -16,6 +16,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { contractFetch, contractJson, ContractError } from "@/lib/mcp/contractFetch";
 import { SCOPES } from "@/lib/mcp/config";
+import { fetchNearbyPlaces } from "@/lib/mcp/places";
 import { env } from "@/lib/env";
 
 /** What `withMcpAuth` hands each tool via `extra.authInfo`. */
@@ -58,6 +59,15 @@ function ok(data: unknown): ToolResult {
 
 function say(text: string, isError = false): ToolResult {
   return { content: [{ type: "text", text }], isError };
+}
+
+/**
+ * A branded SUCCESS for write tools: a warm, in-voice confirmation the assistant
+ * can relay verbatim, followed by the saved data. Reads keep returning raw data
+ * (`ok`) - the brand voice for those lives in the instructions and resources.
+ */
+function done(message: string, data: unknown): ToolResult {
+  return { content: [{ type: "text", text: `${message}\n\n${JSON.stringify(data, null, 2)}` }] };
 }
 
 /** Where the family adds / buys a trip. */
@@ -124,18 +134,17 @@ async function safe(
 }
 
 /** Apply structured edit ops to the saved itinerary (persists via the BE). */
-async function applyTripOps(
-  auth: ToolAuth,
-  tripId: string,
-  ops: unknown[],
-): Promise<ToolResult> {
+async function applyTripOps(auth: ToolAuth, tripId: string, ops: unknown[]): Promise<ToolResult> {
   const content = await contractJson(`/trips/${encodeURIComponent(tripId)}/content/patch`, {
     ...auth,
     method: "POST",
     body: { ops },
     headers: { "x-yaycay-source": "connector", "x-yaycay-connection-id": auth.connectionId },
   });
-  return ok({ saved: true, content });
+  return done(
+    "Saved to your Yaycay trip - it'll show up everywhere the family looks, no copying needed. Want to keep shaping it?",
+    { saved: true, content },
+  );
 }
 
 /** Drain a `text/event-stream` planning reply into one aggregated string. */
@@ -182,16 +191,6 @@ export function registerYaycayTools(server: McpServer): void {
   );
 
   server.tool(
-    "get_trip",
-    "Get a single trip record: status, tier, dates and memory-retention info.",
-    { trip_id: z.string().describe("The trip id, e.g. from list_trips.") },
-    async ({ trip_id }, extra) =>
-      safe(extra, SCOPES.read, async (auth) =>
-        ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}`, auth)),
-      ),
-  );
-
-  server.tool(
     "get_trip_content",
     "Get the full day-by-day content for a trip (days, moments, activities).",
     { trip_id: z.string().describe("The trip id.") },
@@ -202,26 +201,26 @@ export function registerYaycayTools(server: McpServer): void {
   );
 
   server.tool(
-    "get_packing_list",
-    "Get the packing lists for a trip.",
-    { trip_id: z.string().describe("The trip id.") },
-    async ({ trip_id }, extra) =>
-      safe(extra, SCOPES.read, async (auth) =>
-        ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}/packing`, auth)),
-      ),
-  );
-
-  server.tool(
     "get_trip_brief",
-    "Get the planning brief for a trip: the trip header plus the family's travellers (names, ages, interests) so you can plan to THIS family. Call this (with list_trips) before planning. Note: dietary and medical details are NOT shared through the connector - if they could affect plans, ask the family directly.",
+    "The whole picture for a trip in ONE call - your starting point. Returns the trip header, the family's travellers (names, ages, interests), the saved brief (pace/interests/must-dos/avoids), the tracked bookings, the packing lists, and an outline of the plan so far (days + how full each is). Call this (with list_trips) before planning; pull get_trip_content when you need the full day-by-day to edit it. Note: dietary and medical details are NOT shared through the connector - if they could affect plans, ask the family directly.",
     { trip_id: z.string().describe("The trip id (see list_trips).") },
     async ({ trip_id }, extra) =>
       safe(extra, SCOPES.read, async (auth) => {
         type ProfileRow = { name?: string; age?: number | null; interests?: string[] };
-        const [trip, raw, intentRes] = await Promise.all([
-          contractJson<Record<string, unknown>>(`/trips/${encodeURIComponent(trip_id)}`, auth),
+        type DayRow = { id?: string; label?: string; date?: string; moments?: unknown[] };
+        const id = encodeURIComponent(trip_id);
+        // The trip header + travellers + brief are core (an error here should
+        // brand as "add it in the app"). Bookings / packing / content are
+        // secondary context, so a hiccup there shouldn't sink the whole brief.
+        const [trip, raw, intentRes, content, reservations, packing] = await Promise.all([
+          contractJson<Record<string, unknown>>(`/trips/${id}`, auth),
           contractJson<{ profiles?: ProfileRow[] } | ProfileRow[]>("/profiles", auth),
-          contractJson<{ intent?: unknown }>(`/trips/${encodeURIComponent(trip_id)}/intent`, auth),
+          contractJson<{ intent?: unknown }>(`/trips/${id}/intent`, auth),
+          contractJson<{ days?: DayRow[] } | DayRow[]>(`/trips/${id}/content`, auth).catch(
+            () => null,
+          ),
+          contractJson<unknown>(`/trips/${id}/reservations`, auth).catch(() => null),
+          contractJson<unknown>(`/trips/${id}/packing`, auth).catch(() => null),
         ]);
         const list = Array.isArray(raw) ? raw : (raw.profiles ?? []);
         // Minimise the account profiles to low-sensitivity fields - never export
@@ -232,10 +231,18 @@ export function registerYaycayTools(server: McpServer): void {
           ...(typeof p.age === "number" ? { age: p.age } : {}),
           interests: p.interests ?? [],
         }));
+        const days = Array.isArray(content) ? content : (content?.days ?? []);
+        const plan_outline = days.map((d) => ({
+          day: d.label ?? d.date ?? d.id ?? "",
+          moments: Array.isArray(d.moments) ? d.moments.length : 0,
+        }));
         return ok({
           trip,
           travellers,
           intent: intentRes?.intent ?? null,
+          reservations: reservations ?? [],
+          packing: packing ?? null,
+          plan_outline,
           note: "Plan warmly to this family and trip. Account profiles here omit dietary/medical - if those could affect food or activity choices and aren't already in the brief, ask the family and save them with set_trip_brief.",
         });
       }),
@@ -243,29 +250,27 @@ export function registerYaycayTools(server: McpServer): void {
 
   server.tool(
     "whats_nearby",
-    "Yaycay's curated 'what's nearby' for a trip (places worth a look + rainy-day backups). Lead with these, then layer in your own real-world knowledge of the area for more ideas - always through Yaycay's lens.",
+    "Yaycay's 'what's nearby' for a trip: curated picks + rainy-day backups, plus live real-world places when a maps source is connected. Lead with these, then layer in your own area knowledge - always through Yaycay's lens.",
     { trip_id: z.string().describe("The trip id (see list_trips).") },
     async ({ trip_id }, extra) =>
       safe(extra, SCOPES.read, async (auth) => {
-        const nearby = await contractJson(
-          `/trips/${encodeURIComponent(trip_id)}/companion`,
-          auth,
-        );
+        const id = encodeURIComponent(trip_id);
+        const [curated, trip] = await Promise.all([
+          contractJson(`/trips/${id}/companion`, auth),
+          contractJson<{ destination?: string }>(`/trips/${id}`, auth),
+        ]);
+        // Best-effort live layer: real, current places near the destination when
+        // a provider is configured; silently absent otherwise (curated still leads).
+        const live = await fetchNearbyPlaces(String(trip.destination ?? ""));
         return ok({
-          nearby,
-          note: "These are Yaycay's curated picks - lead with them, then add a couple of your own well-judged nearby ideas (something for the kids, something shared) and a rainy-day backup. Keep it age-appropriate and low-faff.",
+          curated,
+          live_nearby: live.available ? live.places : [],
+          live_source: live.source,
+          note: live.available
+            ? "Lead with Yaycay's curated picks, then weave in the live_nearby places (current, real-world) and a couple of your own well-judged ideas - something for the kids, something shared - plus a rainy-day backup. Age-appropriate, low-faff."
+            : "These are Yaycay's curated picks - lead with them, then add a couple of your own well-judged nearby ideas (something for the kids, something shared) and a rainy-day backup. Keep it age-appropriate and low-faff.",
         });
       }),
-  );
-
-  server.tool(
-    "list_reservations",
-    "List the family's tracked bookings for a trip (hotel / activity / flight / transport / dining) with each one's status (planned / booked / confirmed).",
-    { trip_id: z.string().describe("The trip id (see list_trips).") },
-    async ({ trip_id }, extra) =>
-      safe(extra, SCOPES.read, async (auth) =>
-        ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}/reservations`, auth)),
-      ),
   );
 
   server.tool(
@@ -286,12 +291,14 @@ export function registerYaycayTools(server: McpServer): void {
         // Confirm the trip exists so a new/unknown destination returns the
         // friendly "add it in the app" guidance instead of an FK error.
         await contractJson(`/trips/${encodeURIComponent(trip_id)}`, auth);
-        return ok(
-          await contractJson(`/trips/${encodeURIComponent(trip_id)}/reservations`, {
-            ...auth,
-            method: "POST",
-            body,
-          }),
+        const saved = await contractJson(`/trips/${encodeURIComponent(trip_id)}/reservations`, {
+          ...auth,
+          method: "POST",
+          body,
+        });
+        return done(
+          "Tracked it on your trip! I've just noted it down - no payment, nothing booked on your behalf. Tell me when it's locked in and I'll mark it confirmed.",
+          saved,
         );
       }),
   );
@@ -305,14 +312,13 @@ export function registerYaycayTools(server: McpServer): void {
       ref: z.string().optional().describe("Confirmation reference, if any."),
     },
     async ({ trip_id, reservation_id, ref }, extra) =>
-      safe(extra, SCOPES.plan, async (auth) =>
-        ok(
-          await contractJson(
-            `/trips/${encodeURIComponent(trip_id)}/reservations/${encodeURIComponent(reservation_id)}`,
-            { ...auth, method: "PATCH", body: { status: "confirmed", ...(ref ? { ref } : {}) } },
-          ),
-        ),
-      ),
+      safe(extra, SCOPES.plan, async (auth) => {
+        const saved = await contractJson(
+          `/trips/${encodeURIComponent(trip_id)}/reservations/${encodeURIComponent(reservation_id)}`,
+          { ...auth, method: "PATCH", body: { status: "confirmed", ...(ref ? { ref } : {}) } },
+        );
+        return done("Locked in! I've marked that one confirmed on your trip.", saved);
+      }),
   );
 
   server.tool(
@@ -367,22 +373,26 @@ export function registerYaycayTools(server: McpServer): void {
       constraints: z
         .record(z.unknown())
         .optional()
-        .describe("Free-form, e.g. {allergies:['nuts'], meals:'kid-friendly dinners', nap:'1-3pm'}."),
+        .describe(
+          "Free-form, e.g. {allergies:['nuts'], meals:'kid-friendly dinners', nap:'1-3pm'}.",
+        ),
       travellers: z
         .array(z.record(z.unknown()))
         .optional()
         .describe("[{name, age?, kind:'kid'|'adult', interests?, dietary?}]"),
     },
     async ({ trip_id, ...patch }, extra) =>
-      safe(extra, SCOPES.plan, async (auth) =>
-        ok(
-          await contractJson(`/trips/${encodeURIComponent(trip_id)}/intent`, {
-            ...auth,
-            method: "PUT",
-            body: patch,
-          }),
-        ),
-      ),
+      safe(extra, SCOPES.plan, async (auth) => {
+        const saved = await contractJson(`/trips/${encodeURIComponent(trip_id)}/intent`, {
+          ...auth,
+          method: "PUT",
+          body: patch,
+        });
+        return done(
+          "Got it - I'll remember that for this trip. It'll shape every plan from here, so you won't have to tell me twice.",
+          saved,
+        );
+      }),
   );
 
   server.tool(
@@ -485,12 +495,61 @@ export function registerYaycayPrompts(server: McpServer): void {
   );
 }
 
+/** The Yaycay "front door" - house style + how to plan, surfaced as a resource. */
+const WELCOME = [
+  "# Welcome to Yaycay",
+  "",
+  "I'm Yaycay - your family-holiday companion. I help you plan, book and enjoy",
+  "trips the whole family will remember. Warm, upbeat, a little playful, and",
+  "always proactive. Let's bring the yay.",
+  "",
+  "## What I hold in mind",
+  "- **For you (the parent):** make it easy and low-stress - I'll do the thinking.",
+  "- **For each kid:** age-appropriate wonder - something every child lights up about.",
+  "- **For together:** shared moments that bond the family.",
+  "- **Everyone gets a win:** no day leaves anyone - big or small - with nothing.",
+  "",
+  "## How planning works here",
+  "- A **trip** is a holiday you own in the Yaycay app (destination + dates). New",
+  "  trips are created there, not through me - just say the word and I'll point",
+  "  you to your dashboard.",
+  "- I turn a trip into a day-by-day plan of **moments** (morning / midday /",
+  "  afternoon / evening), each a kid, shared, or adult activity.",
+  "- Planning is a loop, not a one-shot: I plan a day, surface what's nearby, fold",
+  "  in your bookings, and keep refining as the family reacts.",
+  "- **I save as I go.** Plans, the family brief (pace, must-dos, allergies), and",
+  "  bookings all live on the trip - never something you copy in by hand.",
+  "",
+  "## Try asking",
+  '- "Plan us a relaxed day with something for everyone."',
+  '- "What\'s nearby that the kids would love?"',
+  '- "It might rain Thursday - what\'s our backup?"',
+  '- "Track our hotel and the Sea World tickets."',
+  "",
+  "Tell me which trip we're on (or ask me to list them) and we'll dive in.",
+].join("\n");
+
 /**
  * MCP resources: the live itinerary as ambient context. A connected assistant
  * can read `yaycay://trip/{trip_id}/itinerary` without spending a tool call, so
  * the plan is always in view as the conversation evolves.
  */
 export function registerYaycayResources(server: McpServer): void {
+  // A fixed, always-available "front door": the Yaycay worldview + how to plan
+  // here, as ambient context the assistant can read without a tool call. This is
+  // the brand experience showing up the moment a client browses Yaycay.
+  server.registerResource(
+    "yaycay_welcome",
+    "yaycay://welcome",
+    {
+      description: "Welcome to Yaycay - the house style and how to plan a family trip here.",
+      mimeType: "text/markdown",
+    },
+    async (uri) => ({
+      contents: [{ uri: uri.href, mimeType: "text/markdown", text: WELCOME }],
+    }),
+  );
+
   server.registerResource(
     "trip_itinerary",
     new ResourceTemplate("yaycay://trip/{trip_id}/itinerary", {
