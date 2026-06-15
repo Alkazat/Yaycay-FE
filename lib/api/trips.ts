@@ -2,6 +2,7 @@ import { apiFetch, SERVED } from "@/lib/api/http";
 import { getAccessToken } from "@/lib/auth/session";
 import type {
   ChildProfile,
+  CreateTripRequest,
   Trip,
   TripContent,
   TripContentPatch,
@@ -19,6 +20,22 @@ async function getJson<T>(path: string, served: boolean, signal?: AbortSignal): 
 export async function listTrips(signal?: AbortSignal): Promise<TripSummary[]> {
   const data = await getJson<{ trips: TripSummary[] }>("/trips", SERVED.listTrips, signal);
   return data.trips;
+}
+
+/**
+ * Create a trip (`POST /trips`). A new trip starts free + single-day; expanding
+ * to the full multi-day experience is a paid upgrade (paywall).
+ */
+export async function createTrip(req: CreateTripRequest): Promise<Trip> {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch("/trips", SERVED.createTrip, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(req),
+    accessToken,
+  });
+  if (!res.ok) throw new Error(`Failed to create trip (${res.status})`);
+  return (await res.json()) as Trip;
 }
 
 /** The trip record (row): status, tier, dates, retention. NOT the day content. */
