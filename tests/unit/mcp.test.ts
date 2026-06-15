@@ -344,6 +344,108 @@ describe("MCP tools", () => {
     expect(out.content[0].text).toContain("Gardens by the Bay");
     expect(out.content[0].text).toContain("rainy-day");
   });
+
+  it("tracks a reservation (pre-checks the trip) and confirms it", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+      const u = String(url);
+      const method = (init as RequestInit | undefined)?.method ?? "GET";
+      if (u.endsWith("/reservations") && method === "POST") {
+        return new Response(JSON.stringify({ reservation: { id: "r_1", status: "planned" } }), {
+          status: 200,
+        });
+      }
+      if (u.includes("/reservations/")) {
+        return new Response(JSON.stringify({ reservation: { id: "r_1", status: "confirmed" } }), {
+          status: 200,
+        });
+      }
+      return new Response(JSON.stringify({ id: "t_1" }), { status: 200 }); // trip pre-check
+    });
+
+    const added = await tools.add_reservation(
+      { trip_id: "t_1", title: "Sea World tickets", kind: "activity" },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(added.content[0].text).toContain("r_1");
+    const post = fetchSpy.mock.calls.find(
+      (c) => String(c[0]).endsWith("/reservations") && (c[1] as RequestInit)?.method === "POST",
+    );
+    expect(String((post?.[1] as RequestInit)?.body)).toContain("Sea World tickets");
+
+    const confirmed = await tools.confirm_reservation(
+      { trip_id: "t_1", reservation_id: "r_1", ref: "ABC123" },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(confirmed.content[0].text).toContain("confirmed");
+  });
+
+  it("blocks add_reservation without the plan scope (no payment, just tracking)", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const denied = await tools.add_reservation(
+      { trip_id: "t_1", title: "x" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
+  });
+
+  it("persists structural edits via edit_itinerary (connector write)", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ days: [{ id: "d1" }] }), { status: 200 }),
+    );
+    const out = await tools.edit_itinerary(
+      {
+        trip_id: "t_1",
+        ops: [{ op: "update_activity", activity_id: "a1", set: { body: "Pip's nut allergy" } }],
+      },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(out.content[0].text).toContain("saved");
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/content/patch"));
+    expect((call?.[1] as RequestInit)?.method).toBe("POST");
+    expect(new Headers((call?.[1] as RequestInit)?.headers).get("x-yaycay-source")).toBe(
+      "connector",
+    );
+  });
+
+  it("blocks edit_itinerary without the plan scope", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const denied = await tools.edit_itinerary(
+      { trip_id: "t_1", ops: [] },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
+  });
+
+  it("saves the family's brief (allergies etc.) via set_trip_brief", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ intent: { constraints: { allergies: ["nuts"] } } }), {
+        status: 200,
+      }),
+    );
+    const out = await tools.set_trip_brief(
+      { trip_id: "t_1", constraints: { allergies: ["nuts"] }, must_do: ["Sea World"] },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(out.content[0].text).toContain("nuts");
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/intent"));
+    expect((call?.[1] as RequestInit)?.method).toBe("PUT");
+    expect(String((call?.[1] as RequestInit)?.body)).toContain("Sea World");
+  });
 });
 
 describe("MCP prompts", () => {
