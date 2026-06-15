@@ -3,11 +3,19 @@
  * contract, executed with the connected parent's identity (see contractFetch).
  *
  * Read tools require the `yaycay.read` scope; the planner requires `yaycay.plan`.
+ *
+ * Every tool body runs through `safe`, which checks scope and - crucially -
+ * turns failures into warm, on-brand guidance the assistant can relay verbatim
+ * (never a raw 500). The product's restrictions live here too: trips are
+ * created/bought in the Yaycay app, not through this connector, so a request for
+ * a new destination returns friendly steps + a dashboard link rather than
+ * erroring.
  */
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { contractFetch, contractJson } from "@/lib/mcp/contractFetch";
+import { contractFetch, contractJson, ContractError } from "@/lib/mcp/contractFetch";
 import { SCOPES } from "@/lib/mcp/config";
+import { env } from "@/lib/env";
 
 /** What `withMcpAuth` hands each tool via `extra.authInfo`. */
 export interface ToolAuth {
@@ -29,19 +37,88 @@ function authFrom(extra: unknown): ToolAuth {
   };
 }
 
+/** A friendly, missing-scope error that reads well when relayed to the family. */
+class ScopeError extends Error {}
+
 function requireScope(auth: ToolAuth, scope: string): void {
   if (!auth.scopes.includes(scope)) {
-    throw new Error(`This connector is missing the "${scope}" scope for that action.`);
+    const what = scope === SCOPES.plan ? "make changes or plan" : "read your trips";
+    throw new ScopeError(
+      `This Yaycay connection isn't set up to ${what} yet. Reconnect Yaycay from your assistant's settings and allow the planning permission, then we can pick up where we left off.`,
+    );
   }
 }
 
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+type ToolResult = { content: { type: "text"; text: string }[]; isError?: boolean };
+
+function ok(data: unknown): ToolResult {
+  return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+}
+
+function say(text: string, isError = false): ToolResult {
+  return { content: [{ type: "text", text }], isError };
+}
+
+/** Where the family adds / buys a trip. */
+function dashboardUrl(auth: ToolAuth): string {
+  return `${auth.origin || env.siteUrl.replace(/\/$/, "")}/trips`;
+}
+
+/** Map any thrown error to warm, on-brand, actionable text (never a raw 500). */
+function brand(err: unknown, auth: ToolAuth): ToolResult {
+  const dash = dashboardUrl(auth);
+  if (err instanceof ScopeError) return say(err.message, true);
+  if (err instanceof ContractError) {
+    if (err.status === 404) {
+      return say(
+        `I couldn't find that trip on your Yaycay account. New trips are set up in the Yaycay app - that's where the trip and its memories live. Open your dashboard to add one: ${dash}  Once it's there, tell me the destination and we'll start building it together.`,
+        true,
+      );
+    }
+    if (err.status === 401 || err.status === 403) {
+      return say(
+        `This Yaycay connection isn't allowed to do that. Try disconnecting and reconnecting Yaycay (with planning enabled) from your assistant's settings.`,
+        true,
+      );
+    }
+    if (err.status === 429) {
+      return say(
+        `We've reached today's planning limit for this trip (about 10 updates a day, so every change stays considered). Let's continue tomorrow, or carry on in the Yaycay app: ${dash}`,
+        true,
+      );
+    }
+    if (err.status >= 500) {
+      return say(
+        `Yaycay's planner had a brief hiccup just then - please try that again in a moment. If it keeps happening, you can always plan in the app: ${dash}`,
+        true,
+      );
+    }
+    return say(
+      `Yaycay couldn't complete that just now. Mind trying again, or doing it in the app: ${dash}`,
+      true,
+    );
+  }
+  return say(`Something went sideways on Yaycay's side - please try that again in a moment.`, true);
+}
+
+/** Run a tool body with scope-check + on-brand error mapping. */
+async function safe(
+  extra: unknown,
+  scope: string | null,
+  fn: (auth: ToolAuth) => Promise<ToolResult>,
+): Promise<ToolResult> {
+  const auth = authFrom(extra);
+  try {
+    if (scope) requireScope(auth, scope);
+    return await fn(auth);
+  } catch (err) {
+    return brand(err, auth);
+  }
 }
 
 /** Drain a `text/event-stream` planning reply into one aggregated string. */
 async function drainPlanStream(res: Response): Promise<string> {
-  if (!res.ok || !res.body) throw new Error(`Planner failed (${res.status})`);
+  if (!res.ok || !res.body) throw new ContractError(res.status, "/plan/chat", "POST");
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -73,73 +150,89 @@ async function drainPlanStream(res: Response): Promise<string> {
 export function registerYaycayTools(server: McpServer): void {
   server.tool(
     "list_trips",
-    "List the family's Yaycay trips (id, destination, dates, tier, status).",
+    "List the family's Yaycay trips (id, destination, dates, tier, status). Call this first to see what already exists.",
     {},
-    async (_args, extra) => {
-      const auth = authFrom(extra);
-      requireScope(auth, SCOPES.read);
-      const data = await contractJson<{ trips: unknown[] }>("/trips", auth);
-      return ok(data.trips);
-    },
+    async (_args, extra) =>
+      safe(extra, SCOPES.read, async (auth) => {
+        const data = await contractJson<{ trips: unknown[] }>("/trips", auth);
+        return ok(data.trips);
+      }),
   );
 
   server.tool(
     "get_trip",
     "Get a single trip record: status, tier, dates and memory-retention info.",
     { trip_id: z.string().describe("The trip id, e.g. from list_trips.") },
-    async ({ trip_id }, extra) => {
-      const auth = authFrom(extra);
-      requireScope(auth, SCOPES.read);
-      return ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}`, auth));
-    },
+    async ({ trip_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) =>
+        ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}`, auth)),
+      ),
   );
 
   server.tool(
     "get_trip_content",
     "Get the full day-by-day content for a trip (days, moments, activities).",
     { trip_id: z.string().describe("The trip id.") },
-    async ({ trip_id }, extra) => {
-      const auth = authFrom(extra);
-      requireScope(auth, SCOPES.read);
-      return ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}/content`, auth));
-    },
+    async ({ trip_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) =>
+        ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}/content`, auth)),
+      ),
   );
 
   server.tool(
     "get_packing_list",
     "Get the packing lists for a trip.",
     { trip_id: z.string().describe("The trip id.") },
-    async ({ trip_id }, extra) => {
-      const auth = authFrom(extra);
-      requireScope(auth, SCOPES.read);
-      return ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}/packing`, auth));
-    },
+    async ({ trip_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) =>
+        ok(await contractJson(`/trips/${encodeURIComponent(trip_id)}/packing`, auth)),
+      ),
+  );
+
+  server.tool(
+    "request_new_trip",
+    "Use when the family wants a NEW destination that isn't in their trips yet. Trips can't be created through this connector - they're added in the Yaycay app - so this returns the friendly steps + the family's dashboard link. Relay it warmly and pause planning until they confirm the trip is added.",
+    { destination: z.string().describe("Where the family wants to go, e.g. 'Gold Coast'.") },
+    async ({ destination }, extra) =>
+      safe(extra, null, async (auth) => {
+        const dash = dashboardUrl(auth);
+        return ok({
+          can_create_here: false,
+          destination,
+          message: `Love it - ${destination} sounds like a great one! New trips are set up in the Yaycay app, where the trip and its memories live. Pop over to your dashboard to add ${destination}: ${dash}  As soon as it's there, tell me and we'll start building your day-by-day plan together.`,
+          dashboard_url: dash,
+          next_step: `After the family adds "${destination}" in the app, call list_trips to pick it up, then plan_trip to build it.`,
+        });
+      }),
   );
 
   server.tool(
     "plan_trip",
-    "Ask the Yaycay planner to help shape a trip. Returns the planner's reply.",
+    "Ask the Yaycay planner to help shape an EXISTING trip. Returns the planner's reply. For a brand-new destination, use request_new_trip instead.",
     {
-      trip_id: z.string().describe("The trip id to plan."),
+      trip_id: z.string().describe("The trip id to plan (must already exist; see list_trips)."),
       message: z.string().describe("What you want help with, in plain language."),
     },
-    async ({ trip_id, message }, extra) => {
-      const auth = authFrom(extra);
-      requireScope(auth, SCOPES.plan);
-      // Mark the call as connector-sourced so BE can log it to ai_jobs, count it
-      // against the daily cap, and route the written content through Content
-      // Review (an external model has no built-in guardrail). See handoff #08.
-      const res = await contractFetch(`/trips/${encodeURIComponent(trip_id)}/plan/chat`, {
-        ...auth,
-        method: "POST",
-        body: { messages: [{ role: "user", content: message }] },
-        headers: {
-          "x-yaycay-source": "connector",
-          "x-yaycay-connection-id": auth.connectionId,
-        },
-      });
-      const reply = await drainPlanStream(res);
-      return ok({ reply });
-    },
+    async ({ trip_id, message }, extra) =>
+      safe(extra, SCOPES.plan, async (auth) => {
+        // Confirm the trip exists first, so a missing/new destination returns the
+        // friendly "add it in the app" guidance (brand's 404 case) rather than a
+        // planner 500.
+        await contractJson(`/trips/${encodeURIComponent(trip_id)}`, auth);
+        // Mark the call as connector-sourced so BE can log it to ai_jobs, count
+        // it against the daily cap, and route the written content through Content
+        // Review (an external model has no built-in guardrail). See handoff #08.
+        const res = await contractFetch(`/trips/${encodeURIComponent(trip_id)}/plan/chat`, {
+          ...auth,
+          method: "POST",
+          body: { messages: [{ role: "user", content: message }] },
+          headers: {
+            "x-yaycay-source": "connector",
+            "x-yaycay-connection-id": auth.connectionId,
+          },
+        });
+        const reply = await drainPlanStream(res);
+        return ok({ reply });
+      }),
   );
 }
