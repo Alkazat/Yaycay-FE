@@ -8,6 +8,7 @@ import { createCheckoutSession } from "@/lib/api/account";
 import { getCatalogue, priceOf } from "@/lib/api/catalogue";
 import { PRODUCTS } from "@/lib/paywall";
 import { Modal } from "@/components/ui/Modal";
+import { CityAutocomplete } from "@/components/trips/CityAutocomplete";
 import { Button, Input, Select } from "@/components/ds";
 
 type Plan = "free" | "ours" | "byo";
@@ -151,12 +152,7 @@ export function CreateTripModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="New trip" onClose={onClose}>
       <div className="yc-stack" style={{ gap: "var(--space-3)" }}>
-        <Input
-          label="Where to?"
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          placeholder="Singapore"
-        />
+        <CityAutocomplete value={destination} onChange={setDestination} onSelect={() => {}} />
 
         <div className="yc-stack" style={{ gap: "var(--space-2)" }}>
           <span style={{ fontWeight: 800 }}>When?</span>
