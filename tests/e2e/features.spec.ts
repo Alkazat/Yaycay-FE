@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { seedExplorer } from "./_helpers";
 
 /** A2: ticking the day's activities completes the day. */
 test("progress: ticking activities completes the day", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
   await expect(page.getByTestId("done-check").first()).toBeVisible();
@@ -25,6 +27,7 @@ test("progress: ticking activities completes the day", async ({ page }) => {
 
 /** B3: reveal and claim the day's star challenge. */
 test("stars: claim the day's star challenge", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   const challenge = page.getByTestId("star-challenge");
   await expect(challenge).toBeVisible();
@@ -40,6 +43,7 @@ test("stars: claim the day's star challenge", async ({ page }) => {
 
 /** B2: a little explorer can play and win the mini-game. */
 test("mini-game: little explorer plays and wins", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 

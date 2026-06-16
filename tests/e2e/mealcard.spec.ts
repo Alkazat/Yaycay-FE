@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { seedExplorer } from "./_helpers";
 
 /** Day 2's Satay lunch shows the allergy meal card, bilingual ask-the-kitchen, and reminder. */
 test("day 2 lunch renders the allergy meal card + bilingual ask-the-kitchen", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 

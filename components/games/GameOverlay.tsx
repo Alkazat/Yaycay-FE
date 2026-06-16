@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { GameConfig } from "@/lib/contract-mock/types";
 import { Button } from "@/components/ds";
+import { Celebrate } from "@/components/ui/Celebrate";
 
 interface GameOverlayProps {
   game: GameConfig;
@@ -28,6 +29,12 @@ export function GameOverlay({ game, onWin, onClose }: GameOverlayProps) {
 
   const progress = isColour ? Object.keys(filled).length : caught.size;
   const won = progress >= goal;
+
+  // Fire a confetti burst the moment the game is won (re-fires after Play again).
+  const [winKey, setWinKey] = useState(0);
+  useEffect(() => {
+    if (won) setWinKey((k) => k + 1);
+  }, [won]);
 
   // Render `goal` catchable tiles for tap/spot; cycle item labels for variety.
   const tiles = Array.from({ length: goal }, (_, i) => game.items[i % game.items.length]);
@@ -199,6 +206,7 @@ export function GameOverlay({ game, onWin, onClose }: GameOverlayProps) {
           })}
         </div>
       )}
+      <Celebrate fireKey={winKey} />
     </div>
   );
 }
