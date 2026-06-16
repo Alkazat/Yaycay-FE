@@ -1,9 +1,10 @@
 /**
- * Lightweight inline brand marks for the supported AI assistants. Recognisable
- * approximations (terracotta burst, sparkle, knot) so the "Connected assistants"
- * hero reads as branded without bundling external logo files. Each is isolated,
- * so an official SVG can be dropped in per assistant later.
+ * Brand assets for the supported AI assistants. `BrandLogo` renders the official
+ * wordmark (uploaded to /public/brand); `AssistantMark` is the inline icon mark
+ * used where a compact, square glyph is wanted (pills, connected-assistant rows).
  */
+
+import Image from "next/image";
 
 export type AssistantBrand = "claude" | "openai" | "gemini";
 
@@ -21,32 +22,28 @@ export const ASSISTANT_OWNER: Record<AssistantBrand, string> = {
   gemini: "Google",
 };
 
+/** Official wordmark files in /public/brand, with their approx aspect ratio. */
+const BRAND_LOGO: Record<AssistantBrand, { file: string; aspect: number }> = {
+  claude: { file: "claude", aspect: 4.4 },
+  openai: { file: "chatgpt", aspect: 3.9 },
+  gemini: { file: "gemini", aspect: 4.3 },
+};
+
 /**
- * A branded pill: the assistant's logo mark plus "Owner Model" (e.g. the
- * Anthropic burst + "Anthropic Claude"). Used on the connect/how-to page so each
- * assistant reads by its logo and its maker, not a repeated bare word.
+ * The official assistant wordmark (logo + name) from /public/brand. Sized by
+ * height; width follows the logo's aspect ratio. Used where there is horizontal
+ * room (the connect "works with" strip, the BYO planning notice).
  */
-export function BrandPill({ brand, size = 22 }: { brand: AssistantBrand; size?: number }) {
+export function BrandLogo({ brand, height = 26 }: { brand: AssistantBrand; height?: number }) {
+  const { file, aspect } = BRAND_LOGO[brand];
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "5px 12px 5px 8px",
-        borderRadius: "var(--radius-pill, 999px)",
-        background: "var(--surface-sunk)",
-        border: "2px solid var(--sand-200, #e7e2d8)",
-        fontWeight: 800,
-        whiteSpace: "nowrap",
-      }}
-    >
-      <AssistantMark brand={brand} size={size} />
-      <span>
-        <span style={{ color: "var(--text-muted)" }}>{ASSISTANT_OWNER[brand]}</span>{" "}
-        {ASSISTANT_LABEL[brand]}
-      </span>
-    </span>
+    <Image
+      src={`/brand/${file}.png`}
+      alt={ASSISTANT_LABEL[brand]}
+      width={Math.round(height * aspect)}
+      height={height}
+      style={{ width: "auto", height }}
+    />
   );
 }
 
