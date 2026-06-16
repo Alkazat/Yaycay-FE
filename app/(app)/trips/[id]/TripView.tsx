@@ -28,7 +28,6 @@ import { Tabs, Card, CardBody, Banner } from "@/components/ds";
 import type { ProfileMode, TripProgress } from "@/lib/contract-mock/types";
 import { useTripPlanning } from "@/components/trips/useTripPlanning";
 import { useTripFeatures } from "@/components/trips/useTripFeatures";
-import { ExplorePlanSwitch } from "@/components/trips/ExplorePlanSwitch";
 import { PlanningPanel } from "@/components/trips/PlanningPanel";
 import { TripStickyHeader } from "@/components/trips/TripStickyHeader";
 import { BrandLoading } from "@/components/shell/BrandLoading";
@@ -182,7 +181,7 @@ export function TripView({ tripId }: { tripId: string }) {
   });
 
   return (
-    <div className="yc-stack" data-testid="trip-view">
+    <div className="yc-stack" data-testid="trip-view" data-section={showPlan ? "planning" : undefined}>
       <TripStickyHeader
         tripId={tripId}
         title={trip.trip.destination}
@@ -194,12 +193,14 @@ export function TripView({ tripId }: { tripId: string }) {
         activeProfileId={profileId}
         onSelectProfile={selectProfile}
         showPocketMoney={effectiveView === "kid" && features.pocket_money}
+        canPlan={canPlan}
+        mode={planning.mode}
+        onModeChange={planning.setMode}
       />
-      <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
-        {canPlan ? <ExplorePlanSwitch mode={planning.mode} onChange={planning.setMode} /> : null}
-        {/* Exploring tools. Per-explorer links honour the active explorer's
-            toggles; Map and While-you're-there are trip-wide. Hidden in Plan. */}
-        {!showPlan ? (
+      {/* Exploring tools. Per-explorer links honour the active explorer's
+          toggles; Map and While-you're-there are trip-wide. Hidden in Plan. */}
+      {!showPlan ? (
+        <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
           <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
             {features.journal ? (
               <Link
@@ -234,8 +235,8 @@ export function TripView({ tripId }: { tripId: string }) {
               While you&apos;re there
             </Link>
           </nav>
-        ) : null}
-      </header>
+        </header>
+      ) : null}
 
       {showPlan ? (
         <PlanningPanel
