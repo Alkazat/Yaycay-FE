@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { ProfileMode, TripDay } from "@/lib/contract-mock/types";
 import { activitiesForView, type RenderView } from "@/lib/render/routeByKind";
 import { selectActivityCopy } from "@/lib/render/selectVariant";
@@ -10,6 +11,7 @@ import { ReadAloud } from "@/components/renderer/ReadAloud";
 import { dayCompletion } from "@/lib/render/progress";
 import { dayEmoji, dayTone } from "@/components/trips/dayDecor";
 import { activityScene } from "@/components/trips/activityScene";
+import { Celebrate } from "@/components/ui/Celebrate";
 import { Badge, Card, CardBody, CardMedia } from "@/components/ds";
 
 interface TripDayRendererProps {
@@ -67,6 +69,21 @@ export function TripDayRenderer({
   const doneSet = done ?? new Set<string>();
   const completion = dayCompletion(day, doneSet);
   const showChecks = isKid && !!onToggleActivity;
+
+  // Celebrate the moment THIS day is completed (a tick flips it), but never on
+  // simply navigating to an already-finished day.
+  const [dayWinKey, setDayWinKey] = useState(0);
+  const prevComplete = useRef<{ id: string; complete: boolean }>({
+    id: day.id,
+    complete: completion.complete,
+  });
+  useEffect(() => {
+    const sameDay = prevComplete.current.id === day.id;
+    if (showChecks && sameDay && completion.complete && !prevComplete.current.complete) {
+      setDayWinKey((k) => k + 1);
+    }
+    prevComplete.current = { id: day.id, complete: completion.complete };
+  }, [day.id, completion.complete, showChecks]);
 
   // SG-style day header (kid view): floating emoji + "DAY N • WEEKDAY DATE" + title.
   const dayIndex = (dayNumber ?? 1) - 1;
@@ -342,6 +359,7 @@ export function TripDayRenderer({
           Day complete! Amazing exploring.
         </div>
       ) : null}
+      <Celebrate fireKey={dayWinKey} />
     </div>
   );
 }

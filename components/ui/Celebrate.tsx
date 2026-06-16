@@ -49,7 +49,7 @@ export function Celebrate({ fireKey }: { fireKey: number }) {
       ))}
       <style>{`
         .yc-celebrate {
-          position: fixed; inset: 0; z-index: 80;
+          position: fixed; inset: 0; z-index: 9999;
           pointer-events: none; display: grid; place-items: center;
         }
         .yc-celebrate__burst { position: relative; }
