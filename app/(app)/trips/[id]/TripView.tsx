@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTripContent, listProfiles } from "@/lib/api/trips";
@@ -12,6 +11,11 @@ import { DayNav } from "@/components/trips/DayNav";
 import { TripComplete } from "@/components/trips/TripComplete";
 import { TripCover } from "@/components/trips/TripCover";
 import { TripHome } from "@/components/trips/TripHome";
+import { Overlay } from "@/components/ui/Overlay";
+import { MapClient } from "./map/MapClient";
+import { PackingClient } from "./packing/PackingClient";
+import { JournalClient } from "./journal/JournalClient";
+import { CompanionClient } from "./companion/CompanionClient";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { PinGate } from "@/components/profile/PinGate";
@@ -56,6 +60,11 @@ export function TripView({ tripId }: { tripId: string }) {
   // or seeded explorer (no cover) lands straight on a day. Tapping a day card or
   // chip moves to "day"; the in-book Home button returns to "home".
   const [bookView, setBookView] = useState<"home" | "day">("day");
+  // Tools open as in-place overlays over the book instead of navigating away to
+  // their routes (the routes stay for deep links). null = no tool open.
+  const [activeTool, setActiveTool] = useState<"map" | "packing" | "journal" | "companion" | null>(
+    null,
+  );
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
   // Explore (default) vs Plan mode (device-local) + the parent's per-explorer
   // feature overrides (BE-backed, synced across devices).
@@ -247,37 +256,37 @@ export function TripView({ tripId }: { tripId: string }) {
         <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
           <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
             {features.journal ? (
-              <Link
-                href={`/trips/${tripId}/journal`}
+              <button
+                type="button"
                 className="yc-btn yc-btn--secondary yc-btn--sm"
-                style={{ textDecoration: "none" }}
+                onClick={() => setActiveTool("journal")}
               >
                 Journal
-              </Link>
+              </button>
             ) : null}
             {features.packing ? (
-              <Link
-                href={`/trips/${tripId}/packing`}
+              <button
+                type="button"
                 className="yc-btn yc-btn--secondary yc-btn--sm"
-                style={{ textDecoration: "none" }}
+                onClick={() => setActiveTool("packing")}
               >
                 Packing
-              </Link>
+              </button>
             ) : null}
-            <Link
-              href={`/trips/${tripId}/map`}
+            <button
+              type="button"
               className="yc-btn yc-btn--secondary yc-btn--sm"
-              style={{ textDecoration: "none" }}
+              onClick={() => setActiveTool("map")}
             >
               Map
-            </Link>
-            <Link
-              href={`/trips/${tripId}/companion`}
+            </button>
+            <button
+              type="button"
               className="yc-btn yc-btn--secondary yc-btn--sm"
-              style={{ textDecoration: "none" }}
+              onClick={() => setActiveTool("companion")}
             >
               While you&apos;re there
-            </Link>
+            </button>
           </nav>
         </header>
       ) : null}
@@ -417,6 +426,39 @@ export function TripView({ tripId }: { tripId: string }) {
           ) : null}
         </>
       )}
+
+      <Overlay
+        open={activeTool === "map"}
+        title="Map"
+        onClose={() => setActiveTool(null)}
+        testId="map-overlay"
+      >
+        {activeTool === "map" ? <MapClient tripId={tripId} /> : null}
+      </Overlay>
+      <Overlay
+        open={activeTool === "packing"}
+        title="Packing"
+        onClose={() => setActiveTool(null)}
+        testId="packing-overlay"
+      >
+        {activeTool === "packing" ? <PackingClient tripId={tripId} /> : null}
+      </Overlay>
+      <Overlay
+        open={activeTool === "journal"}
+        title="Journal"
+        onClose={() => setActiveTool(null)}
+        testId="journal-overlay"
+      >
+        {activeTool === "journal" ? <JournalClient tripId={tripId} /> : null}
+      </Overlay>
+      <Overlay
+        open={activeTool === "companion"}
+        title="While you're there"
+        onClose={() => setActiveTool(null)}
+        testId="companion-overlay"
+      >
+        {activeTool === "companion" ? <CompanionClient tripId={tripId} /> : null}
+      </Overlay>
     </div>
   );
 }
