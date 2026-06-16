@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardBody, Badge, Button } from "@/components/ds";
-import { AssistantMark, ASSISTANT_OWNER, ASSISTANT_LABEL, type AssistantBrand } from "@/components/brand/AssistantMark";
+import { AssistantMark, BrandLogo, ASSISTANT_OWNER, ASSISTANT_LABEL, type AssistantBrand } from "@/components/brand/AssistantMark";
 
 /**
  * One-click-ish connector setup. The MCP URL + OAuth discovery do the heavy
@@ -156,6 +156,19 @@ export function ConnectClient({ mcpUrl }: { mcpUrl: string }) {
             Manage connected assistants
           </a>
         </p>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "var(--space-5)",
+            marginTop: "var(--space-2)",
+          }}
+        >
+          <BrandLogo brand="claude" height={26} />
+          <BrandLogo brand="openai" height={26} />
+          <BrandLogo brand="gemini" height={26} />
+        </div>
       </header>
 
       <Card>
