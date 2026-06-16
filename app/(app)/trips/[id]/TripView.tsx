@@ -254,39 +254,55 @@ export function TripView({ tripId }: { tripId: string }) {
           toggles; Map and While-you're-there are trip-wide. Hidden in Plan. */}
       {!showPlan ? (
         <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
-          <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
-            {features.journal ? (
-              <button
-                type="button"
-                className="yc-btn yc-btn--secondary yc-btn--sm"
-                onClick={() => setActiveTool("journal")}
-              >
-                Journal
+          <nav className="yc-appbar" aria-label="Trip tools">
+            {effectiveView === "kid" && bookView === "day" ? (
+              <button type="button" className="yc-appbar__btn" onClick={() => setBookView("home")}>
+                <span className="yc-appbar__ic" aria-hidden="true">🏠</span>
+                <span className="yc-appbar__lb">Home</span>
               </button>
             ) : null}
+            <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("map")}>
+              <span className="yc-appbar__ic" aria-hidden="true">🗺️</span>
+              <span className="yc-appbar__lb">Map</span>
+            </button>
             {features.packing ? (
-              <button
-                type="button"
-                className="yc-btn yc-btn--secondary yc-btn--sm"
-                onClick={() => setActiveTool("packing")}
-              >
-                Packing
+              <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("packing")}>
+                <span className="yc-appbar__ic" aria-hidden="true">🧳</span>
+                <span className="yc-appbar__lb">Packing</span>
               </button>
             ) : null}
-            <button
-              type="button"
-              className="yc-btn yc-btn--secondary yc-btn--sm"
-              onClick={() => setActiveTool("map")}
-            >
-              Map
+            {features.journal ? (
+              <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("journal")}>
+                <span className="yc-appbar__ic" aria-hidden="true">📖</span>
+                <span className="yc-appbar__lb">Journal</span>
+              </button>
+            ) : null}
+            <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("companion")}>
+              <span className="yc-appbar__ic" aria-hidden="true">📍</span>
+              <span className="yc-appbar__lb">Nearby</span>
             </button>
-            <button
-              type="button"
-              className="yc-btn yc-btn--secondary yc-btn--sm"
-              onClick={() => setActiveTool("companion")}
-            >
-              While you&apos;re there
-            </button>
+            <style>{`
+              .yc-appbar {
+                display: flex; gap: var(--space-2); overflow-x: auto;
+                padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+              }
+              .yc-appbar::-webkit-scrollbar { display: none; }
+              .yc-appbar__btn {
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; min-width: 60px; min-height: var(--control-lg, 56px);
+                padding: var(--space-2) var(--space-3);
+                border-radius: var(--radius-lg, 16px);
+                border: 2.5px solid var(--sand-300, #ddd0b8);
+                background: var(--surface-card, #fff);
+                cursor: pointer; white-space: nowrap;
+                font-family: var(--font-display); color: var(--royal-700, #0a4c8b);
+                transition: transform var(--dur-sm, .15s) var(--ease-bounce, ease);
+              }
+              .yc-appbar__btn:hover { transform: translateY(-2px); box-shadow: var(--pop-sky); }
+              .yc-appbar__btn:active { transform: scale(.95); }
+              .yc-appbar__ic { font-size: 22px; line-height: 1; }
+              .yc-appbar__lb { font-size: var(--fs-xs, .72rem); font-weight: 700; }
+            `}</style>
           </nav>
         </header>
       ) : null}
@@ -324,7 +340,7 @@ export function TripView({ tripId }: { tripId: string }) {
               tripId={tripId}
               days={trip.days}
               profile={activeProfile}
-              activeDay={activeDay}
+              kids={profiles.filter((p) => isChild(p))}
               showPocketMoney={features.pocket_money}
               doneSet={doneSet}
               daysComplete={tp.daysComplete}
@@ -345,18 +361,6 @@ export function TripView({ tripId }: { tripId: string }) {
             />
           ) : (
             <>
-              {effectiveView === "kid" ? (
-                <div>
-                  <button
-                    type="button"
-                    className="yc-btn yc-btn--secondary yc-btn--sm"
-                    onClick={() => setBookView("home")}
-                  >
-                    🏠 Home
-                  </button>
-                </div>
-              ) : null}
-
               {effectiveView === "kid" && features.pocket_money && activeProfile && activeDay ? (
                 <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
               ) : null}

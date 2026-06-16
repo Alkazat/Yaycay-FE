@@ -2,7 +2,7 @@
 
 import type { ChildProfile, TripDay } from "@/lib/contract-mock/types";
 import { Button } from "@/components/ds";
-import { StarBank } from "@/components/stars/StarBank";
+import { FamilyStarBank } from "@/components/stars/FamilyStarBank";
 import { dayCompletion } from "@/lib/render/progress";
 import { dayEmoji, dayTone } from "@/components/trips/dayDecor";
 
@@ -24,7 +24,7 @@ interface TripHomeProps {
   tripId: string;
   days: TripDay[];
   profile: ChildProfile | null;
-  activeDay?: TripDay;
+  kids: ChildProfile[];
   showPocketMoney: boolean;
   doneSet: Set<string>;
   daysComplete: number;
@@ -38,7 +38,7 @@ export function TripHome({
   tripId,
   days,
   profile,
-  activeDay,
+  kids,
   showPocketMoney,
   doneSet,
   daysComplete,
@@ -66,8 +66,8 @@ export function TripHome({
         </Button>
       ) : null}
 
-      {showPocketMoney && profile && activeDay ? (
-        <StarBank tripId={tripId} profile={profile} day={activeDay} />
+      {showPocketMoney && kids.length > 0 ? (
+        <FamilyStarBank tripId={tripId} kids={kids} activeId={profile?.id ?? null} />
       ) : null}
 
       <div className="yc-home__progress" aria-label={`${daysComplete} of ${totalDays} days explored`}>
