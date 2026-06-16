@@ -9,10 +9,10 @@ test("connect page shows the MCP URL and assistant cards", async ({ page }) => {
   // The MCP URL is rendered and points at /api/mcp.
   await expect(page.getByText("/api/mcp").first()).toBeVisible();
 
-  // Each major assistant has a setup card.
-  await expect(page.getByRole("heading", { name: /claude \(chat\)/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /chatgpt/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /gemini/i })).toBeVisible();
+  // Each major assistant is shown by its owner and model (branded pills).
+  await expect(page.getByText(/anthropic claude/i).first()).toBeVisible();
+  await expect(page.getByText(/openai chatgpt/i).first()).toBeVisible();
+  await expect(page.getByText(/google gemini/i).first()).toBeVisible();
 });
 
 test("OAuth discovery metadata is served", async ({ request, baseURL }) => {

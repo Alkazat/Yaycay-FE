@@ -102,36 +102,17 @@ export function PlanningPanel({
       >
         {/* ---- Main: the chat with Yaycay AI ------------------------------- */}
         <div className="yc-stack" data-testid="planning-chat">
-          <div>
-            <h2 style={{ margin: 0, fontFamily: "var(--font-display)", color: "var(--royal-800)" }}>
-              Plan with Yaycay
-            </h2>
-            <p style={{ margin: "var(--space-1) 0 0", color: "var(--text-muted)", fontWeight: 700 }}>
-              Chat to shape the trip. Days and moments appear in the itinerary as you go.
-            </p>
-          </div>
-          <ChatHistoryPanel tripId={tripId} />
-          {ent.canUseOurAi ? <PlanChat tripId={tripId} /> : null}
-          {ent.canUseByoConnector ? (
-            <Card variant="soft">
-              <CardBody title="Bring your own AI">
-                <p style={{ margin: 0 }}>
-                  Plan from your own ChatGPT, Claude or Gemini - it talks to Yaycay through a secure
-                  connector.
-                </p>
-                <Link
-                  href="/connect"
-                  className="yc-btn yc-btn--secondary yc-btn--sm"
-                  style={{ textDecoration: "none", marginTop: "var(--space-2)" }}
-                >
-                  🔌 Connect your AI
-                </Link>
-              </CardBody>
-            </Card>
+          {ent.canUseOurAi ? (
+            <>
+              <ChatHistoryPanel tripId={tripId} />
+              <PlanChat tripId={tripId} />
+            </>
           ) : null}
+          {/* BYO: show the same chat, locked, with a connect reminder. */}
+          {!ent.canUseOurAi && ent.canUseByoConnector ? <PlanChat tripId={tripId} locked /> : null}
           {!ent.canUseOurAi && !ent.canUseByoConnector ? (
             <Card variant="soft">
-              <CardBody>
+              <CardBody title="Unlock planning">
                 <p style={{ margin: 0 }}>Planning unlocks with a full holiday.</p>
               </CardBody>
             </Card>

@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/Modal";
 import type { Tier } from "@/lib/contract-mock/types";
 import { PlanChat } from "@/components/chat/PlanChat";
 import { ChatHistoryPanel } from "@/components/chat/ChatHistoryPanel";
-import { Button, Card, CardBody, Badge, Banner } from "@/components/ds";
+import { Button, Card, CardBody, Banner } from "@/components/ds";
 
 /**
  * Plan upgrade/downgrade matrix:
@@ -94,33 +94,6 @@ function PlanUpgrade({ tier, tripId }: { tier: Tier; tripId: string }) {
   );
 }
 
-/** BYO-AI connector entry point. The connect flow lives at /connect. */
-function ByoConnector() {
-  return (
-    <Card>
-      <CardBody title="Bring your own AI">
-        <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
-          <Badge tone="meadow" dot>
-            Ready to connect
-          </Badge>
-        </div>
-        <p style={{ margin: 0 }}>
-          Connect your own ChatGPT, Claude or Gemini to plan this trip. Your AI talks to Yaycay
-          through a secure connector - we never see your subscription.
-        </p>
-        <ol style={{ margin: 0, paddingLeft: "var(--space-5)", color: "var(--text-body)" }}>
-          <li>Open the connect page and pick your assistant.</li>
-          <li>Paste the Yaycay MCP URL into its connector settings.</li>
-          <li>Sign in once and approve - then plan right from your assistant.</li>
-        </ol>
-        <a href="/connect">
-          <Button variant="primary">Connect your AI</Button>
-        </a>
-      </CardBody>
-    </Card>
-  );
-}
-
 export function PlanClient({ tripId }: { tripId: string }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["trips"],
@@ -146,9 +119,14 @@ export function PlanClient({ tripId }: { tripId: string }) {
         <Banner tone="danger">We couldn&apos;t load the planner. Give it another go?</Banner>
       ) : null}
 
-      <ChatHistoryPanel tripId={tripId} />
-      {ent.canUseByoConnector ? <ByoConnector /> : null}
-      {ent.canUseOurAi ? <PlanChat tripId={tripId} /> : null}
+      {ent.canUseOurAi ? (
+        <>
+          <ChatHistoryPanel tripId={tripId} />
+          <PlanChat tripId={tripId} />
+        </>
+      ) : null}
+      {/* BYO: the chat shell, locked, pointing at the connect/how-to page. */}
+      {!ent.canUseOurAi && ent.canUseByoConnector ? <PlanChat tripId={tripId} locked /> : null}
       <PlanUpgrade tier={tier} tripId={tripId} />
     </div>
   );
