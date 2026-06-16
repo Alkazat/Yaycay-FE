@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { getStars } from "@/lib/api/stars";
 import { balanceFor, sgdValue, STAR_CURRENCY } from "@/lib/stars";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
+import { ExplorePlanSwitch } from "@/components/trips/ExplorePlanSwitch";
 import { Badge } from "@/components/ds";
 import { formatDateRange } from "@/lib/format";
+import type { TripMode } from "@/components/trips/useTripPlanning";
 import type { ChildProfile } from "@/lib/contract-mock/types";
 
 /**
@@ -24,6 +26,9 @@ export function TripStickyHeader({
   activeProfileId,
   onSelectProfile,
   showPocketMoney,
+  canPlan,
+  mode,
+  onModeChange,
 }: {
   tripId: string;
   title: string;
@@ -35,6 +40,9 @@ export function TripStickyHeader({
   activeProfileId: string | null;
   onSelectProfile: (id: string) => void;
   showPocketMoney: boolean;
+  canPlan: boolean;
+  mode: TripMode;
+  onModeChange: (mode: TripMode) => void;
 }) {
   const stars = useQuery({
     queryKey: ["stars", tripId, activeProfileId],
@@ -66,6 +74,11 @@ export function TripStickyHeader({
           ) : null}
         </span>
       </div>
+      {canPlan ? (
+        <div style={{ marginTop: "var(--space-3)" }}>
+          <ExplorePlanSwitch mode={mode} onChange={onModeChange} />
+        </div>
+      ) : null}
       {profiles.length > 0 ? (
         <div style={{ marginTop: "var(--space-2)" }}>
           <ProfileSwitcher profiles={profiles} activeId={activeProfileId} onSelect={onSelectProfile} />
