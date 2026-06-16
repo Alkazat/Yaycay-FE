@@ -9,7 +9,8 @@ import { MealCardView } from "@/components/renderer/MealCard";
 import { ReadAloud } from "@/components/renderer/ReadAloud";
 import { dayCompletion } from "@/lib/render/progress";
 import { dayEmoji, dayTone } from "@/components/trips/dayDecor";
-import { Badge, Card, CardBody } from "@/components/ds";
+import { activityScene } from "@/components/trips/activityScene";
+import { Badge, Card, CardBody, CardMedia } from "@/components/ds";
 
 interface TripDayRendererProps {
   day: TripDay;
@@ -185,8 +186,20 @@ export function TripDayRenderer({
 
             {activities.map((activity) => {
               const copy = selectActivityCopy(activity, mode);
+              const scene = activityScene(activity.id, copy.title);
               return (
                 <Card key={activity.id} variant="soft">
+                  {isKid ? (
+                    <CardMedia
+                      height={88}
+                      aria-hidden
+                      style={{ background: scene.gradient, display: "grid", placeItems: "center" }}
+                    >
+                      <span style={{ fontSize: 42, filter: "drop-shadow(0 2px 4px rgba(10,30,60,.18))" }}>
+                        {scene.emoji}
+                      </span>
+                    </CardMedia>
+                  ) : null}
                   <CardBody title={copy.title}>
                     {copy.body ? <p style={{ margin: 0 }}>{copy.body}</p> : null}
 
