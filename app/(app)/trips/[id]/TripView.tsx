@@ -20,6 +20,7 @@ import {
   grownupsNeedsPin,
   modeForProfile,
   isChild,
+  isParentCarer,
 } from "@/lib/profile/access";
 import { StarBank } from "@/components/stars/StarBank";
 import { GameLauncher } from "@/components/games/GameLauncher";
@@ -55,6 +56,9 @@ export function TripView({ tripId }: { tripId: string }) {
   const planning = useTripPlanning(tripId);
   const featureToggles = useTripFeatures(tripId);
 
+  const trip = tripQuery.data;
+  const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data]);
+
   // Honour the mode chosen at the trip tile (?mode=explore|plan), once per entry.
   const searchParams = useSearchParams();
   const modeParam = searchParams.get("mode");
@@ -66,9 +70,6 @@ export function TripView({ tripId }: { tripId: string }) {
       appliedMode.current = true;
     }
   }, [modeParam, planning]);
-
-  const trip = tripQuery.data;
-  const profiles = profilesQuery.data ?? [];
 
   // Default selections once data arrives. The view lands on today during the
   // trip, otherwise day one.
@@ -87,10 +88,24 @@ export function TripView({ tripId }: { tripId: string }) {
     mode,
     profileId ? featureToggles.overridesFor(profileId) : undefined,
   );
-  // Planning is a grown-up activity: only parent/carers get the switch, and a
-  // plan-mode flag left in storage is ignored while a child is active.
-  const canPlan = !!activeProfile && canAccessGrownups(activeProfile);
-  const showPlan = canPlan && planning.mode === "plan";
+  // Planning is a grown-up activity, but it must be discoverable from any trip
+  // entry: the trip defaults to a child profile, so gating the switch on the
+  // *active* profile hid planning entirely. Instead the switch shows whenever the
+  // trip has a parent/carer at all; choosing Planning auto-activates them.
+  const planningAvailable = profiles.some((p) => isParentCarer(p));
+  const showPlan = planningAvailable && planning.mode === "plan";
+
+  // Planning is a grown-up workspace. Whenever we're in Plan mode but a child is
+  // active (the default profile, a persisted flag, or a tile/switch request),
+  // elevate to the trip's parent/carer so the grown-up planner (and its chat)
+  // actually opens instead of silently falling back to the kid view.
+  useEffect(() => {
+    if (planning.mode !== "plan" || profiles.length === 0) return;
+    const current = profiles.find((p) => p.id === profileId) ?? null;
+    if (current && canAccessGrownups(current)) return;
+    const grown = profiles.find((p) => isParentCarer(p));
+    if (grown && grown.id !== activeProfileId) setActiveProfileId(grown.id);
+  }, [planning.mode, profiles, profileId, activeProfileId, setActiveProfileId]);
   // Which views this profile may enter; children are locked to Explorers.
   const allowedViews = activeProfile ? viewsForProfile(activeProfile) : ["kid"];
   // Never render a view the active profile can't access (e.g. after switching
@@ -193,7 +208,7 @@ export function TripView({ tripId }: { tripId: string }) {
         activeProfileId={profileId}
         onSelectProfile={selectProfile}
         showPocketMoney={effectiveView === "kid" && features.pocket_money}
-        canPlan={canPlan}
+        canPlan={planningAvailable}
         mode={planning.mode}
         onModeChange={planning.setMode}
       />

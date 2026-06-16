@@ -81,23 +81,23 @@ test("explorer bands gate the challenge + bonus quiz by profile", async ({ page 
   await expect(page.getByRole("button", { name: /reveal the answer/i })).toHaveCount(0);
 });
 
-test("grown-ups flip the trip into a chat-first planner with itinerary on the side", async ({ page }) => {
+test("the Plan switch flips the trip into a chat-first planner with itinerary on the side", async ({ page }) => {
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
-  // Children don't get the mode switch - planning is a grown-up activity.
-  await expect(page.getByTestId("explore-plan-switch")).toHaveCount(0);
-
-  // Activate the parent/carer: the Exploring/Planning switch appears in the header.
-  await page.getByRole("radio", { name: /mum/i }).click();
+  // The Exploring/Planning switch is discoverable from the default entry (the trip
+  // has a grown-up), even though the trip lands on a child explorer.
   const modeSwitch = page.getByTestId("explore-plan-switch");
   await expect(modeSwitch).toBeVisible();
 
-  // Flip to Planning: the chat is the stage, the itinerary sits alongside.
+  // Flip to Planning: the grown-up workspace opens - chat is the stage, with the
+  // itinerary alongside on the right.
   await modeSwitch.getByRole("tab", { name: /planning/i }).click();
   await expect(page.getByTestId("planning-chat")).toBeVisible();
   await expect(page.getByTestId("planning-sidebar")).toBeVisible();
   await expect(page.getByTestId("planning-sidebar").getByText(/trip itinerary/i)).toBeVisible();
+  // The chat composer is present (our-AI tier): you can actually message Yaycay.
+  await expect(page.getByLabel(/message yaycay/i)).toBeVisible();
 });
 
 test("grown-ups view shows the allergy protocol banner", async ({ page }) => {
