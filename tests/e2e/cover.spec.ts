@@ -16,9 +16,13 @@ test("trip cover: shows on fresh entry and picking enters the book", async ({ pa
   await expect(cover.getByRole("button", { name: /tay/i })).toBeVisible();
   await expect(cover.getByRole("button", { name: /lenny/i })).toBeVisible();
 
-  // Pick the Big Explorer; the cover hands off to the day-by-day book.
+  // Pick the Big Explorer; the cover hands off to the book's Home / overview.
   await cover.getByRole("button", { name: /savy/i }).click();
   await expect(page.getByTestId("trip-view")).toBeVisible();
+  await expect(page.getByTestId("trip-home")).toBeVisible();
+
+  // Tap a day card to open its page.
+  await page.getByRole("button", { name: /day 1/i }).click();
   await expect(page.getByTestId("trip-day")).toBeVisible();
 });
 

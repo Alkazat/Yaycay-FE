@@ -11,6 +11,7 @@ import { todayDayId } from "@/lib/render/today";
 import { DayNav } from "@/components/trips/DayNav";
 import { TripComplete } from "@/components/trips/TripComplete";
 import { TripCover } from "@/components/trips/TripCover";
+import { TripHome } from "@/components/trips/TripHome";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { PinGate } from "@/components/profile/PinGate";
@@ -51,6 +52,10 @@ export function TripView({ tripId }: { tripId: string }) {
   // (or reload). `pinOpen` drives the PIN modal.
   const [grownupsUnlocked, setGrownupsUnlocked] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
+  // The book opens on its Home / overview after the cover hands off; a returning
+  // or seeded explorer (no cover) lands straight on a day. Tapping a day card or
+  // chip moves to "day"; the in-book Home button returns to "home".
+  const [bookView, setBookView] = useState<"home" | "day">("day");
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
   // Explore (default) vs Plan mode (device-local) + the parent's per-explorer
   // feature overrides (BE-backed, synced across devices).
@@ -203,7 +208,10 @@ export function TripView({ tripId }: { tripId: string }) {
         endDate={trip.trip.end_date}
         timezone={trip.trip.timezone}
         profiles={profiles}
-        onPick={selectProfile}
+        onPick={(id) => {
+          selectProfile(id);
+          setBookView("home");
+        }}
       />
     );
   }
@@ -214,6 +222,7 @@ export function TripView({ tripId }: { tripId: string }) {
     const c = dayCompletion(d, doneSet);
     return { id: d.id, label: d.label, pct: c.pct, complete: c.complete };
   });
+  const showKidHome = effectiveView === "kid" && bookView === "home";
 
   return (
     <div className="yc-stack" data-testid="trip-view" data-section={showPlan ? "planning" : undefined}>
@@ -301,53 +310,93 @@ export function TripView({ tripId }: { tripId: string }) {
             <TripComplete destination={trip.trip.destination} />
           ) : null}
 
-          {effectiveView === "kid" && features.pocket_money && activeProfile && activeDay ? (
-            <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
-          ) : null}
-
-          {effectiveView === "kid" && features.games && activeProfile && activeDay?.game ? (
-            <div>
-              <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
-            </div>
-          ) : null}
-
-          {effectiveView === "grownups" && anaphylactic.length > 0 ? (
-            <Banner tone="danger" title="Allergy protocol">
-              {anaphylactic
-                .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
-                .join("; ")}
-              . Carry the EpiPen at all times and confirm every dish with the kitchen.
-            </Banner>
-          ) : null}
-
-          {/* Day navigation: progress rings, today halo, completion discs. */}
-          <DayNav days={dayItems} activeId={dayId} todayId={todayId} onSelect={setActiveDayId} />
-          {todayId && todayId !== dayId ? (
-            <div>
-              <button
-                type="button"
-                className="yc-btn yc-btn--secondary yc-btn--sm"
-                onClick={() => setActiveDayId(todayId)}
-              >
-                Jump to today
-              </button>
-            </div>
-          ) : null}
-
-          {activeDay ? (
-            <TripDayRenderer
-              day={activeDay}
-              view={effectiveView}
-              mode={mode}
-              quizzes={features.quizzes}
-              done={effectiveView === "kid" ? doneSet : undefined}
-              onToggleActivity={
-                effectiveView === "kid" && profileId
-                  ? (activityId, done) => toggle.mutate({ activityId, done })
+          {showKidHome ? (
+            <TripHome
+              tripId={tripId}
+              days={trip.days}
+              profile={activeProfile}
+              activeDay={activeDay}
+              showPocketMoney={features.pocket_money}
+              doneSet={doneSet}
+              daysComplete={tp.daysComplete}
+              totalDays={tp.totalDays}
+              todayId={todayId}
+              onSelectDay={(id) => {
+                setActiveDayId(id);
+                setBookView("day");
+              }}
+              onJumpToday={
+                todayId
+                  ? () => {
+                      setActiveDayId(todayId);
+                      setBookView("day");
+                    }
                   : undefined
               }
             />
-          ) : null}
+          ) : (
+            <>
+              {effectiveView === "kid" ? (
+                <div>
+                  <button
+                    type="button"
+                    className="yc-btn yc-btn--secondary yc-btn--sm"
+                    onClick={() => setBookView("home")}
+                  >
+                    🏠 Home
+                  </button>
+                </div>
+              ) : null}
+
+              {effectiveView === "kid" && features.pocket_money && activeProfile && activeDay ? (
+                <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
+              ) : null}
+
+              {effectiveView === "kid" && features.games && activeProfile && activeDay?.game ? (
+                <div>
+                  <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
+                </div>
+              ) : null}
+
+              {effectiveView === "grownups" && anaphylactic.length > 0 ? (
+                <Banner tone="danger" title="Allergy protocol">
+                  {anaphylactic
+                    .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
+                    .join("; ")}
+                  . Carry the EpiPen at all times and confirm every dish with the kitchen.
+                </Banner>
+              ) : null}
+
+              {/* Day navigation: progress rings, today halo, completion discs. */}
+              <DayNav days={dayItems} activeId={dayId} todayId={todayId} onSelect={setActiveDayId} />
+              {todayId && todayId !== dayId ? (
+                <div>
+                  <button
+                    type="button"
+                    className="yc-btn yc-btn--secondary yc-btn--sm"
+                    onClick={() => setActiveDayId(todayId)}
+                  >
+                    Jump to today
+                  </button>
+                </div>
+              ) : null}
+
+              {activeDay ? (
+                <TripDayRenderer
+                  day={activeDay}
+                  view={effectiveView}
+                  mode={mode}
+                  quizzes={features.quizzes}
+                  done={effectiveView === "kid" ? doneSet : undefined}
+                  onToggleActivity={
+                    effectiveView === "kid" && profileId
+                      ? (activityId, done) => toggle.mutate({ activityId, done })
+                      : undefined
+                  }
+                />
+              ) : null}
+            </>
+          )}
 
           {effectiveView === "grownups" && trip.grownups ? (
             <GrownupsGuide tripId={tripId} guide={trip.grownups} activeDayId={dayId} />
