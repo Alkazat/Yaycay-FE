@@ -121,7 +121,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
       <header className="yc-stack" style={{ gap: "var(--space-2)" }}>
         <h1 style={{ margin: 0 }}>Journal - {trip.trip.destination}</h1>
         <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
-          Capture the yay. Notes and stars, day by day.
+          Capture the yay - photos, notes and moods, day by day.
         </p>
       </header>
 
@@ -235,7 +235,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
       <section className="yc-stack" data-testid="journal-entries">
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
           <h2 style={{ margin: 0 }}>Memories</h2>
-          {avg != null ? <Badge tone="sun">{avg} avg stars</Badge> : null}
+          {avg != null ? <Badge tone="sun">{avg}/5 loved it</Badge> : null}
           {entries.length > 0 ? (
             <Button variant="secondary" size="sm" onClick={exportKeepsake}>
               Export keepsake
