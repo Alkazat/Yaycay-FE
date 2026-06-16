@@ -89,11 +89,14 @@ export function TripView({ tripId }: { tripId: string }) {
     mode,
     profileId ? featureToggles.overridesFor(profileId) : undefined,
   );
-  // Planning is a grown-up activity, but it must be discoverable from any trip
-  // entry: the trip defaults to a child profile, so gating the switch on the
-  // *active* profile hid planning entirely. Instead the switch shows whenever the
-  // trip has a parent/carer at all; choosing Planning auto-activates them.
+  // Planning is a grown-up activity - it is never surfaced inside a child's
+  // Exploring book (that clutter is exactly what made the kid experience feel
+  // overcomplicated). It stays discoverable for grown-ups: the cover's "the
+  // guides" entry, the Mum chip in the explorer switcher, and the trips-home
+  // Plan button all land a parent/carer, who then sees the Exploring/Planning
+  // switch. `planningAvailable` still gates whether Plan mode can run at all.
   const planningAvailable = profiles.some((p) => isParentCarer(p));
+  const planSwitchVisible = planningAvailable && !!activeProfile && isParentCarer(activeProfile);
   const showPlan = planningAvailable && planning.mode === "plan";
 
   // Planning is a grown-up workspace. Whenever we're in Plan mode but a child is
@@ -225,7 +228,7 @@ export function TripView({ tripId }: { tripId: string }) {
         activeProfileId={profileId}
         onSelectProfile={selectProfile}
         showPocketMoney={effectiveView === "kid" && features.pocket_money}
-        canPlan={planningAvailable}
+        canPlan={planSwitchVisible}
         mode={planning.mode}
         onModeChange={planning.setMode}
       />

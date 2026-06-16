@@ -91,8 +91,12 @@ test("the Plan switch flips the trip into a chat-first planner with itinerary on
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
-  // The Exploring/Planning switch is discoverable from the default entry (the trip
-  // has a grown-up), even though the trip lands on a child explorer.
+  // Planning is a grown-up activity: a child explorer never sees the switch in
+  // their Exploring book (it used to clutter the kid view).
+  await expect(page.getByTestId("explore-plan-switch")).toHaveCount(0);
+
+  // Activate the grown-up (Mum); the Exploring/Planning switch now appears.
+  await page.getByRole("radio", { name: /mum/i }).click();
   const modeSwitch = page.getByTestId("explore-plan-switch");
   await expect(modeSwitch).toBeVisible();
 
