@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/shell/AppShell";
+import { SessionHint } from "@/components/shell/SessionHint";
 import { ActiveProfileProvider } from "@/components/profile/ActiveProfileProvider";
 import { FirstRunChecklist } from "@/components/firstrun/FirstRunChecklist";
 
@@ -7,6 +8,7 @@ import { FirstRunChecklist } from "@/components/firstrun/FirstRunChecklist";
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <ActiveProfileProvider>
+      <SessionHint />
       <AppShell>{children}</AppShell>
       <FirstRunChecklist />
     </ActiveProfileProvider>
