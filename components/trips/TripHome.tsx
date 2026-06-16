@@ -4,6 +4,7 @@ import type { ChildProfile, TripDay } from "@/lib/contract-mock/types";
 import { Button } from "@/components/ds";
 import { StarBank } from "@/components/stars/StarBank";
 import { dayCompletion } from "@/lib/render/progress";
+import { dayEmoji, dayTone } from "@/components/trips/dayDecor";
 
 /**
  * The book's Home / overview - where the cover hands you off. Emulates the gold
@@ -12,9 +13,6 @@ import { dayCompletion } from "@/lib/render/progress";
  *
  * Presentation-only; every value comes from existing trip + progress data.
  */
-
-const DAY_EMOJI = ["🏝️", "🎡", "🦁", "🌳", "🌃", "🍜", "🛶", "🐠", "🎢", "🌸", "🚀", "✈️"];
-const DAY_TONE = ["sky", "sun", "aqua", "coral", "meadow"];
 
 function fmtDate(d: string): string {
   return new Intl.DateTimeFormat("en-AU", { weekday: "short", day: "numeric", month: "short" }).format(
@@ -85,8 +83,8 @@ export function TripHome({
       <div className="yc-home__grid" aria-label="Trip days">
         {days.map((d, i) => {
           const c = dayCompletion(d, doneSet);
-          const tone = DAY_TONE[i % DAY_TONE.length];
-          const emoji = DAY_EMOJI[i % DAY_EMOJI.length];
+          const tone = dayTone(i);
+          const emoji = dayEmoji(i);
           const isToday = d.id === todayId;
           return (
             <button

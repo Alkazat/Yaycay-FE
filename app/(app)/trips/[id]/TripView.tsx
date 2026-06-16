@@ -386,6 +386,7 @@ export function TripView({ tripId }: { tripId: string }) {
                   day={activeDay}
                   view={effectiveView}
                   mode={mode}
+                  dayNumber={trip.days.findIndex((d) => d.id === activeDay.id) + 1}
                   quizzes={features.quizzes}
                   done={effectiveView === "kid" ? doneSet : undefined}
                   onToggleActivity={

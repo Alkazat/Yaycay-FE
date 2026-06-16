@@ -8,6 +8,7 @@ import { ChallengeBlock } from "@/components/renderer/ChallengeBlock";
 import { MealCardView } from "@/components/renderer/MealCard";
 import { ReadAloud } from "@/components/renderer/ReadAloud";
 import { dayCompletion } from "@/lib/render/progress";
+import { dayEmoji, dayTone } from "@/components/trips/dayDecor";
 import { Badge, Card, CardBody } from "@/components/ds";
 
 interface TripDayRendererProps {
@@ -16,6 +17,8 @@ interface TripDayRendererProps {
   view: RenderView;
   /** Active render mode (kid view). Defaults to standard. */
   mode?: ProfileMode;
+  /** 1-based position of this day in the trip, for the kid day header ("DAY N"). */
+  dayNumber?: number;
   /** Whether quizzes (typed challenges + bonus) show for this explorer. Defaults
    * to on; the parent can turn them off per explorer in Planning. */
   quizzes?: boolean;
@@ -54,6 +57,7 @@ export function TripDayRenderer({
   day,
   view,
   mode = "standard",
+  dayNumber,
   quizzes = true,
   done,
   onToggleActivity,
@@ -63,18 +67,72 @@ export function TripDayRenderer({
   const completion = dayCompletion(day, doneSet);
   const showChecks = isKid && !!onToggleActivity;
 
+  // SG-style day header (kid view): floating emoji + "DAY N • WEEKDAY DATE" + title.
+  const dayIndex = (dayNumber ?? 1) - 1;
+  const headEmoji = dayEmoji(dayIndex);
+  const headTone = dayTone(dayIndex);
+  const weekday = day.date
+    ? new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long" })
+        .format(new Date(`${day.date}T12:00:00`))
+        .toUpperCase()
+    : "";
+  const eyebrow = [dayNumber ? `DAY ${dayNumber}` : null, weekday || null].filter(Boolean).join(" • ");
+
   return (
     <div className="yc-stack" data-testid="trip-day">
       <header className="yc-stack" style={{ gap: "var(--space-2)" }}>
-        <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-          <Badge tone="sun">{day.label}</Badge>
-          {day.hotel && (day.hotel.name || day.hotel.phase) ? (
-            <Badge tone="ink">
-              {[day.hotel.name, day.hotel.phase].filter(Boolean).join(" - ")}
-            </Badge>
-          ) : null}
-        </div>
-        {day.summary ? <p style={{ margin: 0, color: "var(--text-body)" }}>{day.summary}</p> : null}
+        {isKid ? (
+          <div className="yc-dayhead" data-tone={headTone}>
+            <span className="yc-dayhead__emoji" aria-hidden>
+              {headEmoji}
+            </span>
+            {eyebrow ? <span className="yc-dayhead__eyebrow">{eyebrow}</span> : null}
+            <h2 className="yc-dayhead__title">{day.label}</h2>
+            {day.summary ? <p className="yc-dayhead__sub">{day.summary}</p> : null}
+            <style>{`
+              .yc-dayhead {
+                display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
+                padding: var(--space-5) var(--space-4); text-align: center;
+                border: var(--border-ink, 2.5px solid #0a4c8b);
+                border-radius: var(--radius-2xl, 24px);
+                box-shadow: var(--gloss-top);
+              }
+              .yc-dayhead[data-tone="sky"] { background: var(--sky-50, #eaf6ff); }
+              .yc-dayhead[data-tone="sun"] { background: var(--sun-50, #fff6e0); }
+              .yc-dayhead[data-tone="aqua"] { background: var(--aqua-50, #e6fafc); }
+              .yc-dayhead[data-tone="coral"] { background: var(--coral-50, #ffeee9); }
+              .yc-dayhead[data-tone="meadow"] { background: var(--meadow-50, #eafaf0); }
+              .yc-dayhead__emoji { font-size: 40px; line-height: 1; animation: yc-dayhead-float 4s ease-in-out infinite; }
+              .yc-dayhead__eyebrow {
+                font-family: var(--font-display); font-weight: 800;
+                font-size: var(--fs-xs, .72rem); letter-spacing: var(--ls-wide, .06em);
+                text-transform: uppercase; color: var(--sky-600, #1f7fbf);
+              }
+              .yc-dayhead__title {
+                margin: 0; font-family: var(--font-display); font-weight: 700;
+                font-size: var(--fs-h2, 1.6rem); line-height: var(--lh-tight, 1.15);
+                color: var(--royal-700, #0a4c8b);
+              }
+              .yc-dayhead__sub { margin: 0; color: var(--text-muted, #5b6b7b); font-weight: 600; }
+              @keyframes yc-dayhead-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+              @media (prefers-reduced-motion: reduce){ .yc-dayhead__emoji{animation:none} }
+            `}</style>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+              <Badge tone="sun">{day.label}</Badge>
+              {day.hotel && (day.hotel.name || day.hotel.phase) ? (
+                <Badge tone="ink">
+                  {[day.hotel.name, day.hotel.phase].filter(Boolean).join(" - ")}
+                </Badge>
+              ) : null}
+            </div>
+            {day.summary ? (
+              <p style={{ margin: 0, color: "var(--text-body)" }}>{day.summary}</p>
+            ) : null}
+          </>
+        )}
 
         {isKid && day.did_you_know ? (
           <div
