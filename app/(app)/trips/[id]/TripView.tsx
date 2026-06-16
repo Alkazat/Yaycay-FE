@@ -10,6 +10,7 @@ import { tripProgress, dayCompletion } from "@/lib/render/progress";
 import { todayDayId } from "@/lib/render/today";
 import { DayNav } from "@/components/trips/DayNav";
 import { TripComplete } from "@/components/trips/TripComplete";
+import { TripCover } from "@/components/trips/TripCover";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
 import { PinGate } from "@/components/profile/PinGate";
@@ -185,6 +186,22 @@ export function TripView({ tripId }: { tripId: string }) {
           </p>
         </CardBody>
       </Card>
+    );
+  }
+
+  // Fresh entry to the Exploring experience opens the warm "Who's exploring?"
+  // cover (emulating the gold standard). A returning explorer - one already chosen
+  // here or carried in from /profiles - skips it and lands straight in the book.
+  if (!showPlan && activeProfileId == null && profiles.length > 0) {
+    return (
+      <TripCover
+        destination={trip.trip.destination}
+        startDate={trip.trip.start_date}
+        endDate={trip.trip.end_date}
+        timezone={trip.trip.timezone}
+        profiles={profiles}
+        onPick={selectProfile}
+      />
     );
   }
 

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { seedExplorer } from "./_helpers";
 
 /**
  * Trips home -> trip view journey, exercising the renderer, the user-types view
@@ -15,6 +16,7 @@ async function unlockGrownups(page: Page) {
 }
 
 test("children are locked to Explorers; the parent/carer PIN unlocks Grown-ups", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips");
 
   await expect(page.getByRole("heading", { name: /your trips/i })).toBeVisible();
@@ -42,6 +44,7 @@ test("children are locked to Explorers; the parent/carer PIN unlocks Grown-ups",
 });
 
 test("a wrong PIN is rejected and keeps Grown-ups locked", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
@@ -56,6 +59,7 @@ test("a wrong PIN is rejected and keeps Grown-ups locked", async ({ page }) => {
 });
 
 test("profile switch changes the kid copy", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
@@ -65,6 +69,7 @@ test("profile switch changes the kid copy", async ({ page }) => {
 });
 
 test("explorer bands gate the challenge + bonus quiz by profile", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
@@ -82,6 +87,7 @@ test("explorer bands gate the challenge + bonus quiz by profile", async ({ page 
 });
 
 test("the Plan switch flips the trip into a chat-first planner with itinerary on the side", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
@@ -101,6 +107,7 @@ test("the Plan switch flips the trip into a chat-first planner with itinerary on
 });
 
 test("grown-ups view shows the allergy protocol banner", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
