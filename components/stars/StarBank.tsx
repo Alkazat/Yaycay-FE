@@ -29,7 +29,9 @@ export function StarBank({ tripId, profile, day }: StarBankProps) {
     mutationFn: (source: StarSource) =>
       claimStar(tripId, { profile_id: profile.id, source, day: day.id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: starsKey });
+      // Invalidate the trip's whole stars prefix so the per-day bank AND the
+      // family Star Bank on Home both refresh after a claim.
+      queryClient.invalidateQueries({ queryKey: ["stars", tripId] });
       setCelebrateKey((k) => k + 1);
     },
   });
