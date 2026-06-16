@@ -2,15 +2,16 @@
 
 import type { TripMode } from "@/components/trips/useTripPlanning";
 
-const OPTIONS: { value: TripMode; label: string; emoji: string }[] = [
-  { value: "explore", label: "Exploring", emoji: "🧭" },
-  { value: "plan", label: "Planning", emoji: "🗺️" },
+const OPTIONS: { value: TripMode; label: string; emoji: string; sub: string }[] = [
+  { value: "explore", label: "Exploring", emoji: "🧭", sub: "the holiday, day by day" },
+  { value: "plan", label: "Planning", emoji: "🗺️", sub: "build the trip with AI" },
 ];
 
 /**
- * The trip's mode switch. Exploring is the everyday experience; Planning is the
- * grown-up workspace. Kept compact and always one tap away (the default lands on
- * Exploring). Only shown to grown-up profiles - planning is not a kid activity.
+ * The trip's mode switch - the single control that flips the whole experience
+ * between living the holiday (Exploring) and building it (Planning). It is the
+ * hero of the trip header: a big, two-up segmented toggle, always one tap away.
+ * Only shown to grown-up profiles - planning is not a kid activity.
  */
 export function ExplorePlanSwitch({
   mode,
@@ -20,18 +21,7 @@ export function ExplorePlanSwitch({
   onChange: (mode: TripMode) => void;
 }) {
   return (
-    <div
-      role="tablist"
-      aria-label="Trip mode"
-      data-testid="explore-plan-switch"
-      style={{
-        display: "inline-flex",
-        gap: 4,
-        padding: 4,
-        background: "var(--surface-sunk)",
-        borderRadius: "var(--radius-md)",
-      }}
-    >
+    <div role="tablist" aria-label="Trip mode" data-testid="explore-plan-switch" className="yc-mode-switch">
       {OPTIONS.map((o) => {
         const active = o.value === mode;
         return (
@@ -41,13 +31,15 @@ export function ExplorePlanSwitch({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(o.value)}
-            className={`yc-btn yc-btn--sm ${active ? "yc-btn--primary" : ""}`}
-            style={active ? undefined : { background: "transparent", boxShadow: "none" }}
+            className={`yc-mode-switch__opt ${active ? "is-active" : ""}`}
           >
-            <span aria-hidden style={{ marginRight: 6 }}>
+            <span aria-hidden className="yc-mode-switch__emoji">
               {o.emoji}
             </span>
-            {o.label}
+            <span className="yc-mode-switch__text">
+              <span className="yc-mode-switch__label">{o.label}</span>
+              <span className="yc-mode-switch__sub">{o.sub}</span>
+            </span>
           </button>
         );
       })}

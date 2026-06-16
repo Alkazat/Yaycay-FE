@@ -98,7 +98,67 @@ body {
   box-shadow: var(--shadow-sm, 0 4px 12px rgba(16, 24, 40, 0.08));
 }
 
-/* Planning workspace: tabbed main + right sidebar; stacks on tablet/mobile. */
+/* Explore/Plan switch: the hero control that flips the whole trip experience. */
+.yc-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 5px;
+  width: 100%;
+  background: var(--surface-sunk);
+  border-radius: var(--radius-lg, 16px);
+}
+.yc-mode-switch__opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md, 12px);
+  cursor: pointer;
+  color: var(--text-muted);
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.yc-mode-switch__opt.is-active {
+  background: var(--surface-card, #fff);
+  color: var(--royal-800);
+  box-shadow: var(--shadow-sm, 0 4px 12px rgba(16, 24, 40, 0.1));
+}
+.yc-mode-switch__opt.is-active:nth-child(2) {
+  color: var(--aqua-600, #14808f);
+}
+.yc-mode-switch__emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+.yc-mode-switch__text {
+  display: flex;
+  flex-direction: column;
+}
+.yc-mode-switch__label {
+  font-weight: 800;
+  font-size: var(--fs-body);
+  line-height: 1.1;
+}
+.yc-mode-switch__sub {
+  font-weight: 700;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Planning mode visibly flips the dynamic: a calm aqua wash on the trip header. */
+[data-section="planning"] {
+  --accent: var(--aqua-500, #1f9fb0);
+}
+[data-section="planning"] .yc-tripbar {
+  border-color: var(--aqua-200, #b7e3e9);
+  background: var(--aqua-50, #f0fafb);
+}
+
+/* Planning workspace: chat-first main + right sidebar; stacks on tablet/mobile. */
 @media (min-width: 921px) {
   .yc-planning-grid > [data-testid="planning-sidebar"] {
     position: sticky;
