@@ -21,8 +21,8 @@ test("trip cover: shows on fresh entry and picking enters the book", async ({ pa
   await expect(page.getByTestId("trip-view")).toBeVisible();
   await expect(page.getByTestId("trip-home")).toBeVisible();
 
-  // Tap a day card to open its page.
-  await page.getByRole("button", { name: /day 1/i }).click();
+  // Tap the first day card (Arrival) to open its page.
+  await page.getByRole("button", { name: /arrival/i }).click();
   await expect(page.getByTestId("trip-day")).toBeVisible();
 });
 
