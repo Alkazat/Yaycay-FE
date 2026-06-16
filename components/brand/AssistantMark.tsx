@@ -7,11 +7,48 @@
 
 export type AssistantBrand = "claude" | "openai" | "gemini";
 
+/** Product name per brand (the model the user talks to). */
 export const ASSISTANT_LABEL: Record<AssistantBrand, string> = {
   claude: "Claude",
   openai: "ChatGPT",
   gemini: "Gemini",
 };
+
+/** The company behind each model, for "Owner Model" pills (e.g. "Anthropic Claude"). */
+export const ASSISTANT_OWNER: Record<AssistantBrand, string> = {
+  claude: "Anthropic",
+  openai: "OpenAI",
+  gemini: "Google",
+};
+
+/**
+ * A branded pill: the assistant's logo mark plus "Owner Model" (e.g. the
+ * Anthropic burst + "Anthropic Claude"). Used on the connect/how-to page so each
+ * assistant reads by its logo and its maker, not a repeated bare word.
+ */
+export function BrandPill({ brand, size = 22 }: { brand: AssistantBrand; size?: number }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "5px 12px 5px 8px",
+        borderRadius: "var(--radius-pill, 999px)",
+        background: "var(--surface-sunk)",
+        border: "2px solid var(--sand-200, #e7e2d8)",
+        fontWeight: 800,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <AssistantMark brand={brand} size={size} />
+      <span>
+        <span style={{ color: "var(--text-muted)" }}>{ASSISTANT_OWNER[brand]}</span>{" "}
+        {ASSISTANT_LABEL[brand]}
+      </span>
+    </span>
+  );
+}
 
 /** Infer a partner brand from a dynamically-registered assistant's name. */
 export function brandFromName(name: string | null | undefined): AssistantBrand | null {

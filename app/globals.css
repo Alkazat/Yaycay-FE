@@ -157,6 +157,49 @@ body {
   opacity: 0.75;
 }
 
+/* Planning chat: a full-height, browser-style conversation. The log scrolls and
+   the composer stays pinned at the bottom; the empty/locked states centre a
+   notice. Used live on the our-AI tier and locked on BYO. */
+.yc-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+  border: 2px solid var(--sand-200, #e7e2d8);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-card, #fff);
+  overflow: hidden;
+}
+.yc-chat__log {
+  flex: 1;
+  min-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+.yc-chat__bubble {
+  max-width: 85%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.yc-chat__notice {
+  margin: auto;
+  max-width: 460px;
+  text-align: center;
+  padding: var(--space-4) var(--space-2);
+}
+.yc-chat__composer {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 2px solid var(--sand-200, #e7e2d8);
+  background: var(--surface-card, #fff);
+}
+
 /* Planning mode visibly flips the dynamic: a calm aqua wash on the trip header. */
 [data-section="planning"] {
   --accent: var(--aqua-500, #1f9fb0);
