@@ -5,7 +5,7 @@ import Link from "next/link";
 import { streamPlanChat } from "@/lib/api/planChat";
 import type { ChatMessage } from "@/lib/contract-mock/types";
 import { ChatThinking } from "@/components/chat/ChatThinking";
-import { BrandPill } from "@/components/brand/AssistantMark";
+import { BrandLogo } from "@/components/brand/AssistantMark";
 import { Button } from "@/components/ds";
 
 const SUGGESTIONS = [
@@ -79,10 +79,10 @@ export function PlanChat({ tripId, locked = false }: { tripId: string; locked?: 
               You&apos;re on Bring-your-own-AI. Connect your assistant to Yaycay once, then plan this
               trip right from your own chat - it talks to Yaycay through a secure connector.
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)", justifyContent: "center" }}>
-              <BrandPill brand="claude" />
-              <BrandPill brand="openai" />
-              <BrandPill brand="gemini" />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", alignItems: "center", justifyContent: "center" }}>
+              <BrandLogo brand="claude" height={24} />
+              <BrandLogo brand="openai" height={24} />
+              <BrandLogo brand="gemini" height={24} />
             </div>
             <Link
               href="/connect"
