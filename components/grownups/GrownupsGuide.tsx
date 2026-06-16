@@ -49,7 +49,19 @@ export function GrownupsGuide({
   const rows = mergeChecklist(guide.checklist ?? [], checklistQuery.data);
 
   return (
-    <div className="yc-stack">
+    <div className="yc-stack yc-grownups">
+      <div className="yc-grownups__intro">
+        <span className="yc-grownups__cup" aria-hidden="true">
+          ☕
+        </span>
+        <div>
+          <strong className="yc-grownups__lead">For the grown-ups</strong>
+          <p className="yc-grownups__sub">
+            The planning side - bookings, costs, transport and grown-up food. The kids&apos;
+            adventure is all theirs; this is your bit.
+          </p>
+        </div>
+      </div>
       <Card variant="soft">
         <CardBody title="Grown-ups guide">
           {guide.phases && guide.phases.length > 0 ? (
@@ -122,6 +134,18 @@ export function GrownupsGuide({
           ))}
         </CardBody>
       </Card>
+      <style>{`
+        .yc-grownups__intro {
+          display: flex; gap: var(--space-3); align-items: flex-start;
+          padding: var(--space-4);
+          background: var(--royal-700, #0a4c8b); color: #fff;
+          border-radius: var(--radius-xl, 20px);
+          box-shadow: var(--card-lift);
+        }
+        .yc-grownups__cup { font-size: 28px; line-height: 1; }
+        .yc-grownups__lead { font-family: var(--font-display); font-size: var(--fs-h4, 1.1rem); display: block; }
+        .yc-grownups__sub { margin: 4px 0 0; opacity: .85; font-weight: 600; font-size: var(--fs-sm, .9rem); }
+      `}</style>
     </div>
   );
 }
