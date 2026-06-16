@@ -97,6 +97,14 @@ body {
   padding: var(--space-3);
   box-shadow: var(--shadow-sm, 0 4px 12px rgba(16, 24, 40, 0.08));
 }
+/* On phones the sub-header (title + mode switch + profile switcher) is tall; a
+   sticky bar would eat the screen and overlay tappable day content. Let it scroll
+   with the page on small screens, keeping it sticky on tablet/desktop. */
+@media (max-width: 640px) {
+  .yc-tripbar {
+    position: static;
+  }
+}
 
 /* Explore/Plan switch: the hero control that flips the whole trip experience. */
 .yc-mode-switch {
