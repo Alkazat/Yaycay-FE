@@ -104,4 +104,11 @@ export const SERVED = {
   // Per-explorer feature toggles (`GET|PUT /trips/:id/features`) - live as of
   // BE migration 0031. Reads degrade to "no overrides" if not yet deployed.
   features: true,
+  // Trip management: archive/unarchive, duplicate, and share-by-link/email, plus
+  // the public read-only shared view. NOT in the contract yet - mock-backed until
+  // BE ships them. See docs/handoffs/13.
+  archiveTrip: false,
+  duplicateTrip: false,
+  shareTrip: false,
+  sharedTrip: false,
 } as const;

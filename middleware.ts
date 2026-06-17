@@ -9,9 +9,10 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
  * the signed-in app and bounces to /auth. `/connect` stays public so the BYO-AI
  * connector setup + its OAuth consent (which does its own sign-in handoff) work.
  * `/auth/*` (including /auth/mfa and /auth/callback) is public so the step-up
- * and magic-link exchange can run.
+ * and magic-link exchange can run. `/shared/*` is public so a recipient can view
+ * a read-only shared trip without a Yaycay account.
  */
-const PUBLIC_PREFIXES = ["/auth", "/demo", "/connect"];
+const PUBLIC_PREFIXES = ["/auth", "/demo", "/connect", "/shared"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
