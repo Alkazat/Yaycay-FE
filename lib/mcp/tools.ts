@@ -416,6 +416,79 @@ export function registerYaycayTools(server: McpServer): void {
   );
 
   server.tool(
+    "list_journal",
+    "Read the trip's end-of-day journal - the family's daily memories. Each entry has who wrote it, the day, what they wrote, a mood, and a 1-5 star rating. Pass explorer_id to see just one explorer's entries (id from list_explorers). This is how the family looks back on the trip so far.",
+    {
+      trip_id: z.string().describe("The trip id (see list_trips)."),
+      explorer_id: z
+        .string()
+        .optional()
+        .describe("Optional: only this explorer's entries (id from list_explorers)."),
+    },
+    async ({ trip_id, explorer_id }, extra) =>
+      safe(extra, SCOPES.read, async (auth) => {
+        const qs = explorer_id ? `?profile_id=${encodeURIComponent(explorer_id)}` : "";
+        const data = await contractJson<{ entries: unknown[] }>(
+          `/trips/${encodeURIComponent(trip_id)}/journal${qs}`,
+          auth,
+        );
+        return ok(data.entries);
+      }),
+  );
+
+  server.tool(
+    "add_journal_entry",
+    [
+      "Write an explorer's end-of-day journal entry onto the trip - the heart of Yaycay. Each day, an explorer records what they did and how it felt, and it's kept as the family's memory, everywhere they look.",
+      "- explorer_id: whose journal this is (a child or grown-up; id from list_explorers). Omit for a shared family entry.",
+      "- day_id: optional, ties the memory to a day of the plan (ids come from get_trip_content).",
+      "- mood: optional, a word for how the day felt, e.g. 'happy', 'sleepy', 'adventurous'.",
+      "- stars: optional whole number 1-5 - the explorer's rating for the day.",
+      "Always include some body text in the explorer's own warm voice. Photos are added later in the Yaycay app, not here.",
+    ].join("\n"),
+    {
+      trip_id: z.string().describe("The trip id (see list_trips)."),
+      body: z.string().describe("What the explorer wants to remember about the day."),
+      explorer_id: z
+        .string()
+        .optional()
+        .describe("Whose journal this is (id from list_explorers). Omit for a shared entry."),
+      day_id: z
+        .string()
+        .optional()
+        .describe("Ties the entry to a plan day (see get_trip_content)."),
+      mood: z.string().optional().describe("A word for the day's mood, e.g. 'happy'."),
+      stars: z
+        .number()
+        .int()
+        .min(1)
+        .max(5)
+        .optional()
+        .describe("The explorer's rating for the day, a whole number 1-5."),
+    },
+    async ({ trip_id, body, explorer_id, day_id, mood, stars }, extra) =>
+      safe(extra, SCOPES.plan, async (auth) => {
+        // Confirm the trip exists first, so a new/unknown destination returns the
+        // friendly "add it in the app" guidance instead of an FK error.
+        await contractJson(`/trips/${encodeURIComponent(trip_id)}`, auth);
+        const payload: Record<string, unknown> = { body };
+        if (explorer_id) payload.profile_id = explorer_id;
+        if (day_id) payload.day_id = day_id;
+        if (mood) payload.mood = mood;
+        if (typeof stars === "number") payload.stars = stars;
+        const saved = await contractJson(`/trips/${encodeURIComponent(trip_id)}/journal`, {
+          ...auth,
+          method: "POST",
+          body: payload,
+        });
+        return done(
+          "Saved to the journal! That memory's tucked safely onto your trip now - the whole family can look back on it any time. Want to capture another?",
+          saved,
+        );
+      }),
+  );
+
+  server.tool(
     "edit_itinerary",
     [
       "Save structural changes to the trip's day-by-day plan so they PERSIST (not just chat). Pass one or more ops, applied in order:",
@@ -558,6 +631,21 @@ export function registerYaycayPrompts(server: McpServer): void {
   );
 
   server.prompt(
+    "journal_the_day",
+    "Capture the day in the explorers' own words - a warm end-of-day journal entry with a mood and a star rating.",
+    {
+      trip_id: z.string().optional().describe("Trip id (see list_trips)."),
+      day: z.string().optional().describe("Optional day to journal about."),
+    },
+    ({ trip_id, day }) =>
+      promptText(
+        `Help us journal today on our Yaycay trip${trip_id ? ` (${trip_id})` : ""}${day ? `, for ${day}` : ""}.\n` +
+          `Ask each explorer (list_explorers) what they loved, what surprised them, and how the day felt - then, in their own warm voice, write it up with add_journal_entry: a short memory, a mood, and a 1-5 star rating each.\n` +
+          `Keep it theirs - playful for the kids, genuine for the grown-ups. This is the keepsake the family reads back on for years.`,
+      ),
+  );
+
+  server.prompt(
     "rainy_day",
     "Pivot a day to a fun indoor plan, keeping spirits high.",
     {
@@ -596,12 +684,16 @@ const WELCOME = [
   "  in your bookings, and keep refining as the family reacts.",
   "- **I save as I go.** Plans, the family brief (pace, must-dos, allergies), and",
   "  bookings all live on the trip - never something you copy in by hand.",
+  "- **The day isn't done till it's journalled.** This is the heart of Yaycay: at",
+  "  the end of each day every explorer records a memory - a few words, a mood, a",
+  '  star rating - and I keep it forever. Just say "let\'s journal today".',
   "",
   "## Try asking",
   '- "Plan us a relaxed day with something for everyone."',
   '- "What\'s nearby that the kids would love?"',
   '- "It might rain Thursday - what\'s our backup?"',
   '- "Track our hotel and the Sea World tickets."',
+  '- "Let\'s journal today - ask the kids how it went."',
   "",
   "Tell me which trip we're on (or ask me to list them) and we'll dive in.",
 ].join("\n");
