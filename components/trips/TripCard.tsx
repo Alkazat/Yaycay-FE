@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { TripSummary } from "@/lib/contract-mock/types";
 import { Card, CardBody, CardFooter, Badge, Button } from "@/components/ds";
 import { Countdown } from "@/components/Countdown";
+import { TripMenu } from "@/components/trips/TripMenu";
 import { formatDateRange } from "@/lib/format";
 import { tripPrimaryMode } from "@/lib/tripMode";
 import { flagForDestination } from "@/lib/geo";
@@ -35,7 +36,8 @@ export function TripCard({ trip }: { trip: TripSummary }) {
   const flag = flagForDestination(trip.destination);
 
   return (
-    <Card interactive>
+    <Card interactive style={{ position: "relative" }}>
+      <TripMenu trip={trip} />
       <Link href={`/trips/${trip.id}`} style={{ textDecoration: "none", color: "inherit" }}>
         <CardBody
           title={flag ? `${flag} ${trip.destination}` : trip.destination}

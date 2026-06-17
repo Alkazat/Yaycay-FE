@@ -1850,3 +1850,59 @@ export function getMockTripRecord(id: string): Trip | undefined {
   const { day_count: _dc, data_kept: _dk, ...trip } = s;
   return trip;
 }
+
+// --- Trip management mocks (archive / duplicate / share) --------------------
+// These mutate the in-memory MOCK_TRIPS so the dev/mock experience reflects the
+// change. Production flips the SERVED flags to the live BE (see docs/handoffs/13).
+
+/** Flip a trip's archived state in the mock store; returns the updated row. */
+export function archiveMockTrip(id: string, archived: boolean): Trip | undefined {
+  const s = MOCK_TRIPS.find((t) => t.id === id);
+  if (!s) return undefined;
+  s.status = archived ? "archived" : "ready";
+  return getMockTripRecord(id);
+}
+
+/** Duplicate a trip into a fresh free draft, registering its content too. */
+export function duplicateMockTrip(id: string): Trip | undefined {
+  const src = MOCK_TRIPS.find((t) => t.id === id);
+  if (!src) return undefined;
+  const newId = `t_${Math.random().toString(36).slice(2, 8)}`;
+  const copy: TripSummary = {
+    ...src,
+    id: newId,
+    destination: `${src.destination} (copy)`,
+    tier: "free",
+    status: "draft",
+  };
+  MOCK_TRIPS.unshift(copy);
+  const content = TRIPS_BY_ID[id];
+  if (content) {
+    TRIPS_BY_ID[newId] = {
+      ...content,
+      trip: { ...content.trip, id: newId, destination: copy.destination },
+    };
+  }
+  const { day_count: _dc, data_kept: _dk, ...trip } = copy;
+  return trip;
+}
+
+/** In-memory share-token -> trip id map for the mock shared view. */
+const SHARES_BY_TOKEN: Record<string, string> = {};
+
+/** Mint (or reuse) a share token for a trip in the mock store. */
+export function shareMockTrip(id: string): string | undefined {
+  if (!MOCK_TRIPS.some((t) => t.id === id)) return undefined;
+  const token = `shr_${id}_${Math.random().toString(36).slice(2, 8)}`;
+  SHARES_BY_TOKEN[token] = id;
+  return token;
+}
+
+/** Resolve a mock share token to its read-only trip content. */
+export function getMockSharedTrip(token: string): { shared_by: string; content: TripContent } | undefined {
+  // Tolerate tokens minted in another worker by parsing the embedded trip id.
+  const id = SHARES_BY_TOKEN[token] ?? token.split("_").slice(1, -1).join("_");
+  const content = TRIPS_BY_ID[id];
+  if (!content) return undefined;
+  return { shared_by: "A Yaycay family", content };
+}
