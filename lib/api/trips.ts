@@ -3,11 +3,15 @@ import { getAccessToken } from "@/lib/auth/session";
 import type {
   ChildProfile,
   CreateTripRequest,
+  SharedTrip,
+  ShareTripResponse,
   Trip,
   TripContent,
   TripContentPatch,
   TripSummary,
 } from "@/lib/contract-mock/types";
+
+export type { SharedTrip, ShareTripResponse };
 
 async function getJson<T>(path: string, served: boolean, signal?: AbortSignal): Promise<T> {
   // Trips are authenticated; carry the signed-in user's JWT when available.
@@ -69,21 +73,6 @@ export async function listProfiles(signal?: AbortSignal): Promise<ChildProfile[]
   return data.profiles;
 }
 
-/** A read-only, shareable view of a trip (resolved from a share token). */
-export interface SharedTrip {
-  /** Who shared it, for the "shared by" line. */
-  shared_by: string;
-  /** The trip's day-by-day content, rendered read-only for the recipient. */
-  content: TripContent;
-}
-
-export interface ShareResult {
-  /** Public, read-only URL the recipient opens. */
-  share_url: string;
-  /** Whether an invite email was sent (when a recipient address was given). */
-  emailed: boolean;
-}
-
 async function postJson<T>(path: string, served: boolean, body: unknown): Promise<T> {
   const accessToken = await getAccessToken();
   const res = await apiFetch(path, served, {
@@ -114,8 +103,8 @@ export async function duplicateTrip(id: string): Promise<Trip> {
  * email is given, BE also sends the recipient an invite. Recipients view read-only
  * and can duplicate into their own (paid) trip.
  */
-export async function shareTrip(id: string, email?: string): Promise<ShareResult> {
-  return postJson<ShareResult>(`/trips/${id}/share`, SERVED.shareTrip, {
+export async function shareTrip(id: string, email?: string): Promise<ShareTripResponse> {
+  return postJson<ShareTripResponse>(`/trips/${id}/share`, SERVED.shareTrip, {
     email: email?.trim() || undefined,
   });
 }
@@ -125,4 +114,13 @@ export async function getSharedTrip(token: string, signal?: AbortSignal): Promis
   const res = await apiFetch(`/shared/${encodeURIComponent(token)}`, SERVED.sharedTrip, { signal });
   if (!res.ok) throw new Error(`Shared trip not found (${res.status})`);
   return (await res.json()) as SharedTrip;
+}
+
+/**
+ * Recipient duplicates a shared trip into their own account
+ * (`POST /shared/:token/duplicate`). Requires the recipient's JWT. Returns the
+ * new trip (fresh, free, editable) - the "Plan my own version" action.
+ */
+export async function duplicateSharedTrip(token: string): Promise<Trip> {
+  return postJson<Trip>(`/shared/${encodeURIComponent(token)}/duplicate`, SERVED.sharedTrip, {});
 }
