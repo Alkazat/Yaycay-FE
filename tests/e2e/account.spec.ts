@@ -20,8 +20,10 @@ test("settings exposes editable profile fields", async ({ page }) => {
   await expect(form.getByLabel(/^name$/i)).toBeVisible();
   await expect(form.getByLabel(/recovery email/i)).toBeVisible();
 
-  // Editing enables Save, and saving reports success.
-  await form.getByLabel(/^name$/i).fill("The Test Family");
+  // Editing enables Save, and saving reports success. Use a unique value so the
+  // field is always dirty - the mock persists `name` in-memory across the shared
+  // dev server, so a fixed value would leave Save disabled on repeat runs.
+  await form.getByLabel(/^name$/i).fill(`The Test Family ${Date.now()}`);
   await form.getByRole("button", { name: /save changes/i }).click();
   await expect(form.getByText(/saved/i)).toBeVisible();
 });
