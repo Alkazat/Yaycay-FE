@@ -6,13 +6,12 @@ import {
   getAccount,
   createCheckoutSession,
   updateAccount,
-  type AccountProfile,
 } from "@/lib/api/account";
 import { listTrips, archiveTrip, duplicateTrip } from "@/lib/api/trips";
 import { listTransactions } from "@/lib/api/transactions";
 import { retentionStatus } from "@/lib/retention";
 import { formatHumanDate } from "@/lib/format";
-import type { Tier, TripSummary } from "@/lib/contract-mock/types";
+import type { AccountSummary, Tier, TripSummary } from "@/lib/contract-mock/types";
 import type { ConnectionView } from "@/lib/mcp/store";
 import {
   AssistantMark,
@@ -157,7 +156,7 @@ function ConnectedAssistantsHero() {
  * Login email is server-owned (changed via the auth flow), so it is shown
  * read-only. Save is enabled only when something actually changed.
  */
-function ProfileForm({ account }: { account: AccountProfile }) {
+function ProfileForm({ account }: { account: AccountSummary }) {
   const qc = useQueryClient();
   const [name, setName] = useState(account.name ?? "");
   const [recovery, setRecovery] = useState(account.secondary_email ?? "");
@@ -218,7 +217,7 @@ function ProfileForm({ account }: { account: AccountProfile }) {
   );
 }
 
-function SettingsPanel({ account }: { account: AccountProfile }) {
+function SettingsPanel({ account }: { account: AccountSummary }) {
   return (
     <Card>
       <CardBody title="Settings">

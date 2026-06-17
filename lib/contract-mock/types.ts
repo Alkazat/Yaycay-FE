@@ -55,6 +55,14 @@ export type {
   TripSummary,
   ListTripsResponse,
   CreateTripRequest,
+  // Trip management (v0.31): archive/share request + response, and the public
+  // read-only shared view resolved from a share token.
+  ArchiveTripRequest,
+  ShareTripRequest,
+  ShareTripResponse,
+  SharedTrip,
+  // Billing/transaction history (v0.31): Stripe-sourced, each line carries trip_id.
+  Transaction,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
   // Account (v0.18): the owner account summary (email, secondary_email, tier, ...).

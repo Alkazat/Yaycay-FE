@@ -6,8 +6,13 @@ an Archive list, plus a public read-only shared view. The FE is built and live
 behind mocks; flip the `SERVED` flags in `lib/api/http.ts` as each endpoint lands.
 Writing rule: no em-dashes.
 
-All four are mock-backed today (`SERVED.archiveTrip/duplicateTrip/shareTrip/sharedTrip
-= false`). FE shapes live in `lib/api/trips.ts`.
+**STATUS (2026-06-17): SHIPPED.** BE deployed all four endpoints (contract
+`@alkazat/contracts@^0.31.0`) plus the new `POST /shared/:token/duplicate`. FE has
+flipped `SERVED.archiveTrip/duplicateTrip/shareTrip/sharedTrip = true` and wired the
+shared view's "Plan my own version" button to the recipient-duplicate endpoint. The
+`/api/*` mock routes are retained as the no-API-base fallback (mock dev + CI).
+
+FE shapes live in `lib/api/trips.ts`.
 
 ## 1. Archive / restore - `POST /trips/:id/archive`
 

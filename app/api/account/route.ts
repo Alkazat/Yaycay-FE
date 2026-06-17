@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { MOCK_ACCOUNT } from "@/lib/contract-mock/data";
-import type { AccountProfileUpdate } from "@/lib/api/account";
+import type { AccountUpdate } from "@/lib/contract-mock/types";
 
 /** MOCK account summary. Active until NEXT_PUBLIC_API_BASE is set. */
 export async function GET() {
@@ -13,9 +13,9 @@ export async function GET() {
  * session so the UI reflects the save.
  */
 export async function PATCH(request: Request) {
-  let body: AccountProfileUpdate;
+  let body: AccountUpdate;
   try {
-    body = (await request.json()) as AccountProfileUpdate;
+    body = (await request.json()) as AccountUpdate;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }

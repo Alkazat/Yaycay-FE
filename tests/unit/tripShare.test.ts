@@ -39,4 +39,13 @@ describe("trip management mocks", () => {
     expect(shareMockTrip("missing")).toBeUndefined();
     expect(getMockSharedTrip("shr_missing_x")).toBeUndefined();
   });
+
+  it("a recipient can duplicate a shared trip from its token", () => {
+    // Mirrors POST /shared/:token/duplicate: resolve token -> trip -> copy.
+    const token = shareMockTrip("t_sg")!;
+    const shared = getMockSharedTrip(token)!;
+    const copy = duplicateMockTrip(shared.content.trip.id);
+    expect(copy?.tier).toBe("free");
+    expect(copy?.id).not.toBe("t_sg");
+  });
 });

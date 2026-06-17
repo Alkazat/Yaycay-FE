@@ -3,8 +3,14 @@
 **From:** Yaycay-FE. **For:** Yaycay-BE. **Date:** 2026-06-17.
 **Why:** the Settings page now edits a display **name** alongside the recovery
 email, and the **Transaction history** is a real table with a per-trip column.
-Both are mock-backed today; this is what BE needs to ship to make them live.
 Writing rule: no em-dashes.
+
+**STATUS (2026-06-17): SHIPPED.** BE deployed both (contract
+`@alkazat/contracts@^0.31.0`): `AccountSummary.name` / `AccountUpdate.name` are live,
+and `GET /account/transactions` is Stripe-sourced with `trip_id`/`trip_name`. FE
+flipped `SERVED.transactions = true`, dropped the local `AccountProfile` extension
+(now uses the contract `AccountSummary`/`AccountUpdate` + `Transaction`), and kept the
+`/api/*` mock routes as the no-API-base fallback.
 
 ## 1. Account display name (`GET` + `PATCH /account`)
 
