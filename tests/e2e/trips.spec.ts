@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { seedExplorer } from "./_helpers";
 
 /**
  * Trips home -> trip view journey, exercising the renderer, the user-types view
@@ -15,6 +16,7 @@ async function unlockGrownups(page: Page) {
 }
 
 test("children are locked to Explorers; the parent/carer PIN unlocks Grown-ups", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips");
 
   await expect(page.getByRole("heading", { name: /your trips/i })).toBeVisible();
@@ -42,6 +44,7 @@ test("children are locked to Explorers; the parent/carer PIN unlocks Grown-ups",
 });
 
 test("a wrong PIN is rejected and keeps Grown-ups locked", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
@@ -56,6 +59,7 @@ test("a wrong PIN is rejected and keeps Grown-ups locked", async ({ page }) => {
 });
 
 test("profile switch changes the kid copy", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
@@ -65,6 +69,7 @@ test("profile switch changes the kid copy", async ({ page }) => {
 });
 
 test("explorer bands gate the challenge + bonus quiz by profile", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 
@@ -81,7 +86,32 @@ test("explorer bands gate the challenge + bonus quiz by profile", async ({ page 
   await expect(page.getByRole("button", { name: /reveal the answer/i })).toHaveCount(0);
 });
 
+test("the Plan switch flips the trip into a chat-first planner with itinerary on the side", async ({ page }) => {
+  await seedExplorer(page);
+  await page.goto("/trips/t_sg");
+  await expect(page.getByTestId("trip-view")).toBeVisible();
+
+  // Planning is a grown-up activity: a child explorer never sees the switch in
+  // their Exploring book (it used to clutter the kid view).
+  await expect(page.getByTestId("explore-plan-switch")).toHaveCount(0);
+
+  // Activate the grown-up (Mum); the Exploring/Planning switch now appears.
+  await page.getByRole("radio", { name: /mum/i }).click();
+  const modeSwitch = page.getByTestId("explore-plan-switch");
+  await expect(modeSwitch).toBeVisible();
+
+  // Flip to Planning: the grown-up workspace opens - chat is the stage, with the
+  // itinerary alongside on the right.
+  await modeSwitch.getByRole("tab", { name: /planning/i }).click();
+  await expect(page.getByTestId("planning-chat")).toBeVisible();
+  await expect(page.getByTestId("planning-sidebar")).toBeVisible();
+  await expect(page.getByTestId("planning-sidebar").getByText(/trip itinerary/i)).toBeVisible();
+  // The chat composer is present (our-AI tier): you can actually message Yaycay.
+  await expect(page.getByLabel(/message yaycay/i)).toBeVisible();
+});
+
 test("grown-ups view shows the allergy protocol banner", async ({ page }) => {
+  await seedExplorer(page);
   await page.goto("/trips/t_sg");
   await expect(page.getByTestId("trip-view")).toBeVisible();
 

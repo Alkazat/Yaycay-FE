@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardBody, Badge, Button } from "@/components/ds";
+import { AssistantMark, BrandLogo, ASSISTANT_OWNER, ASSISTANT_LABEL, type AssistantBrand } from "@/components/brand/AssistantMark";
 
 /**
  * One-click-ish connector setup. The MCP URL + OAuth discovery do the heavy
@@ -57,6 +58,8 @@ function Snippet({ text }: { text: string }) {
 
 interface Provider {
   key: string;
+  /** The brand behind this client, for the logo + "Owner Model" pill. */
+  brand?: AssistantBrand;
   name: string;
   blurb: string;
   /** A deep link to the assistant's connector settings, when one exists. */
@@ -77,7 +80,8 @@ function providers(mcpUrl: string): Provider[] {
   return [
     {
       key: "claude-chat",
-      name: "Claude (chat)",
+      brand: "claude",
+      name: "Claude app",
       blurb: "Add Yaycay as a custom connector in the Claude app.",
       settingsUrl: "https://claude.ai/settings/connectors",
       settingsLabel: "Open Claude connectors",
@@ -89,6 +93,7 @@ function providers(mcpUrl: string): Provider[] {
     },
     {
       key: "claude-cowork",
+      brand: "claude",
       name: "Claude Code / Cowork",
       blurb: "One command in your terminal registers the connector.",
       steps: [
@@ -99,7 +104,8 @@ function providers(mcpUrl: string): Provider[] {
     },
     {
       key: "chatgpt",
-      name: "ChatGPT",
+      brand: "openai",
+      name: "ChatGPT app",
       blurb: "Add Yaycay under Connectors in ChatGPT settings.",
       settingsUrl: "https://chatgpt.com/#settings/Connectors",
       settingsLabel: "Open ChatGPT connectors",
@@ -111,14 +117,16 @@ function providers(mcpUrl: string): Provider[] {
     },
     {
       key: "codex",
-      name: "OpenAI Codex",
+      brand: "openai",
+      name: "Codex",
       blurb: "Add Yaycay to your Codex config.",
       steps: ["Add this to ~/.codex/config.toml, then restart Codex and authorize."],
       snippet: `[mcp_servers.yaycay]\nurl = "${mcpUrl}"`,
     },
     {
       key: "gemini",
-      name: "Gemini",
+      brand: "gemini",
+      name: "Gemini CLI",
       blurb: "Add Yaycay to the Gemini CLI.",
       steps: ["Run the command below, then authorize in your browser."],
       snippet: `gemini mcp add yaycay ${mcpUrl} --transport http`,
@@ -148,6 +156,19 @@ export function ConnectClient({ mcpUrl }: { mcpUrl: string }) {
             Manage connected assistants
           </a>
         </p>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "var(--space-5)",
+            marginTop: "var(--space-2)",
+          }}
+        >
+          <BrandLogo brand="claude" height={26} />
+          <BrandLogo brand="openai" height={26} />
+          <BrandLogo brand="gemini" height={26} />
+        </div>
       </header>
 
       <Card>
@@ -167,11 +188,36 @@ export function ConnectClient({ mcpUrl }: { mcpUrl: string }) {
 
       {list.map((p) => (
         <Card key={p.key}>
-          <CardBody title={p.name}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+          <CardBody>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginBottom: "var(--space-2)" }}>
+              {p.brand ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 44,
+                    height: 44,
+                    borderRadius: "var(--radius-md, 12px)",
+                    background: "var(--surface-sunk)",
+                    border: "2px solid var(--sand-200, #e7e2d8)",
+                    flex: "none",
+                  }}
+                >
+                  <AssistantMark brand={p.brand} size={26} />
+                </span>
+              ) : null}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <strong style={{ display: "block", fontSize: "var(--fs-h5, 1.1rem)" }}>{p.name}</strong>
+                {p.brand ? (
+                  <span style={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "var(--fs-sm)" }}>
+                    {ASSISTANT_OWNER[p.brand]} {ASSISTANT_LABEL[p.brand]}
+                  </span>
+                ) : null}
+              </div>
               <Badge tone="meadow">MCP</Badge>
-              <span style={{ color: "var(--text-muted)", fontWeight: 700 }}>{p.blurb}</span>
             </div>
+            <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>{p.blurb}</p>
             <ol style={{ margin: "var(--space-3) 0 0", paddingLeft: "var(--space-5)", color: "var(--text-body)" }}>
               {p.steps.map((s, i) => (
                 <li key={i}>{s}</li>

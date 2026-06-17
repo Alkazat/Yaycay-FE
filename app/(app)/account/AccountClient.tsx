@@ -9,7 +9,12 @@ import { retentionStatus } from "@/lib/retention";
 import { formatHumanDate } from "@/lib/format";
 import type { AccountSummary, Tier, TripSummary } from "@/lib/contract-mock/types";
 import type { ConnectionView } from "@/lib/mcp/store";
-import { AssistantMark, ASSISTANT_LABEL, type AssistantBrand } from "@/components/brand/AssistantMark";
+import {
+  AssistantMark,
+  ASSISTANT_LABEL,
+  brandFromName,
+  type AssistantBrand,
+} from "@/components/brand/AssistantMark";
 import { Card, CardBody, Button, Badge, Banner, Input } from "@/components/ds";
 
 const TIER_NAME: Record<Tier, string> = {
@@ -43,7 +48,7 @@ function ConnectedAssistantsHero() {
 
   return (
     <Card>
-      <CardBody title="Connected assistants">
+      <CardBody title="Connect your assistant">
         <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
           Plan trips with your own AI. Connect ChatGPT, Claude or Gemini and it talks to Yaycay
           through a secure connector.
@@ -71,22 +76,56 @@ function ConnectedAssistantsHero() {
           </a>
         </div>
 
-        <div style={{ marginTop: "var(--space-3)" }}>
+        {/* Connected assistants: one row each, with the partner logo. */}
+        <div style={{ marginTop: "var(--space-4)" }}>
+          <span style={{ fontWeight: 800, display: "block", marginBottom: "var(--space-2)" }}>
+            Connected assistants
+          </span>
           {active.length === 0 ? (
             <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
-              No assistants connected yet.
+              None yet - connect one above.
             </p>
           ) : (
             <div className="yc-stack" style={{ gap: "var(--space-2)" }}>
-              {active.map((c) => (
-                <div key={c.connection_id} style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                  <Badge tone="meadow" dot>
-                    Active
-                  </Badge>
-                  <strong>{c.client_name}</strong>
-                  {c.scopes.includes("yaycay.plan") ? <Badge tone="sun">Can write</Badge> : null}
-                </div>
-              ))}
+              {active.map((c) => {
+                const brand = brandFromName(c.client_name);
+                return (
+                  <div
+                    key={c.connection_id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--space-3)",
+                      padding: "var(--space-2) var(--space-3)",
+                      borderRadius: "var(--radius-md, 12px)",
+                      border: "2px solid var(--sand-200, #e7e2d8)",
+                      background: "var(--surface, #fff)",
+                    }}
+                  >
+                    <span style={{ width: 32, display: "grid", placeItems: "center", flex: "none" }}>
+                      {brand ? (
+                        <AssistantMark brand={brand} size={28} />
+                      ) : (
+                        <Badge tone="meadow" dot>
+                          AI
+                        </Badge>
+                      )}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <strong style={{ display: "block" }}>{c.client_name}</strong>
+                      <span style={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "var(--fs-sm)" }}>
+                        {c.last_used_at
+                          ? `Last used ${new Date(c.last_used_at).toLocaleDateString()}`
+                          : "Not used yet"}
+                      </span>
+                    </span>
+                    <Badge tone="meadow" dot>
+                      Active
+                    </Badge>
+                    {c.scopes.includes("yaycay.plan") ? <Badge tone="sun">Can write</Badge> : null}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

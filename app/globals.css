@@ -28,9 +28,29 @@ body {
   background: var(--grad-scene);
 }
 
+/* Subtle per-section accent. Each app area gets a quiet, distinct hue (not
+   candy) applied to the app-bar underline and a thin strip atop the content,
+   so explorers / grown-ups / planning / account feel different without shouting. */
+.yc-app {
+  --accent: var(--royal-500);
+}
+.yc-app[data-section="trips"] {
+  --accent: var(--meadow-500, #3aa657);
+}
+.yc-app[data-section="planning"] {
+  --accent: var(--aqua-500, #1f9fb0);
+}
+.yc-app[data-section="explorers"] {
+  --accent: var(--sun-500, #e7a008);
+}
+.yc-app[data-section="account"] {
+  --accent: var(--royal-500);
+}
+
 /* App shell: full-width page, a single centered column capped to the content
    width. Chrome (app bar) spans 100%; content sits inside --content-max. */
 .yc-shell {
+  border-top: 3px solid var(--accent);
   min-height: 100dvh;
   padding-block: calc(var(--safe-top) + var(--space-4)) calc(var(--safe-bottom) + var(--space-8));
   padding-inline: 0;
@@ -62,6 +82,144 @@ body {
 @media (max-width: 768px) {
   .yc-grid-5050 {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Trip sub-header: one compact bar (title/dates/days/profile/pocket money) that
+   sticks just beneath the app bar. */
+.yc-tripbar {
+  position: sticky;
+  top: var(--appbar-h, 64px);
+  z-index: 8;
+  background: var(--surface-card, #fff);
+  border: 2px solid var(--sand-200, #e7e2d8);
+  border-radius: var(--radius-lg, 16px);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-sm, 0 4px 12px rgba(16, 24, 40, 0.08));
+}
+/* On phones the sub-header (title + mode switch + profile switcher) is tall; a
+   sticky bar would eat the screen and overlay tappable day content. Let it scroll
+   with the page on small screens, keeping it sticky on tablet/desktop. */
+@media (max-width: 640px) {
+  .yc-tripbar {
+    position: static;
+  }
+}
+
+/* Explore/Plan switch: the hero control that flips the whole trip experience. */
+.yc-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 5px;
+  width: 100%;
+  background: var(--surface-sunk);
+  border-radius: var(--radius-lg, 16px);
+}
+.yc-mode-switch__opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md, 12px);
+  cursor: pointer;
+  color: var(--text-muted);
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.yc-mode-switch__opt.is-active {
+  background: var(--surface-card, #fff);
+  color: var(--royal-800);
+  box-shadow: var(--shadow-sm, 0 4px 12px rgba(16, 24, 40, 0.1));
+}
+.yc-mode-switch__opt.is-active:nth-child(2) {
+  color: var(--aqua-600, #14808f);
+}
+.yc-mode-switch__emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+.yc-mode-switch__text {
+  display: flex;
+  flex-direction: column;
+}
+.yc-mode-switch__label {
+  font-weight: 800;
+  font-size: var(--fs-body);
+  line-height: 1.1;
+}
+.yc-mode-switch__sub {
+  font-weight: 700;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Planning chat: a full-height, browser-style conversation. The log scrolls and
+   the composer stays pinned at the bottom; the empty/locked states centre a
+   notice. Used live on the our-AI tier and locked on BYO. */
+.yc-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+  border: 2px solid var(--sand-200, #e7e2d8);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-card, #fff);
+  overflow: hidden;
+}
+.yc-chat__log {
+  flex: 1;
+  min-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+.yc-chat__bubble {
+  max-width: 85%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.yc-chat__notice {
+  margin: auto;
+  max-width: 460px;
+  text-align: center;
+  padding: var(--space-4) var(--space-2);
+}
+.yc-chat__composer {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 2px solid var(--sand-200, #e7e2d8);
+  background: var(--surface-card, #fff);
+}
+
+/* Planning mode visibly flips the dynamic: a calm aqua wash on the trip header. */
+[data-section="planning"] {
+  --accent: var(--aqua-500, #1f9fb0);
+}
+[data-section="planning"] .yc-tripbar {
+  border-color: var(--aqua-200, #b7e3e9);
+  background: var(--aqua-50, #f0fafb);
+}
+
+/* Planning workspace: chat-first main + right sidebar; stacks on tablet/mobile. */
+@media (min-width: 921px) {
+  .yc-planning-grid > [data-testid="planning-sidebar"] {
+    position: sticky;
+    top: calc(var(--appbar-h, 64px) + 12px);
+    align-self: start;
+  }
+}
+@media (max-width: 920px) {
+  .yc-planning-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -125,7 +283,7 @@ body {
   padding-inline: max(calc(var(--safe-left) + var(--gutter)), calc((100% - var(--content-max)) / 2))
     max(calc(var(--safe-right) + var(--gutter)), calc((100% - var(--content-max)) / 2));
   background: var(--surface-card);
-  border-bottom: 2.5px solid var(--royal-500);
+  border-bottom: 2.5px solid var(--accent, var(--royal-500));
   transition: padding 0.18s ease;
 }
 /* Compact state once the page is scrolled. */

@@ -25,7 +25,9 @@ export function GameLauncher({
   const claim = useMutation({
     mutationFn: () =>
       claimStar(tripId, { profile_id: profile.id, source: "game", day: day.id }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: starsKey }),
+    // Invalidate the trip's whole stars prefix so the family Star Bank on Home
+    // refreshes too, not just this child's per-day bank.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["stars", tripId] }),
   });
 
   if (!day.game) return null;

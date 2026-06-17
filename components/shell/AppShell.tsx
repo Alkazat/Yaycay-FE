@@ -45,9 +45,18 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Which section accent the current route belongs to (subtle per-area colour). */
+function sectionFor(pathname: string): string {
+  if (pathname.startsWith("/account")) return "account";
+  if (pathname.startsWith("/profiles")) return "explorers";
+  if (/^\/trips\/[^/]+\/plan/.test(pathname)) return "planning";
+  return "trips";
+}
+
 /** Persistent app chrome: top brand bar + desktop nav, mobile bottom tab bar. */
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
+  const section = sectionFor(pathname);
 
   // The brand mark is large at the top of a page and shrinks once you scroll.
   const [scrolled, setScrolled] = useState(false);
@@ -59,7 +68,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <>
+    <div
+      className="yc-app"
+      data-section={section}
+      style={{ ["--appbar-h" as string]: scrolled ? "62px" : "104px" }}
+    >
       <OfflineBanner />
       <header className={`yc-appbar${scrolled ? " yc-appbar--scrolled" : ""}`}>
         <Link href="/trips" className="yc-appbar__brand" aria-label="Yaycay home">
@@ -114,6 +127,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         ))}
       </nav>
-    </>
+    </div>
   );
 }

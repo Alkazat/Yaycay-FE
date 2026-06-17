@@ -107,10 +107,25 @@ export function ProfilesClient() {
   }
 
   function Column({ title, type, list, addLabel }: { title: string; type: ProfileType; list: ChildProfile[]; addLabel: string }) {
+    // Subtle, distinct tint per column: explorers warm (sun), grown-ups cool (sky).
+    const child = type === "child";
     return (
-      <section className="yc-stack" style={{ gap: "var(--space-3)" }} data-testid={`column-${type}`}>
+      <section
+        className="yc-stack"
+        data-testid={`column-${type}`}
+        style={{
+          gap: "var(--space-3)",
+          padding: "var(--space-4)",
+          borderRadius: "var(--radius-lg, 16px)",
+          background: child ? "var(--sun-50, #fff7e6)" : "var(--sky-50, #f0f7ff)",
+          borderTop: `4px solid ${child ? "var(--sun-400, #f5b73d)" : "var(--sky-500, #2f86d8)"}`,
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-3)" }}>
-          <h2 style={{ margin: 0 }}>{title}</h2>
+          <h2 style={{ margin: 0, color: child ? "var(--sun-700, #9a6a00)" : "var(--royal-700)" }}>
+            {child ? "🧭 " : "🛡️ "}
+            {title}
+          </h2>
           <Button variant="secondary" size="sm" onClick={() => setCreateType(type)} data-testid={`add-${type}`}>
             {addLabel}
           </Button>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTripContent, listProfiles } from "@/lib/api/trips";
 import { getProgress, setActivityDone } from "@/lib/api/progress";
@@ -9,9 +9,15 @@ import { tripProgress, dayCompletion } from "@/lib/render/progress";
 import { todayDayId } from "@/lib/render/today";
 import { DayNav } from "@/components/trips/DayNav";
 import { TripComplete } from "@/components/trips/TripComplete";
+import { TripCover } from "@/components/trips/TripCover";
+import { TripHome } from "@/components/trips/TripHome";
+import { Overlay } from "@/components/ui/Overlay";
+import { MapClient } from "./map/MapClient";
+import { PackingClient } from "./packing/PackingClient";
+import { JournalClient } from "./journal/JournalClient";
+import { CompanionClient } from "./companion/CompanionClient";
 import type { RenderView } from "@/lib/render/routeByKind";
 import { TripDayRenderer } from "@/components/renderer/TripDayRenderer";
-import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { PinGate } from "@/components/profile/PinGate";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import {
@@ -20,18 +26,18 @@ import {
   grownupsNeedsPin,
   modeForProfile,
   isChild,
+  isParentCarer,
 } from "@/lib/profile/access";
 import { StarBank } from "@/components/stars/StarBank";
 import { GameLauncher } from "@/components/games/GameLauncher";
 import { GrownupsGuide } from "@/components/grownups/GrownupsGuide";
-import { Countdown } from "@/components/Countdown";
-import { Tabs, Card, CardBody, Banner, ProgressMeter } from "@/components/ds";
+import { Tabs, Card, CardBody, Banner } from "@/components/ds";
 import type { ProfileMode, TripProgress } from "@/lib/contract-mock/types";
-import { formatDateRange } from "@/lib/format";
 import { useTripPlanning } from "@/components/trips/useTripPlanning";
 import { useTripFeatures } from "@/components/trips/useTripFeatures";
-import { ExplorePlanSwitch } from "@/components/trips/ExplorePlanSwitch";
 import { PlanningPanel } from "@/components/trips/PlanningPanel";
+import { TripStickyHeader } from "@/components/trips/TripStickyHeader";
+import { BrandLoading } from "@/components/shell/BrandLoading";
 import { resolveFeatures } from "@/lib/features";
 
 export function TripView({ tripId }: { tripId: string }) {
@@ -50,6 +56,15 @@ export function TripView({ tripId }: { tripId: string }) {
   // (or reload). `pinOpen` drives the PIN modal.
   const [grownupsUnlocked, setGrownupsUnlocked] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
+  // The book opens on its Home / overview after the cover hands off; a returning
+  // or seeded explorer (no cover) lands straight on a day. Tapping a day card or
+  // chip moves to "day"; the in-book Home button returns to "home".
+  const [bookView, setBookView] = useState<"home" | "day">("day");
+  // Tools open as in-place overlays over the book instead of navigating away to
+  // their routes (the routes stay for deep links). null = no tool open.
+  const [activeTool, setActiveTool] = useState<"map" | "packing" | "journal" | "companion" | null>(
+    null,
+  );
   const { activeProfileId, setActiveProfileId } = useActiveProfile();
   // Explore (default) vs Plan mode (device-local) + the parent's per-explorer
   // feature overrides (BE-backed, synced across devices).
@@ -57,7 +72,19 @@ export function TripView({ tripId }: { tripId: string }) {
   const featureToggles = useTripFeatures(tripId);
 
   const trip = tripQuery.data;
-  const profiles = profilesQuery.data ?? [];
+  const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data]);
+
+  // Honour the mode chosen at the trip tile (?mode=explore|plan), once per entry.
+  const searchParams = useSearchParams();
+  const modeParam = searchParams.get("mode");
+  const appliedMode = useRef(false);
+  useEffect(() => {
+    if (appliedMode.current) return;
+    if (modeParam === "plan" || modeParam === "explore") {
+      planning.setMode(modeParam);
+      appliedMode.current = true;
+    }
+  }, [modeParam, planning]);
 
   // Default selections once data arrives. The view lands on today during the
   // trip, otherwise day one.
@@ -76,10 +103,27 @@ export function TripView({ tripId }: { tripId: string }) {
     mode,
     profileId ? featureToggles.overridesFor(profileId) : undefined,
   );
-  // Planning is a grown-up activity: only parent/carers get the switch, and a
-  // plan-mode flag left in storage is ignored while a child is active.
-  const canPlan = !!activeProfile && canAccessGrownups(activeProfile);
-  const showPlan = canPlan && planning.mode === "plan";
+  // Planning is a grown-up activity - it is never surfaced inside a child's
+  // Exploring book (that clutter is exactly what made the kid experience feel
+  // overcomplicated). It stays discoverable for grown-ups: the cover's "the
+  // guides" entry, the Mum chip in the explorer switcher, and the trips-home
+  // Plan button all land a parent/carer, who then sees the Exploring/Planning
+  // switch. `planningAvailable` still gates whether Plan mode can run at all.
+  const planningAvailable = profiles.some((p) => isParentCarer(p));
+  const planSwitchVisible = planningAvailable && !!activeProfile && isParentCarer(activeProfile);
+  const showPlan = planningAvailable && planning.mode === "plan";
+
+  // Planning is a grown-up workspace. Whenever we're in Plan mode but a child is
+  // active (the default profile, a persisted flag, or a tile/switch request),
+  // elevate to the trip's parent/carer so the grown-up planner (and its chat)
+  // actually opens instead of silently falling back to the kid view.
+  useEffect(() => {
+    if (planning.mode !== "plan" || profiles.length === 0) return;
+    const current = profiles.find((p) => p.id === profileId) ?? null;
+    if (current && canAccessGrownups(current)) return;
+    const grown = profiles.find((p) => isParentCarer(p));
+    if (grown && grown.id !== activeProfileId) setActiveProfileId(grown.id);
+  }, [planning.mode, profiles, profileId, activeProfileId, setActiveProfileId]);
   // Which views this profile may enter; children are locked to Explorers.
   const allowedViews = activeProfile ? viewsForProfile(activeProfile) : ["kid"];
   // Never render a view the active profile can't access (e.g. after switching
@@ -149,7 +193,7 @@ export function TripView({ tripId }: { tripId: string }) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: progressKey }),
   });
 
-  if (tripQuery.isLoading) return <p>Loading your trip...</p>;
+  if (tripQuery.isLoading) return <BrandLoading label="Opening your trip…" />;
   if (tripQuery.isError || !trip) {
     return (
       <Card variant="soft">
@@ -162,70 +206,106 @@ export function TripView({ tripId }: { tripId: string }) {
     );
   }
 
+  // Fresh entry to the Exploring experience opens the warm "Who's exploring?"
+  // cover (emulating the gold standard). A returning explorer - one already chosen
+  // here or carried in from /profiles - skips it and lands straight in the book.
+  if (!showPlan && activeProfileId == null && profiles.length > 0) {
+    return (
+      <TripCover
+        destination={trip.trip.destination}
+        startDate={trip.trip.start_date}
+        endDate={trip.trip.end_date}
+        timezone={trip.trip.timezone}
+        profiles={profiles}
+        onPick={(id) => {
+          selectProfile(id);
+          setBookView("home");
+        }}
+      />
+    );
+  }
+
   const tp = tripProgress(trip, doneSet);
   const tripComplete = tp.totalDays > 0 && tp.daysComplete === tp.totalDays;
   const dayItems = trip.days.map((d) => {
     const c = dayCompletion(d, doneSet);
     return { id: d.id, label: d.label, pct: c.pct, complete: c.complete };
   });
+  const showKidHome = effectiveView === "kid" && bookView === "home";
 
   return (
-    <div className="yc-stack" data-testid="trip-view">
-      <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
-        <h1 style={{ margin: 0 }}>{trip.trip.destination}</h1>
-        <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
-          {formatDateRange(trip.trip.start_date, trip.trip.end_date)}
-        </p>
-        <div>
-          <Countdown startDate={trip.trip.start_date} timezone={trip.trip.timezone} />
-        </div>
-        <ProgressMeter
-          value={tp.daysComplete}
-          max={Math.max(tp.totalDays, 1)}
-          label="Days explored"
-          valueText={`${tp.daysComplete} / ${tp.totalDays}`}
-          tone="meadow"
-        />
-        {canPlan ? <ExplorePlanSwitch mode={planning.mode} onChange={planning.setMode} /> : null}
-        {/* Exploring tools. Per-explorer links honour the active explorer's
-            toggles; Map and While-you're-there are trip-wide. Hidden in Plan. */}
-        {!showPlan ? (
-          <nav style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
-            {features.journal ? (
-              <Link
-                href={`/trips/${tripId}/journal`}
-                className="yc-btn yc-btn--secondary yc-btn--sm"
-                style={{ textDecoration: "none" }}
-              >
-                Journal
-              </Link>
+    <div className="yc-stack" data-testid="trip-view" data-section={showPlan ? "planning" : undefined}>
+      <TripStickyHeader
+        tripId={tripId}
+        title={trip.trip.destination}
+        startDate={trip.trip.start_date}
+        endDate={trip.trip.end_date}
+        daysComplete={tp.daysComplete}
+        totalDays={tp.totalDays}
+        profiles={profiles}
+        activeProfileId={profileId}
+        onSelectProfile={selectProfile}
+        showPocketMoney={effectiveView === "kid" && features.pocket_money}
+        canPlan={planSwitchVisible}
+        mode={planning.mode}
+        onModeChange={planning.setMode}
+      />
+      {/* Exploring tools. Per-explorer links honour the active explorer's
+          toggles; Map and While-you're-there are trip-wide. Hidden in Plan. */}
+      {!showPlan ? (
+        <header className="yc-stack" style={{ gap: "var(--space-3)" }}>
+          <nav className="yc-appbar" aria-label="Trip tools">
+            {effectiveView === "kid" && bookView === "day" ? (
+              <button type="button" className="yc-appbar__btn" onClick={() => setBookView("home")}>
+                <span className="yc-appbar__ic" aria-hidden="true">🏠</span>
+                <span className="yc-appbar__lb">Home</span>
+              </button>
             ) : null}
+            <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("map")}>
+              <span className="yc-appbar__ic" aria-hidden="true">🗺️</span>
+              <span className="yc-appbar__lb">Map</span>
+            </button>
             {features.packing ? (
-              <Link
-                href={`/trips/${tripId}/packing`}
-                className="yc-btn yc-btn--secondary yc-btn--sm"
-                style={{ textDecoration: "none" }}
-              >
-                Packing
-              </Link>
+              <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("packing")}>
+                <span className="yc-appbar__ic" aria-hidden="true">🧳</span>
+                <span className="yc-appbar__lb">Packing</span>
+              </button>
             ) : null}
-            <Link
-              href={`/trips/${tripId}/map`}
-              className="yc-btn yc-btn--secondary yc-btn--sm"
-              style={{ textDecoration: "none" }}
-            >
-              Map
-            </Link>
-            <Link
-              href={`/trips/${tripId}/companion`}
-              className="yc-btn yc-btn--secondary yc-btn--sm"
-              style={{ textDecoration: "none" }}
-            >
-              While you&apos;re there
-            </Link>
+            {features.journal ? (
+              <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("journal")}>
+                <span className="yc-appbar__ic" aria-hidden="true">📖</span>
+                <span className="yc-appbar__lb">Journal</span>
+              </button>
+            ) : null}
+            <button type="button" className="yc-appbar__btn" onClick={() => setActiveTool("companion")}>
+              <span className="yc-appbar__ic" aria-hidden="true">📍</span>
+              <span className="yc-appbar__lb">Nearby</span>
+            </button>
+            <style>{`
+              .yc-appbar {
+                display: flex; gap: var(--space-2); overflow-x: auto;
+                padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+              }
+              .yc-appbar::-webkit-scrollbar { display: none; }
+              .yc-appbar__btn {
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; min-width: 60px; min-height: var(--control-lg, 56px);
+                padding: var(--space-2) var(--space-3);
+                border-radius: var(--radius-lg, 16px);
+                border: 2.5px solid var(--sand-300, #ddd0b8);
+                background: var(--surface-card, #fff);
+                cursor: pointer; white-space: nowrap;
+                font-family: var(--font-display); color: var(--royal-700, #0a4c8b);
+                transition: transform var(--dur-sm, .15s) var(--ease-bounce, ease);
+              }
+              .yc-appbar__btn:hover { transform: translateY(-2px); box-shadow: var(--pop-sky); }
+              .yc-appbar__btn:active { transform: scale(.95); }
+              .yc-appbar__ic { font-size: 22px; line-height: 1; }
+              .yc-appbar__lb { font-size: var(--fs-xs, .72rem); font-weight: 700; }
+            `}</style>
           </nav>
-        ) : null}
-      </header>
+        </header>
+      ) : null}
 
       {showPlan ? (
         <PlanningPanel
@@ -255,57 +335,82 @@ export function TripView({ tripId }: { tripId: string }) {
             <TripComplete destination={trip.trip.destination} />
           ) : null}
 
-          {effectiveView === "kid" && profiles.length > 0 ? (
-            <ProfileSwitcher profiles={profiles} activeId={profileId} onSelect={selectProfile} />
-          ) : null}
-
-          {effectiveView === "kid" && features.pocket_money && activeProfile && activeDay ? (
-            <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
-          ) : null}
-
-          {effectiveView === "kid" && features.games && activeProfile && activeDay?.game ? (
-            <div>
-              <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
-            </div>
-          ) : null}
-
-          {effectiveView === "grownups" && anaphylactic.length > 0 ? (
-            <Banner tone="danger" title="Allergy protocol">
-              {anaphylactic
-                .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
-                .join("; ")}
-              . Carry the EpiPen at all times and confirm every dish with the kitchen.
-            </Banner>
-          ) : null}
-
-          {/* Day navigation: progress rings, today halo, completion discs. */}
-          <DayNav days={dayItems} activeId={dayId} todayId={todayId} onSelect={setActiveDayId} />
-          {todayId && todayId !== dayId ? (
-            <div>
-              <button
-                type="button"
-                className="yc-btn yc-btn--secondary yc-btn--sm"
-                onClick={() => setActiveDayId(todayId)}
-              >
-                Jump to today
-              </button>
-            </div>
-          ) : null}
-
-          {activeDay ? (
-            <TripDayRenderer
-              day={activeDay}
-              view={effectiveView}
-              mode={mode}
-              quizzes={features.quizzes}
-              done={effectiveView === "kid" ? doneSet : undefined}
-              onToggleActivity={
-                effectiveView === "kid" && profileId
-                  ? (activityId, done) => toggle.mutate({ activityId, done })
+          {showKidHome ? (
+            <TripHome
+              tripId={tripId}
+              days={trip.days}
+              profile={activeProfile}
+              kids={profiles.filter((p) => isChild(p))}
+              showPocketMoney={features.pocket_money}
+              doneSet={doneSet}
+              daysComplete={tp.daysComplete}
+              totalDays={tp.totalDays}
+              todayId={todayId}
+              onSelectDay={(id) => {
+                setActiveDayId(id);
+                setBookView("day");
+              }}
+              onJumpToday={
+                todayId
+                  ? () => {
+                      setActiveDayId(todayId);
+                      setBookView("day");
+                    }
                   : undefined
               }
             />
-          ) : null}
+          ) : (
+            <>
+              {effectiveView === "kid" && features.pocket_money && activeProfile && activeDay ? (
+                <StarBank tripId={tripId} profile={activeProfile} day={activeDay} />
+              ) : null}
+
+              {effectiveView === "kid" && features.games && activeProfile && activeDay?.game ? (
+                <div>
+                  <GameLauncher tripId={tripId} profile={activeProfile} day={activeDay} />
+                </div>
+              ) : null}
+
+              {effectiveView === "grownups" && anaphylactic.length > 0 ? (
+                <Banner tone="danger" title="Allergy protocol">
+                  {anaphylactic
+                    .map((p) => `${p.name} (${p.dietary.join(", ") || "anaphylaxis"})`)
+                    .join("; ")}
+                  . Carry the EpiPen at all times and confirm every dish with the kitchen.
+                </Banner>
+              ) : null}
+
+              {/* Day navigation: progress rings, today halo, completion discs. */}
+              <DayNav days={dayItems} activeId={dayId} todayId={todayId} onSelect={setActiveDayId} />
+              {todayId && todayId !== dayId ? (
+                <div>
+                  <button
+                    type="button"
+                    className="yc-btn yc-btn--secondary yc-btn--sm"
+                    onClick={() => setActiveDayId(todayId)}
+                  >
+                    Jump to today
+                  </button>
+                </div>
+              ) : null}
+
+              {activeDay ? (
+                <TripDayRenderer
+                  day={activeDay}
+                  view={effectiveView}
+                  mode={mode}
+                  dayNumber={trip.days.findIndex((d) => d.id === activeDay.id) + 1}
+                  quizzes={features.quizzes}
+                  done={effectiveView === "kid" ? doneSet : undefined}
+                  onToggleActivity={
+                    effectiveView === "kid" && profileId
+                      ? (activityId, done) => toggle.mutate({ activityId, done })
+                      : undefined
+                  }
+                />
+              ) : null}
+            </>
+          )}
 
           {effectiveView === "grownups" && trip.grownups ? (
             <GrownupsGuide tripId={tripId} guide={trip.grownups} activeDayId={dayId} />
@@ -325,6 +430,39 @@ export function TripView({ tripId }: { tripId: string }) {
           ) : null}
         </>
       )}
+
+      <Overlay
+        open={activeTool === "map"}
+        title="Map"
+        onClose={() => setActiveTool(null)}
+        testId="map-overlay"
+      >
+        {activeTool === "map" ? <MapClient tripId={tripId} /> : null}
+      </Overlay>
+      <Overlay
+        open={activeTool === "packing"}
+        title="Packing"
+        onClose={() => setActiveTool(null)}
+        testId="packing-overlay"
+      >
+        {activeTool === "packing" ? <PackingClient tripId={tripId} /> : null}
+      </Overlay>
+      <Overlay
+        open={activeTool === "journal"}
+        title="Journal"
+        onClose={() => setActiveTool(null)}
+        testId="journal-overlay"
+      >
+        {activeTool === "journal" ? <JournalClient tripId={tripId} /> : null}
+      </Overlay>
+      <Overlay
+        open={activeTool === "companion"}
+        title="While you're there"
+        onClose={() => setActiveTool(null)}
+        testId="companion-overlay"
+      >
+        {activeTool === "companion" ? <CompanionClient tripId={tripId} /> : null}
+      </Overlay>
     </div>
   );
 }
