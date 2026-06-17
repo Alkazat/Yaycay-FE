@@ -17,8 +17,9 @@ import type {
 } from "./types";
 import type { Transaction } from "@/lib/api/transactions";
 
-export const MOCK_ACCOUNT: AccountSummary = {
+export const MOCK_ACCOUNT: AccountSummary & { name: string | null } = {
   email: "family@example.com",
+  name: "The Yeates Family",
   secondary_email: "backup@example.com",
   tier: "ours",
   role: "user",
@@ -54,9 +55,11 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   {
     id: "txn_3",
     date: "2026-05-20T09:14:00.000Z",
-    description: "Keep my memories - Singapore (12 months)",
+    description: "Keep my memories (12 months)",
     amount_usd: 19,
     status: "paid",
+    trip_id: "t_sg",
+    trip_name: "Singapore",
   },
   {
     id: "txn_2",
@@ -64,6 +67,8 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     description: "Holiday - full (our AI planning)",
     amount_usd: 129,
     status: "paid",
+    trip_id: "t_sg",
+    trip_name: "Singapore",
   },
   {
     id: "txn_1",
@@ -71,6 +76,9 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     description: "Holiday - bring your own AI",
     amount_usd: 59,
     status: "refunded",
+    // An older purchase whose trip is no longer around: not every line links.
+    trip_id: null,
+    trip_name: null,
   },
 ];
 
