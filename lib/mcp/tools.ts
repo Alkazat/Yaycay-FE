@@ -395,11 +395,14 @@ export function registerYaycayTools(server: McpServer): void {
     async ({ name, kind, age, avatar, interests }, extra) =>
       safe(extra, SCOPES.plan, async (auth) => {
         const isGrownUp = kind === "grown_up";
+        // A grown-up (parent/carer) stores no band: the DB explorer_mode enum is
+        // children-only (little|explorer|explorer_plus) and the "standard" voice
+        // is derived from type on read. Children get a band from their age.
         const body: Record<string, unknown> = {
           name,
           type: isGrownUp ? "parent_carer" : "child",
-          mode: isGrownUp ? "standard" : bandForAge(age),
         };
+        if (!isGrownUp) body.mode = bandForAge(age);
         if (typeof age === "number") body.age = age;
         if (avatar) body.avatar = avatar;
         if (interests && interests.length) body.interests = interests;

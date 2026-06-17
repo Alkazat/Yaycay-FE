@@ -363,7 +363,9 @@ describe("MCP tools", () => {
     expect(out.isError).toBeFalsy();
     const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/profiles"));
     const body = JSON.parse(String((call?.[1] as RequestInit).body));
-    expect(body).toMatchObject({ name: "Nan", type: "parent_carer", mode: "standard" });
+    expect(body).toMatchObject({ name: "Nan", type: "parent_carer" });
+    // No band for a grown-up: the DB enum is children-only; "standard" is derived.
+    expect(body.mode).toBeUndefined();
     expect(body.age).toBeUndefined();
   });
 
