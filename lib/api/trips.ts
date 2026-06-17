@@ -68,3 +68,61 @@ export async function listProfiles(signal?: AbortSignal): Promise<ChildProfile[]
   const data = await getJson<{ profiles: ChildProfile[] }>("/profiles", SERVED.profiles, signal);
   return data.profiles;
 }
+
+/** A read-only, shareable view of a trip (resolved from a share token). */
+export interface SharedTrip {
+  /** Who shared it, for the "shared by" line. */
+  shared_by: string;
+  /** The trip's day-by-day content, rendered read-only for the recipient. */
+  content: TripContent;
+}
+
+export interface ShareResult {
+  /** Public, read-only URL the recipient opens. */
+  share_url: string;
+  /** Whether an invite email was sent (when a recipient address was given). */
+  emailed: boolean;
+}
+
+async function postJson<T>(path: string, served: boolean, body: unknown): Promise<T> {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch(path, served, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+    accessToken,
+  });
+  if (!res.ok) throw new Error(`Request failed (${res.status}) for ${path}`);
+  return (await res.json()) as T;
+}
+
+/** Archive or restore a trip (`POST /trips/:id/archive`). Returns the updated row. */
+export async function archiveTrip(id: string, archived: boolean): Promise<Trip> {
+  return postJson<Trip>(`/trips/${id}/archive`, SERVED.archiveTrip, { archived });
+}
+
+/**
+ * Duplicate a trip into a fresh draft the caller owns (`POST /trips/:id/duplicate`).
+ * The copy starts free + editable; upgrading to a full holiday is the usual paywall.
+ */
+export async function duplicateTrip(id: string): Promise<Trip> {
+  return postJson<Trip>(`/trips/${id}/duplicate`, SERVED.duplicateTrip, {});
+}
+
+/**
+ * Share a trip read-only (`POST /trips/:id/share`). Returns a public link; if an
+ * email is given, BE also sends the recipient an invite. Recipients view read-only
+ * and can duplicate into their own (paid) trip.
+ */
+export async function shareTrip(id: string, email?: string): Promise<ShareResult> {
+  return postJson<ShareResult>(`/trips/${id}/share`, SERVED.shareTrip, {
+    email: email?.trim() || undefined,
+  });
+}
+
+/** Resolve a share token to its read-only trip (`GET /shared/:token`). Public. */
+export async function getSharedTrip(token: string, signal?: AbortSignal): Promise<SharedTrip> {
+  const res = await apiFetch(`/shared/${encodeURIComponent(token)}`, SERVED.sharedTrip, { signal });
+  if (!res.ok) throw new Error(`Shared trip not found (${res.status})`);
+  return (await res.json()) as SharedTrip;
+}

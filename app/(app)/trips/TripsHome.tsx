@@ -130,19 +130,56 @@ export function TripsHome() {
       ) : null}
 
       {data ? (
-        <div
-          style={{
-            display: "grid",
-            gap: "var(--space-6)",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-          }}
-          data-testid="trips-grid"
-        >
-          <NewTripTile onClick={() => setCreating(true)} />
-          {data.map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
-          ))}
-        </div>
+        <>
+          <div
+            style={{
+              display: "grid",
+              gap: "var(--space-6)",
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            }}
+            data-testid="trips-grid"
+          >
+            <NewTripTile onClick={() => setCreating(true)} />
+            {data
+              .filter((t) => t.status !== "archived")
+              .map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+          </div>
+
+          {data.some((t) => t.status === "archived") ? (
+            <details data-testid="archive-section" style={{ marginTop: "var(--space-4)" }}>
+              <summary
+                style={{
+                  cursor: "pointer",
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 700,
+                  fontSize: "var(--fs-h4)",
+                  color: "var(--royal-700)",
+                }}
+              >
+                🗄️ Archive ({data.filter((t) => t.status === "archived").length})
+              </summary>
+              <p style={{ margin: "var(--space-2) 0 var(--space-4)", color: "var(--text-muted)", fontWeight: 700 }}>
+                Tucked away, but still yours. Restore, share, or duplicate any of these.
+              </p>
+              <div
+                style={{
+                  display: "grid",
+                  gap: "var(--space-6)",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                }}
+                data-testid="archive-grid"
+              >
+                {data
+                  .filter((t) => t.status === "archived")
+                  .map((trip) => (
+                    <TripCard key={trip.id} trip={trip} />
+                  ))}
+              </div>
+            </details>
+          ) : null}
+        </>
       ) : null}
 
       {creating ? <CreateTripModal onClose={() => setCreating(false)} /> : null}
