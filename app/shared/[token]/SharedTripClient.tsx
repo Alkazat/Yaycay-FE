@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { getSharedTrip } from "@/lib/api/trips";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getSharedTrip, duplicateSharedTrip } from "@/lib/api/trips";
 import { Card, CardBody, Badge, Button, Banner } from "@/components/ds";
 import { BrandLoading } from "@/components/shell/BrandLoading";
 import { formatDateRange } from "@/lib/format";
@@ -14,9 +15,19 @@ import { flagForDestination } from "@/lib/geo";
  * (paid) version. Resolved from the share token in the URL.
  */
 export function SharedTripClient({ token }: { token: string }) {
+  const router = useRouter();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["shared-trip", token],
     queryFn: ({ signal }) => getSharedTrip(token, signal),
+  });
+
+  // "Plan my own version": copy the shared trip into the recipient's own account.
+  // If they aren't signed in, BE rejects the call and we bounce them through
+  // sign-in, returning to this page so they can try again once authed.
+  const duplicate = useMutation({
+    mutationFn: () => duplicateSharedTrip(token),
+    onSuccess: (trip) => router.push(`/trips/${trip.id}`),
+    onError: () => router.push(`/auth?next=/shared/${encodeURIComponent(token)}`),
   });
 
   if (isLoading) return <BrandLoading label="Opening the trip…" />;
@@ -59,9 +70,11 @@ export function SharedTripClient({ token }: { token: string }) {
             Like the look of it? Create your own version - a full holiday with day-by-day plans your
             family can explore.
           </p>
-          <Link href="/auth?next=/trips" style={{ textDecoration: "none", marginTop: "var(--space-3)", display: "inline-block" }}>
-            <Button variant="cta">Plan my own version</Button>
-          </Link>
+          <div style={{ marginTop: "var(--space-3)" }}>
+            <Button variant="cta" onClick={() => duplicate.mutate()} disabled={duplicate.isPending}>
+              {duplicate.isPending ? "Copying…" : "Plan my own version"}
+            </Button>
+          </div>
         </CardBody>
       </Card>
 

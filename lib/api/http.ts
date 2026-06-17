@@ -95,20 +95,20 @@ export const SERVED = {
   // planning chat history (`GET /trips/:id/chat`). Live as of contract @0.21/0.22.
   companion: true,
   chatHistory: true,
-  // Billing/transaction history. NOT in the contract yet (no /account/transactions
-  // endpoint) - mock-backed until BE ships it. See docs/handoffs.
-  transactions: false,
+  // Billing/transaction history (`GET /account/transactions`). Live as of contract
+  // @0.31 - Stripe-sourced from the purchases table, each line carries trip_id.
+  transactions: true,
   // Pricing catalogue (Stripe-sourced amounts). No /catalogue endpoint yet -
   // mock-backed until BE ships it. See docs/handoffs.
   catalogue: false,
   // Per-explorer feature toggles (`GET|PUT /trips/:id/features`) - live as of
   // BE migration 0031. Reads degrade to "no overrides" if not yet deployed.
   features: true,
-  // Trip management: archive/unarchive, duplicate, and share-by-link/email, plus
-  // the public read-only shared view. NOT in the contract yet - mock-backed until
-  // BE ships them. See docs/handoffs/13.
-  archiveTrip: false,
-  duplicateTrip: false,
-  shareTrip: false,
-  sharedTrip: false,
+  // Trip management: archive/unarchive, duplicate, share-by-link/email, the public
+  // read-only shared view, and recipient duplicate-from-share. Live as of contract
+  // @0.31. See docs/handoffs/13.
+  archiveTrip: true,
+  duplicateTrip: true,
+  shareTrip: true,
+  sharedTrip: true,
 } as const;

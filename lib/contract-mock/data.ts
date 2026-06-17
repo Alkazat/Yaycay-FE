@@ -17,7 +17,7 @@ import type {
 } from "./types";
 import type { Transaction } from "@/lib/api/transactions";
 
-export const MOCK_ACCOUNT: AccountSummary & { name: string | null } = {
+export const MOCK_ACCOUNT: AccountSummary = {
   email: "family@example.com",
   name: "The Yeates Family",
   secondary_email: "backup@example.com",
@@ -25,6 +25,7 @@ export const MOCK_ACCOUNT: AccountSummary & { name: string | null } = {
   role: "user",
   two_factor_enrolled: false,
   deletion_requested_at: null,
+  data_kept_until: null,
   created_at: "2026-01-01T00:00:00.000Z",
 };
 
