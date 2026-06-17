@@ -321,6 +321,149 @@ describe("MCP tools", () => {
     expect(out.content[0].text).toContain("can_create_here");
   });
 
+  it("requires the plan scope to create an explorer and derives a child's band from age", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+
+    const denied = await tools.create_explorer(
+      { name: "Maya" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(JSON.stringify({ id: "p_1", name: "Maya" }), { status: 201 }),
+      );
+    const out = await tools.create_explorer(
+      { name: "Maya", age: 4 },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(out.isError).toBeFalsy();
+    expect(out.content[0].text).toContain("Maya");
+
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/profiles"));
+    expect((call?.[1] as RequestInit).method).toBe("POST");
+    const body = JSON.parse(String((call?.[1] as RequestInit).body));
+    expect(body).toMatchObject({ name: "Maya", type: "child", mode: "little", age: 4 });
+  });
+
+  it("creates a grown-up as a parent/carer in the standard voice", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ id: "p_2", name: "Nan" }), { status: 201 }));
+    const out = await tools.create_explorer(
+      { name: "Nan", kind: "grown_up" },
+      extraFor({ scopes: [SCOPES.plan] }),
+    );
+    expect(out.isError).toBeFalsy();
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/profiles"));
+    const body = JSON.parse(String((call?.[1] as RequestInit).body));
+    expect(body).toMatchObject({ name: "Nan", type: "parent_carer" });
+    // No band for a grown-up: the DB enum is children-only; "standard" is derived.
+    expect(body.mode).toBeUndefined();
+    expect(body.age).toBeUndefined();
+  });
+
+  it("lists explorers and grown-ups as people without leaking dietary through the connector", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          profiles: [
+            {
+              id: "p_1",
+              name: "Maya",
+              type: "child",
+              mode: "little",
+              age: 4,
+              dietary: ["nut-free"],
+            },
+            { id: "p_2", name: "Nan", type: "parent_carer", mode: "standard" },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const out = await tools.list_explorers({}, extraFor({ scopes: [SCOPES.read] }));
+    const text = out.content[0].text;
+    expect(text).toContain("Maya");
+    expect(text).toContain('"kind": "child"');
+    expect(text).toContain('"kind": "grown_up"');
+    expect(text).not.toContain("nut-free");
+  });
+
+  it("writes an explorer's end-of-day journal entry (pre-checks the trip, requires plan scope)", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+
+    // The journal is a write, so the read scope alone is branded, not thrown.
+    const denied = await tools.add_journal_entry(
+      { trip_id: "t_1", body: "Best day ever" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+      const u = String(url);
+      const method = (init as RequestInit | undefined)?.method ?? "GET";
+      if (u.endsWith("/journal") && method === "POST") {
+        return new Response(JSON.stringify({ id: "j_1", body: "Best day ever", stars: 5 }), {
+          status: 201,
+        });
+      }
+      return new Response(JSON.stringify({ id: "t_1" }), { status: 200 }); // trip pre-check
+    });
+
+    const out = await tools.add_journal_entry(
+      { trip_id: "t_1", body: "Best day ever", explorer_id: "p_1", mood: "happy", stars: 5 },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(out.isError).toBeFalsy();
+    expect(out.content[0].text).toContain("j_1");
+    expect(out.content[0].text).toMatch(/Saved to the journal/i);
+
+    const post = fetchSpy.mock.calls.find(
+      (c) => String(c[0]).endsWith("/journal") && (c[1] as RequestInit)?.method === "POST",
+    );
+    const body = JSON.parse(String((post?.[1] as RequestInit)?.body));
+    // profile_id is the explorer whose memory this is; stars are passed through.
+    expect(body).toMatchObject({
+      body: "Best day ever",
+      profile_id: "p_1",
+      mood: "happy",
+      stars: 5,
+    });
+  });
+
+  it("reads the journal, optionally filtered to one explorer", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ entries: [{ id: "j_1", body: "Sandcastles!" }] }), {
+        status: 200,
+      }),
+    );
+    const out = await tools.list_journal(
+      { trip_id: "t_1", explorer_id: "p_1" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(out.content[0].text).toContain("Sandcastles!");
+    // The explorer filter is forwarded as the contract's profile_id query param.
+    expect(String(fetchSpy.mock.calls[0][0])).toContain("profile_id=p_1");
+  });
+
   it("turns a missing trip into friendly branded guidance (no raw 500)", async () => {
     const { server, tools } = fakeServer();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -498,11 +641,15 @@ describe("MCP tools", () => {
     const names = Object.keys(tools).sort();
     expect(names).toEqual(
       [
+        "add_journal_entry",
         "add_reservation",
         "confirm_reservation",
+        "create_explorer",
         "edit_itinerary",
         "get_trip_brief",
         "get_trip_content",
+        "list_explorers",
+        "list_journal",
         "list_trips",
         "plan_trip",
         "request_new_trip",
@@ -565,13 +712,26 @@ describe("MCP prompts", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerYaycayPrompts(server as any);
     expect(Object.keys(prompts)).toEqual(
-      expect.arrayContaining(["plan_a_day", "something_for_everyone", "whats_nearby", "rainy_day"]),
+      expect.arrayContaining([
+        "plan_a_day",
+        "something_for_everyone",
+        "whats_nearby",
+        "rainy_day",
+        "journal_the_day",
+      ]),
     );
     const day = prompts.plan_a_day({ trip_id: "t_1", focus: "beach" });
     const text = day.messages[0].content.text;
     expect(text).toContain("t_1");
     expect(text).toContain("beach");
     expect(text).toMatch(/yay/i);
+
+    // The end-of-day journal flow carries the explorers + the rating ask.
+    const journal = prompts.journal_the_day({ trip_id: "t_1" });
+    const jtext = journal.messages[0].content.text;
+    expect(jtext).toContain("t_1");
+    expect(jtext).toContain("add_journal_entry");
+    expect(jtext).toMatch(/star rating/i);
   });
 });
 

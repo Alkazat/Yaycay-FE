@@ -3,6 +3,9 @@ import { getAccessToken } from "@/lib/auth/session";
 import type {
   ChildProfile,
   ChildProfileInput,
+  ExplorerLoginEnableResponse,
+  ExplorerLoginRequest,
+  ExplorerLoginStatus,
   PinVerifyResponse,
 } from "@/lib/contract-mock/types";
 
@@ -56,6 +59,44 @@ export async function setProfilePin(id: string, pin: string): Promise<ChildProfi
   });
   if (!res.ok) throw new Error(`Failed to set PIN (${res.status})`);
   return (await res.json()) as ChildProfile;
+}
+
+/** Whether this profile has its own explorer login (`GET /profiles/:id/login`). */
+export async function getExplorerLogin(id: string): Promise<ExplorerLoginStatus> {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch(`/profiles/${id}/login`, SERVED.profiles, { accessToken });
+  if (!res.ok) throw new Error(`Failed to load login status (${res.status})`);
+  return (await res.json()) as ExplorerLoginStatus;
+}
+
+/**
+ * Give this profile its own magic-link login (`POST /profiles/:id/login`).
+ * Idempotent; returns the sign-in `action_link` only on fresh provisioning.
+ */
+export async function enableExplorerLogin(
+  id: string,
+  email: string,
+): Promise<ExplorerLoginEnableResponse> {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch(`/profiles/${id}/login`, SERVED.profiles, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email } satisfies ExplorerLoginRequest),
+    accessToken,
+  });
+  if (!res.ok) throw new Error(`Failed to enable login (${res.status})`);
+  return (await res.json()) as ExplorerLoginEnableResponse;
+}
+
+/** Revoke this profile's explorer login (`DELETE /profiles/:id/login`). */
+export async function disableExplorerLogin(id: string): Promise<ExplorerLoginStatus> {
+  const accessToken = await getAccessToken();
+  const res = await apiFetch(`/profiles/${id}/login`, SERVED.profiles, {
+    method: "DELETE",
+    accessToken,
+  });
+  if (!res.ok) throw new Error(`Failed to revoke login (${res.status})`);
+  return (await res.json()) as ExplorerLoginStatus;
 }
 
 /**

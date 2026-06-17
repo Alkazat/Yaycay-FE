@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { OfflineBanner } from "@/components/shell/OfflineBanner";
+import { useCreateExplorer } from "@/components/profile/CreateExplorerProvider";
 
 interface NavItem {
   href: string;
@@ -57,6 +58,7 @@ function sectionFor(pathname: string): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   const section = sectionFor(pathname);
+  const { openCreateExplorer } = useCreateExplorer();
 
   // The brand mark is large at the top of a page and shrinks once you scroll.
   const [scrolled, setScrolled] = useState(false);
@@ -79,6 +81,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Image src="/icons/yaycay-wordmark.png" alt="Yaycay" width={132} height={76} priority />
         </Link>
         <div className="yc-appbar__actions">
+          <button
+            type="button"
+            className="yc-btn yc-btn--secondary yc-btn--sm yc-appbar__add"
+            onClick={() => openCreateExplorer()}
+            data-testid="add-explorer-global"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <span aria-hidden style={{ fontWeight: 900, fontSize: 16, lineHeight: 1 }}>
+              ＋
+            </span>
+            <span className="yc-appbar__add-label">Add explorer</span>
+          </button>
           <nav className="yc-appnav" aria-label="Primary">
             {NAV.map((item) => (
               <Link

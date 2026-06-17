@@ -41,7 +41,6 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
   );
 
   const isChild = type === "child";
-  const mode: ExplorerMode = isChild ? band : "standard";
 
   const save = useMutation({
     mutationFn: () => {
@@ -50,7 +49,9 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
         age: age.trim() ? Number(age) : null,
         avatar: avatar || null,
         type,
-        mode,
+        // Children store their band; a grown-up stores no band (the DB
+        // explorer_mode enum is children-only) - "standard" is derived on read.
+        mode: isChild ? band : null,
       };
       return editing ? updateProfile(profile.id, input) : createProfile(input);
     },
