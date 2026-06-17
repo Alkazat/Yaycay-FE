@@ -321,6 +321,75 @@ describe("MCP tools", () => {
     expect(out.content[0].text).toContain("can_create_here");
   });
 
+  it("requires the plan scope to create an explorer and derives a child's band from age", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+
+    const denied = await tools.create_explorer(
+      { name: "Maya" },
+      extraFor({ scopes: [SCOPES.read] }),
+    );
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0].text).toMatch(/plan/i);
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ id: "p_1", name: "Maya" }), { status: 201 }));
+    const out = await tools.create_explorer(
+      { name: "Maya", age: 4 },
+      extraFor({ scopes: [SCOPES.read, SCOPES.plan] }),
+    );
+    expect(out.isError).toBeFalsy();
+    expect(out.content[0].text).toContain("Maya");
+
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/profiles"));
+    expect((call?.[1] as RequestInit).method).toBe("POST");
+    const body = JSON.parse(String((call?.[1] as RequestInit).body));
+    expect(body).toMatchObject({ name: "Maya", type: "child", mode: "little", age: 4 });
+  });
+
+  it("creates a grown-up as a parent/carer in the standard voice", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ id: "p_2", name: "Nan" }), { status: 201 }));
+    const out = await tools.create_explorer(
+      { name: "Nan", kind: "grown_up" },
+      extraFor({ scopes: [SCOPES.plan] }),
+    );
+    expect(out.isError).toBeFalsy();
+    const call = fetchSpy.mock.calls.find((c) => String(c[0]).includes("/profiles"));
+    const body = JSON.parse(String((call?.[1] as RequestInit).body));
+    expect(body).toMatchObject({ name: "Nan", type: "parent_carer", mode: "standard" });
+    expect(body.age).toBeUndefined();
+  });
+
+  it("lists explorers and grown-ups as people without leaking dietary through the connector", async () => {
+    const { server, tools } = fakeServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerYaycayTools(server as any);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          profiles: [
+            { id: "p_1", name: "Maya", type: "child", mode: "little", age: 4, dietary: ["nut-free"] },
+            { id: "p_2", name: "Nan", type: "parent_carer", mode: "standard" },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const out = await tools.list_explorers({}, extraFor({ scopes: [SCOPES.read] }));
+    const text = out.content[0].text;
+    expect(text).toContain("Maya");
+    expect(text).toContain('"kind": "child"');
+    expect(text).toContain('"kind": "grown_up"');
+    expect(text).not.toContain("nut-free");
+  });
+
   it("turns a missing trip into friendly branded guidance (no raw 500)", async () => {
     const { server, tools } = fakeServer();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -500,9 +569,11 @@ describe("MCP tools", () => {
       [
         "add_reservation",
         "confirm_reservation",
+        "create_explorer",
         "edit_itinerary",
         "get_trip_brief",
         "get_trip_content",
+        "list_explorers",
         "list_trips",
         "plan_trip",
         "request_new_trip",

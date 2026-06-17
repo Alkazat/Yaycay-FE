@@ -177,6 +177,18 @@ async function drainPlanStream(res: Response): Promise<string> {
   return text;
 }
 
+/**
+ * Pick a child's explorer band from their age, mirroring the USER-TYPES handoff
+ * (Little under ~6, Explorer ~7-11, Big Explorer ~12+). Defaults to the middle
+ * band when no age is given, so a name-only create still lands somewhere sensible.
+ */
+function bandForAge(age?: number): "little" | "explorer" | "explorer_plus" {
+  if (typeof age !== "number") return "explorer";
+  if (age <= 6) return "little";
+  if (age <= 11) return "explorer";
+  return "explorer_plus";
+}
+
 /** Register every Yaycay tool on the given MCP server instance. */
 export function registerYaycayTools(server: McpServer): void {
   server.tool(
@@ -335,6 +347,68 @@ export function registerYaycayTools(server: McpServer): void {
           dashboard_url: dash,
           next_step: `After the family adds "${destination}" in the app, call list_trips to pick it up, then plan_trip to build it.`,
         });
+      }),
+  );
+
+  server.tool(
+    "list_explorers",
+    "List the family's people - the explorers (children) and grown-ups (parents/carers) who travel and use Yaycay. Returns id, name, kind, age band and age. Call this before create_explorer so you can spot someone who already exists instead of adding a duplicate. Note: dietary/medical details are NOT shared through the connector.",
+    {},
+    async (_args, extra) =>
+      safe(extra, SCOPES.read, async (auth) => {
+        const raw = await contractJson<{ profiles?: unknown[] } | unknown[]>("/profiles", auth);
+        const list = Array.isArray(raw) ? raw : (raw.profiles ?? []);
+        const people = (list as Record<string, unknown>[]).map((p) => ({
+          id: p.id,
+          name: p.name ?? "",
+          kind: p.type === "parent_carer" ? "grown_up" : "child",
+          band: (p.mode as string | null) ?? null,
+          ...(typeof p.age === "number" ? { age: p.age } : {}),
+        }));
+        return ok(people);
+      }),
+  );
+
+  server.tool(
+    "create_explorer",
+    [
+      "Add a new explorer (a child) or grown-up to the family so they can join trips and have their own Yaycay experience. Quick to use - just a name is required.",
+      "- kind: 'child' (an explorer) or 'grown_up' (a parent/carer). Defaults to 'child'.",
+      "- age: optional; for a child it picks the right band automatically (Little under ~6, Explorer ~7-11, Big Explorer ~12+).",
+      "- avatar: optional emoji for their card.",
+      "- interests: optional, a few things they love.",
+      "Whoever you add shows up everywhere the family looks - no copying needed. Dietary, medical and any login are set later in the Yaycay app, not here.",
+    ].join("\n"),
+    {
+      name: z.string().describe("The person's name, e.g. 'Maya'."),
+      kind: z
+        .enum(["child", "grown_up"])
+        .optional()
+        .describe("child (an explorer) or grown_up (a parent/carer). Defaults to child."),
+      age: z.number().int().min(0).max(18).optional().describe("A child's age - sets their band."),
+      avatar: z.string().optional().describe("An emoji for their card, e.g. '🦊'."),
+      interests: z
+        .array(z.string())
+        .optional()
+        .describe("A few things they love, e.g. ['dinosaurs','swimming']."),
+    },
+    async ({ name, kind, age, avatar, interests }, extra) =>
+      safe(extra, SCOPES.plan, async (auth) => {
+        const isGrownUp = kind === "grown_up";
+        const body: Record<string, unknown> = {
+          name,
+          type: isGrownUp ? "parent_carer" : "child",
+          mode: isGrownUp ? "standard" : bandForAge(age),
+        };
+        if (typeof age === "number") body.age = age;
+        if (avatar) body.avatar = avatar;
+        if (interests && interests.length) body.interests = interests;
+        const saved = await contractJson("/profiles", { ...auth, method: "POST", body });
+        const who = isGrownUp ? "grown-up" : "explorer";
+        return done(
+          `Added ${name} as a new ${who}! They're set up across the family now and ready to join the trip. You can fine-tune their details - and add any dietary, medical or sign-in - in the Yaycay app.`,
+          saved,
+        );
       }),
   );
 

@@ -6,6 +6,7 @@ import { streamPlanChat } from "@/lib/api/planChat";
 import type { ChatMessage } from "@/lib/contract-mock/types";
 import { ChatThinking } from "@/components/chat/ChatThinking";
 import { BrandLogo } from "@/components/brand/AssistantMark";
+import { useCreateExplorer } from "@/components/profile/CreateExplorerProvider";
 import { Button } from "@/components/ds";
 
 const SUGGESTIONS = [
@@ -27,6 +28,7 @@ export function PlanChat({ tripId, locked = false }: { tripId: string; locked?: 
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
+  const { openCreateExplorer } = useCreateExplorer();
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
@@ -136,6 +138,28 @@ export function PlanChat({ tripId, locked = false }: { tripId: string; locked?: 
       </div>
 
       <div className="yc-chat__composer">
+        <button
+          type="button"
+          aria-label="Add an explorer"
+          title="Add an explorer or grown-up"
+          onClick={() => openCreateExplorer()}
+          data-testid="chat-add-explorer"
+          style={{
+            flex: "0 0 auto",
+            width: 46,
+            minHeight: 46,
+            borderRadius: "var(--radius-md)",
+            border: "2.5px solid var(--sand-300)",
+            background: "var(--surface-card)",
+            color: "var(--sky-600, #2f6fd8)",
+            fontWeight: 900,
+            fontSize: 20,
+            lineHeight: 1,
+            cursor: "pointer",
+          }}
+        >
+          ＋
+        </button>
         <input
           aria-label="Message Yaycay"
           value={input}
