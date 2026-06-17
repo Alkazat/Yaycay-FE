@@ -130,16 +130,22 @@ export function CreateTripModal({ onClose }: { onClose: () => void }) {
   };
 
   const create = useMutation({
-    mutationFn: () => createTrip({ destination: destination.trim(), ...dates() }),
-    onSuccess: async (trip) => {
+    // Create the trip, then (for a paid plan) open Checkout - both in the
+    // mutation so either failure surfaces as an error here, instead of the
+    // checkout step throwing unnoticed inside onSuccess (which left the trip
+    // created but no Stripe redirect, reported only as a generic failure).
+    mutationFn: async () => {
+      const trip = await createTrip({ destination: destination.trim(), ...dates() });
       qc.invalidateQueries({ queryKey: ["trips"] });
-      if (plan === "free") {
-        router.push(`/trips/${trip.id}`);
-        return;
-      }
+      if (plan === "free") return { tripId: trip.id, url: null as string | null };
       const product = plan === "ours" ? PRODUCTS.ours : PRODUCTS.byo;
       const { url } = await createCheckoutSession({ price_id: product.id, trip_id: trip.id });
-      window.location.href = url;
+      if (!url) throw new Error("Checkout did not return a payment link.");
+      return { tripId: trip.id, url };
+    },
+    onSuccess: ({ tripId, url }) => {
+      if (url) window.location.href = url;
+      else router.push(`/trips/${tripId}`);
     },
   });
 
@@ -216,7 +222,10 @@ export function CreateTripModal({ onClose }: { onClose: () => void }) {
         </Button>
         {create.isError ? (
           <p style={{ margin: 0, color: "var(--coral-500)", fontWeight: 700 }}>
-            We couldn&rsquo;t create that trip. Give it another go?
+            {plan === "free"
+              ? "We couldn’t create that trip. Give it another go?"
+              : "We couldn’t start checkout. Give it another go?"}
+            {create.error instanceof Error ? ` (${create.error.message})` : null}
           </p>
         ) : null}
       </div>
