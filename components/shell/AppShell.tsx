@@ -59,9 +59,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const section = sectionFor(pathname);
 
   // The brand mark is large at the top of a page and shrinks once you scroll.
+  // Use a hysteresis band (shrink past 64px, only grow back under 8px) so the
+  // header can't flip-flop at a single threshold: shrinking it shifts layout,
+  // which would otherwise bounce scrollY back across the line and jiggle.
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled((prev) => (prev ? y > 8 : y > 64));
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
