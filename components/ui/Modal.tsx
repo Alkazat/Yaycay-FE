@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Card, CardBody } from "@/components/ds";
 
 /** Lightweight overlay modal: backdrop-click + Escape close, centred card. */
@@ -15,6 +16,12 @@ export function Modal({
   children: ReactNode;
   maxWidth?: number;
 }) {
+  // Portal to <body> so the overlay escapes any transformed / overflow-hidden
+  // ancestor (e.g. a trip card with a hover-lift transform), which would
+  // otherwise trap `position: fixed` inside the card and clip it. SSR-gated.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -23,7 +30,9 @@ export function Modal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -45,6 +54,7 @@ export function Modal({
       <Card variant="soft" style={{ width: "100%", maxWidth }}>
         <CardBody title={title}>{children}</CardBody>
       </Card>
-    </div>
+    </div>,
+    document.body,
   );
 }
