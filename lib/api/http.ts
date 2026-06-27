@@ -111,4 +111,10 @@ export const SERVED = {
   duplicateTrip: true,
   shareTrip: true,
   sharedTrip: true,
+  // Trip economics layer (per-child challenges, cash budget, itemised costs, star
+  // rewards). Mock-backed until BE ships these handlers; flip to true once live.
+  challenges: true,
+  budget: true,
+  costs: true,
+  rewards: true,
 } as const;

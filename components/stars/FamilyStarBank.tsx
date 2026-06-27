@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getStars } from "@/lib/api/stars";
-import { balanceFor, sgdValue, STAR_CURRENCY, STAR_VALUE } from "@/lib/stars";
+import { balanceFor, STAR_CURRENCY, STAR_VALUE } from "@/lib/stars";
 import type { ChildProfile } from "@/lib/contract-mock/types";
 import { Card, CardBody, Badge } from "@/components/ds";
+import { useTripRewards } from "@/components/trips/useTripEconomics";
 
 /**
  * The family Star Bank shown on the book's Home - emulating the gold standard's
@@ -25,18 +26,49 @@ export function FamilyStarBank({
     queryKey: ["stars", tripId, "family"],
     queryFn: ({ signal }) => getStars(tripId, "family", signal),
   });
+  const rewardsQuery = useTripRewards(tripId);
+
+  // Use the trip-default reward config (profile_id == null) when available;
+  // fall back to the hardcoded prototype values.
+  const defaultReward = rewardsQuery.data?.rewards.find((r) => r.profile_id == null);
+  const starValue = defaultReward?.star_value ?? STAR_VALUE;
+  const starCurrency = defaultReward?.currency ?? STAR_CURRENCY;
+  const starTarget = defaultReward?.star_target;
+  const starBudget = defaultReward?.star_budget;
+
+  // Total stars earned across all children (from balances)
+  const totalStars = kids.reduce((sum, k) => sum + balanceFor(data, k.id), 0);
+
+  function rewardValue(stars: number): string {
+    return `${starCurrency} ${(stars * starValue).toLocaleString("en", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  }
 
   return (
     <Card>
       <CardBody title="Star bank">
         <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
-          1 star = {STAR_VALUE} {STAR_CURRENCY} of holiday spending money
+          1 star = {starValue} {starCurrency} of holiday spending money
         </p>
+        {starTarget != null ? (
+          <p style={{ margin: 0, color: "var(--royal-700)", fontWeight: 700 }}>
+            {totalStars} / {starTarget} stars
+            {starBudget != null ? (
+              <span style={{ color: "var(--meadow-600)", fontWeight: 800 }}>
+                {" "}
+                · {starCurrency} {starBudget} earnable
+              </span>
+            ) : null}
+          </p>
+        ) : null}
         <div className="yc-fsb">
           {kids.map((k) => {
             const n = balanceFor(data, k.id);
             return (
-              <div key={k.id} className="yc-fsb__row" data-active={k.id === activeId ? "true" : undefined}>
+              <div
+                key={k.id}
+                className="yc-fsb__row"
+                data-active={k.id === activeId ? "true" : undefined}
+              >
                 <span className="yc-fsb__avatar" aria-hidden="true">
                   {k.avatar ?? (k.name.trim()[0] ?? "?").toUpperCase()}
                 </span>
@@ -44,9 +76,7 @@ export function FamilyStarBank({
                 <Badge tone="sun">
                   {n} {n === 1 ? "star" : "stars"}
                 </Badge>
-                <span className="yc-fsb__sgd">
-                  {sgdValue(n)} {STAR_CURRENCY}
-                </span>
+                <span className="yc-fsb__sgd">{rewardValue(n)}</span>
               </div>
             );
           })}
