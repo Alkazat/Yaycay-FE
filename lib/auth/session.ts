@@ -15,3 +15,22 @@ export async function getAccessToken(): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * Sign the current user out: revokes the Supabase session and clears any
+ * persisted query cache from localStorage. After this call, redirect the user
+ * to the login route so in-memory state is fully dropped.
+ */
+export async function signOut(): Promise<void> {
+  try {
+    const supabase = createClient();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+  } catch {
+    // Best-effort: always proceed to clear local state.
+  }
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("yaycay.query-cache");
+  }
+}

@@ -427,3 +427,90 @@ export interface FeaturesUpdateRequest {
   profile_id: string;
   overrides: Record<string, boolean>;
 }
+
+/* --------------------------------------------------------------------------
+ * Trip economics (kept local - not yet in the published contract).
+ *
+ * Four new per-trip surfaces shipped in the economics layer:
+ *   GET /trips/:id/challenges?profile=<uuid?>  → per-child quiz/spot/photo tasks
+ *   GET /trips/:id/budget                      → cash budget + exchange rate
+ *   GET /trips/:id/costs                       → itemised spend per day/node
+ *   GET /trips/:id/rewards                     → star → cash reward config
+ * ------------------------------------------------------------------------ */
+
+/** Kind of per-child challenge attached to a day/node. */
+export type TripChallengeKind = "quiz" | "spot" | "photo" | "challenge";
+
+/** A single per-child challenge for a trip day/node. */
+export interface TripChallenge {
+  id: string;
+  trip_id: string;
+  profile_id: string;
+  day: string;
+  node_ref: string;
+  kind: TripChallengeKind;
+  prompt: string;
+  answer: string | null;
+  options: string[];
+  stars: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChallengesResponse {
+  challenges: TripChallenge[];
+}
+
+/** Cash budget and exchange rate for a trip. Null when not yet configured. */
+export interface TripBudget {
+  trip_id: string;
+  base_currency: string;
+  home_currency: string;
+  exchange_rate: number | null;
+  rate_as_of: string | null;
+  cash_budget: number | null;
+  daily_cash_budget: number | null;
+  updated_at: string;
+}
+
+export interface BudgetResponse {
+  budget: TripBudget | null;
+}
+
+/** A single itemised cost line for a trip day/node. */
+export interface TripCost {
+  id: string;
+  trip_id: string;
+  reservation_id: string | null;
+  day: string;
+  node_ref: string;
+  label: string;
+  amount_base: number | null;
+  amount_home: number | null;
+  currency_base: string;
+  currency_home: string;
+  paid: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CostsResponse {
+  costs: TripCost[];
+}
+
+/** Reward config: how many stars a child needs to earn a cash reward. */
+export interface TripRewardConfig {
+  id: string;
+  trip_id: string;
+  profile_id: string | null;
+  star_value: number | null;
+  currency: string;
+  star_target: number | null;
+  star_budget: number | null;
+  updated_at: string;
+}
+
+export interface RewardsResponse {
+  rewards: TripRewardConfig[];
+}
