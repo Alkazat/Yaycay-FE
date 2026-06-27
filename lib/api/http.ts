@@ -111,4 +111,11 @@ export const SERVED = {
   duplicateTrip: true,
   shareTrip: true,
   sharedTrip: true,
+  // Trip economics layer (per-child challenges, cash budget, itemised costs, star
+  // rewards). Live: BE ships these (migration 0036 + /trips/:id/{challenges,budget,
+  // costs,rewards}). Mock routes remain as the offline/no-API-base fallback.
+  challenges: true,
+  budget: true,
+  costs: true,
+  rewards: true,
 } as const;

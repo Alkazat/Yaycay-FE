@@ -158,14 +158,14 @@ export const MOCK_TRIPS: TripSummary[] = [
   {
     id: "t_sg",
     destination: "Singapore",
-    start_date: "2026-06-26",
-    end_date: "2026-07-07",
+    start_date: "2026-08-01",
+    end_date: "2026-08-12",
     timezone: "Asia/Singapore",
     tier: "ours",
     status: "ready",
     day_count: 12,
     // 12 months after the holiday ends, unless a keep-token is bought.
-    retention_expires_at: "2027-07-07",
+    retention_expires_at: "2027-08-12",
     data_kept: false,
   },
 ];
@@ -175,15 +175,15 @@ const SINGAPORE_TRIP: TripContent = {
   trip: {
     id: "t_sg",
     destination: "Singapore",
-    start_date: "2026-06-26",
-    end_date: "2026-07-07",
+    start_date: "2026-08-01",
+    end_date: "2026-08-12",
     timezone: "Asia/Singapore",
     currency: "SGD",
   },
   days: [
     {
       id: "d_1",
-      date: "2026-06-26",
+      date: "2026-08-01",
       label: "Arrival",
       summary: "Land, settle in, and dip your toes in the day with an easy first afternoon.",
       did_you_know:
@@ -254,7 +254,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_2",
-      date: "2026-06-27",
+      date: "2026-08-02",
       label: "Explorers",
       summary: "A big day out among gardens, clouds, and very tall trees.",
       did_you_know: "The Cloud Forest has the tallest indoor waterfall in the world!",
@@ -387,7 +387,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_3",
-      date: "2026-06-28",
+      date: "2026-08-03",
       label: "Last splash",
       summary: "One more adventure before home time.",
       moments: [
@@ -419,7 +419,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_4",
-      date: "2026-06-29",
+      date: "2026-08-04",
       label: "Waterpark",
       summary: "A whole day of slides, waves and snorkelling with real fish at Adventure Cove.",
       did_you_know:
@@ -508,7 +508,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_5",
-      date: "2026-06-30",
+      date: "2026-08-05",
       label: "Night Safari",
       summary: "Move to the rainforest, meet giant pandas by day and roaming animals after dark.",
       did_you_know: "Night Safari is the world's FIRST zoo built just for night-time animals!",
@@ -617,7 +617,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_6",
-      date: "2026-07-01",
+      date: "2026-08-06",
       label: "Orangutans",
       summary: "Breakfast beside the orangutans, then explore a brand-new rainforest adventure park.",
       did_you_know: "Today might be the most magical morning of the whole trip - breakfast WITH orangutans!",
@@ -759,7 +759,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_7",
-      date: "2026-07-02",
+      date: "2026-08-07",
       label: "Botanic Gardens",
       summary: "A gentle day: a UNESCO garden in the morning, then a museum made entirely of ice cream.",
       did_you_know:
@@ -926,7 +926,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_8",
-      date: "2026-07-03",
+      date: "2026-08-08",
       label: "teamLab",
       summary: "Digital art you can touch, then the colours of Little India and Chinatown.",
       did_you_know: "Every Friday at teamLab, kids under 12 get in FREE with an adult ticket!",
@@ -1107,7 +1107,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_9",
-      date: "2026-07-04",
+      date: "2026-08-09",
       label: "Gardens by the Bay",
       summary: "Specialty coffee in Joo Chiat, then the Cloud Forest and two free light shows.",
       did_you_know:
@@ -1226,7 +1226,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_10",
-      date: "2026-07-05",
+      date: "2026-08-10",
       label: "Orchard Road",
       summary: "Souvenir hunting along Singapore's famous shopping street, then a huge world buffet.",
       did_you_know:
@@ -1360,7 +1360,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_11",
-      date: "2026-07-06",
+      date: "2026-08-11",
       label: "Universal Studios",
       summary: "A scenic cable car in, then a full day of coasters at Universal Studios.",
       did_you_know:
@@ -1471,7 +1471,7 @@ const SINGAPORE_TRIP: TripContent = {
     },
     {
       id: "d_12",
-      date: "2026-07-07",
+      date: "2026-08-12",
       label: "Fly Home",
       summary: "One last wonder at Jewel Changi, then the flight home with a heart full of memories.",
       did_you_know:

@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getAccount,
-  createCheckoutSession,
-  updateAccount,
-} from "@/lib/api/account";
+import { getAccount, createCheckoutSession, updateAccount } from "@/lib/api/account";
 import { listTrips, archiveTrip, duplicateTrip } from "@/lib/api/trips";
 import { listTransactions } from "@/lib/api/transactions";
 import { retentionStatus } from "@/lib/retention";
@@ -21,6 +17,7 @@ import {
 } from "@/components/brand/AssistantMark";
 import { ShareTripModal } from "@/components/trips/ShareTripModal";
 import { Card, CardBody, Button, Badge, Banner, Input } from "@/components/ds";
+import { signOut } from "@/lib/auth/session";
 
 /** US dollars, no fake precision: whole dollars unless cents are present. */
 function formatUsd(amount: number): string {
@@ -67,11 +64,23 @@ function ConnectedAssistantsHero() {
           through a secure connector.
         </p>
 
-        <div style={{ display: "flex", gap: "var(--space-4)", margin: "var(--space-4) 0", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "var(--space-4)",
+            margin: "var(--space-4) 0",
+            flexWrap: "wrap",
+          }}
+        >
           {BRANDS.map((b) => (
-            <div key={b} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <div
+              key={b}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
+            >
               <AssistantMark brand={b} size={40} />
-              <span style={{ fontWeight: 800, fontSize: "var(--fs-sm)" }}>{ASSISTANT_LABEL[b]}</span>
+              <span style={{ fontWeight: 800, fontSize: "var(--fs-sm)" }}>
+                {ASSISTANT_LABEL[b]}
+              </span>
             </div>
           ))}
         </div>
@@ -115,7 +124,9 @@ function ConnectedAssistantsHero() {
                       background: "var(--surface, #fff)",
                     }}
                   >
-                    <span style={{ width: 32, display: "grid", placeItems: "center", flex: "none" }}>
+                    <span
+                      style={{ width: 32, display: "grid", placeItems: "center", flex: "none" }}
+                    >
                       {brand ? (
                         <AssistantMark brand={brand} size={28} />
                       ) : (
@@ -126,7 +137,13 @@ function ConnectedAssistantsHero() {
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <strong style={{ display: "block" }}>{c.client_name}</strong>
-                      <span style={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "var(--fs-sm)" }}>
+                      <span
+                        style={{
+                          color: "var(--text-muted)",
+                          fontWeight: 700,
+                          fontSize: "var(--fs-sm)",
+                        }}
+                      >
                         {c.last_used_at
                           ? `Last used ${new Date(c.last_used_at).toLocaleDateString()}`
                           : "Not used yet"}
@@ -189,7 +206,14 @@ function ProfileForm({ account }: { account: AccountSummary }) {
         placeholder="you@example.com"
       />
       <div>
-        <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700, fontSize: "var(--fs-sm)" }}>
+        <p
+          style={{
+            margin: 0,
+            color: "var(--text-muted)",
+            fontWeight: 700,
+            fontSize: "var(--fs-sm)",
+          }}
+        >
           Login email
         </p>
         <p style={{ margin: "2px 0 0" }}>
@@ -200,8 +224,15 @@ function ProfileForm({ account }: { account: AccountSummary }) {
         </p>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
-        <Button variant="primary" size="sm" onClick={() => save.mutate()} disabled={save.isPending || !dirty}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}
+      >
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => save.mutate()}
+          disabled={save.isPending || !dirty}
+        >
           {save.isPending ? "Saving..." : "Save changes"}
         </Button>
         {save.isError ? (
@@ -221,14 +252,23 @@ function SettingsPanel({ account }: { account: AccountSummary }) {
   return (
     <Card>
       <CardBody title="Settings">
-        <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap" }}
+        >
           <Badge tone="sky">{TIER_NAME[account.tier]}</Badge>
           <Badge tone={account.two_factor_enrolled ? "meadow" : "soft"}>
             {account.two_factor_enrolled ? "2FA on" : "2FA off"}
           </Badge>
         </div>
         <p style={{ margin: "var(--space-2) 0 0" }}>{TIER_BLURB[account.tier]}</p>
-        <p style={{ margin: "var(--space-1) 0 var(--space-3)", color: "var(--text-muted)", fontWeight: 700, fontSize: "var(--fs-sm)" }}>
+        <p
+          style={{
+            margin: "var(--space-1) 0 var(--space-3)",
+            color: "var(--text-muted)",
+            fontWeight: 700,
+            fontSize: "var(--fs-sm)",
+          }}
+        >
           Member since {formatHumanDate(account.created_at)}
         </p>
 
@@ -271,11 +311,16 @@ function TransactionHistory() {
         {isLoading ? <p style={{ margin: 0 }}>Loading...</p> : null}
         {isError ? <Banner tone="danger">We couldn&rsquo;t load your transactions.</Banner> : null}
         {data && data.length === 0 ? (
-          <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>No transactions yet.</p>
+          <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
+            No transactions yet.
+          </p>
         ) : null}
         {data && data.length > 0 ? (
           <div style={{ overflowX: "auto" }}>
-            <table data-testid="transactions-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table
+              data-testid="transactions-table"
+              style={{ width: "100%", borderCollapse: "collapse" }}
+            >
               <thead>
                 <tr>
                   <th style={TH_STYLE}>Date</th>
@@ -299,7 +344,14 @@ function TransactionHistory() {
                         <span style={{ color: "var(--text-muted)", fontWeight: 700 }}>—</span>
                       )}
                     </td>
-                    <td style={{ ...TD_STYLE, textAlign: "right", fontWeight: 800, whiteSpace: "nowrap" }}>
+                    <td
+                      style={{
+                        ...TD_STYLE,
+                        textAlign: "right",
+                        fontWeight: 800,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {formatUsd(t.amount_usd)}
                     </td>
                     <td style={TD_STYLE}>
@@ -340,8 +392,14 @@ function DataRow({
   const archived = trip.status === "archived";
   const invalidate = () => qc.invalidateQueries({ queryKey: ["trips"] });
 
-  const archive = useMutation({ mutationFn: () => archiveTrip(trip.id, !archived), onSuccess: invalidate });
-  const duplicate = useMutation({ mutationFn: () => duplicateTrip(trip.id), onSuccess: invalidate });
+  const archive = useMutation({
+    mutationFn: () => archiveTrip(trip.id, !archived),
+    onSuccess: invalidate,
+  });
+  const duplicate = useMutation({
+    mutationFn: () => duplicateTrip(trip.id),
+    onSuccess: invalidate,
+  });
   const busy = archive.isPending || duplicate.isPending;
 
   return (
@@ -389,7 +447,11 @@ function DataRow({
 }
 
 export function AccountClient() {
-  const accountQuery = useQuery({ queryKey: ["account"], queryFn: ({ signal }) => getAccount(signal) });
+  const [signingOut, setSigningOut] = useState(false);
+  const accountQuery = useQuery({
+    queryKey: ["account"],
+    queryFn: ({ signal }) => getAccount(signal),
+  });
   const tripsQuery = useQuery({ queryKey: ["trips"], queryFn: ({ signal }) => listTrips(signal) });
 
   const checkout = useMutation({
@@ -406,11 +468,38 @@ export function AccountClient() {
 
   return (
     <div className="yc-stack" data-testid="account">
-      <header>
-        <h1 style={{ margin: 0 }}>Account</h1>
-        <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
-          Your assistants, plan, memories and settings.
-        </p>
+      <header
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <h1 style={{ margin: 0 }}>Account</h1>
+          <p style={{ margin: 0, color: "var(--text-muted)", fontWeight: 700 }}>
+            Your assistants, plan, memories and settings.
+          </p>
+          {account?.email ? (
+            <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: "0.85em" }}>
+              Signed in as {account.email}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          className="yc-btn yc-btn--secondary yc-btn--sm"
+          disabled={signingOut}
+          onClick={async () => {
+            setSigningOut(true);
+            await signOut();
+            window.location.href = "/auth";
+          }}
+        >
+          {signingOut ? "Signing out…" : "Log out"}
+        </button>
       </header>
 
       {accountQuery.isLoading ? <p>Loading your account...</p> : null}
@@ -441,7 +530,12 @@ export function AccountClient() {
                 </thead>
                 <tbody>
                   {trips.map((t) => (
-                    <DataRow key={t.id} trip={t} onKeep={(trip) => checkout.mutate(trip)} keeping={checkout.isPending} />
+                    <DataRow
+                      key={t.id}
+                      trip={t}
+                      onKeep={(trip) => checkout.mutate(trip)}
+                      keeping={checkout.isPending}
+                    />
                   ))}
                 </tbody>
               </table>
