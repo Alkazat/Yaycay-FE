@@ -41,9 +41,10 @@ export function StarBank({ tripId, profile, day }: StarBankProps) {
 
   // Reward config: use per-child or trip-default; fall back to hardcoded prototype.
   const rewardsQuery = useTripRewards(tripId);
+  const rewards = rewardsQuery.data?.rewards ?? [];
   const reward =
-    rewardsQuery.data?.rewards.find((r) => r.profile_id === profile.id) ??
-    rewardsQuery.data?.rewards.find((r) => r.profile_id == null);
+    rewards.find((r) => r.profile_id === profile.id) ??
+    rewards.find((r) => r.profile_id == null);
   const starValue = reward?.star_value ?? STAR_VALUE;
   const starCurrency = reward?.currency ?? STAR_CURRENCY;
 

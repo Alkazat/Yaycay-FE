@@ -30,7 +30,7 @@ export function FamilyStarBank({
 
   // Use the trip-default reward config (profile_id == null) when available;
   // fall back to the hardcoded prototype values.
-  const defaultReward = rewardsQuery.data?.rewards.find((r) => r.profile_id == null);
+  const defaultReward = (rewardsQuery.data?.rewards ?? []).find((r) => r.profile_id == null);
   const starValue = defaultReward?.star_value ?? STAR_VALUE;
   const starCurrency = defaultReward?.currency ?? STAR_CURRENCY;
   const starTarget = defaultReward?.star_target;
