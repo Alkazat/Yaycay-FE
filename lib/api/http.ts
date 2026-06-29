@@ -118,4 +118,8 @@ export const SERVED = {
   budget: true,
   costs: true,
   rewards: true,
+  // Per-trip membership roster (`GET|POST /trips/:id/members`,
+  // `DELETE /trips/:id/members/:profileId`). Not yet live - mock-backed until
+  // BE ships the endpoint. See docs/handoffs.
+  members: false,
 } as const;

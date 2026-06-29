@@ -3,6 +3,7 @@
 import type { ChildProfile, ExplorerMode } from "@/lib/contract-mock/types";
 import { Countdown } from "@/components/Countdown";
 import { isChild, isParentCarer, modeForProfile } from "@/lib/profile/access";
+import { resolvedAge } from "@/lib/age";
 
 /**
  * The warm "Who's exploring?" entry to a trip's Exploring experience - emulating
@@ -80,6 +81,12 @@ export function TripCover({
         <div className="yc-cover__people" role="group" aria-label="Choose your explorer">
           {children.map((p) => {
             const tone = TONE_BY_MODE[modeForProfile(p)] ?? "sky";
+            // Prefer DOB-computed age relative to the trip start; fall back to stored age.
+            const displayAge = resolvedAge(
+              (p as ChildProfile & { date_of_birth?: string | null }).date_of_birth,
+              p.age,
+              startDate,
+            );
             return (
               <button
                 key={p.id}
@@ -92,8 +99,8 @@ export function TripCover({
                   {p.avatar ?? initial(p.name)}
                 </span>
                 <span className="yc-cover__name">{p.name}</span>
-                {typeof p.age === "number" ? (
-                  <span className="yc-cover__age">Age {p.age}</span>
+                {displayAge !== null ? (
+                  <span className="yc-cover__age">Age {displayAge}</span>
                 ) : null}
               </button>
             );
