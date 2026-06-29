@@ -111,7 +111,7 @@ export function TripMemberManager({ tripId, tripStartDate }: TripMemberManagerPr
     <section className="yc-tmm" data-testid="trip-member-manager">
       <div className="yc-tmm__header">
         <h3 className="yc-tmm__title">
-          <span aria-hidden="true">🧑‍🤝‍🧑</span> Who's on this trip?
+          <span aria-hidden="true">🧑‍🤝‍🧑</span> Who&apos;s on this trip?
         </h3>
         <Button
           variant="secondary"
