@@ -451,6 +451,32 @@ export interface FeaturesUpdateRequest {
 }
 
 /* --------------------------------------------------------------------------
+ * Per-trip membership (kept local - not yet in the published contract).
+ *
+ * Each trip has its own roster of explorers + grown-ups (`GET /trips/:id/members`).
+ * Profiles are reusable: a profile can be added to multiple trips but membership
+ * is per-trip (add/remove via `POST|DELETE /trips/:id/members`).
+ *
+ * `date_of_birth` is an extra field the BE now emits on ChildProfile when present.
+ * The published contract does not yet model it, so we declare it as an augmentation
+ * here (the same pattern the economics layer uses for local-only shapes).
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Local augmentation of the contract `ChildProfile` with the new `date_of_birth`
+ * field. Use this type wherever a profile may carry a DOB (trip member endpoints).
+ * The base `ChildProfile` re-exported from the contract remains unchanged.
+ */
+export interface ProfileWithDob {
+  date_of_birth?: string | null;
+}
+
+/** Response shape for `GET /trips/:id/members` and `POST /trips/:id/members`. */
+export interface TripMembersResponse {
+  members: Array<import("@alkazat/contracts").ChildProfile & ProfileWithDob>;
+}
+
+/* --------------------------------------------------------------------------
  * Trip economics (kept local - not yet in the published contract).
  *
  * Four new per-trip surfaces shipped in the economics layer:

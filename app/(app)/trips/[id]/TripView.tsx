@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTripContent, listProfiles } from "@/lib/api/trips";
+import { getTripContent } from "@/lib/api/trips";
+import { useTripMembers } from "@/components/trips/useTripMembers";
 import { getProgress, setActivityDone } from "@/lib/api/progress";
 import { tripProgress, dayCompletion } from "@/lib/render/progress";
 import { todayDayId } from "@/lib/render/today";
@@ -45,10 +46,8 @@ export function TripView({ tripId }: { tripId: string }) {
     queryKey: ["trip", tripId],
     queryFn: ({ signal }) => getTripContent(tripId, signal),
   });
-  const profilesQuery = useQuery({
-    queryKey: ["profiles"],
-    queryFn: ({ signal }) => listProfiles(signal),
-  });
+  // Source profiles from THIS trip's member roster, not the whole account.
+  const { query: membersQuery } = useTripMembers(tripId);
 
   const [view, setView] = useState<RenderView>("kid");
   const [activeDayId, setActiveDayId] = useState<string | null>(null);
@@ -72,7 +71,7 @@ export function TripView({ tripId }: { tripId: string }) {
   const featureToggles = useTripFeatures(tripId);
 
   const trip = tripQuery.data;
-  const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data]);
+  const profiles = useMemo(() => membersQuery.data?.members ?? [], [membersQuery.data]);
 
   // Honour the mode chosen at the trip tile (?mode=explore|plan), once per entry.
   const searchParams = useSearchParams();
@@ -193,7 +192,7 @@ export function TripView({ tripId }: { tripId: string }) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: progressKey }),
   });
 
-  if (tripQuery.isLoading) return <BrandLoading label="Opening your trip…" />;
+  if (tripQuery.isLoading || membersQuery.isLoading) return <BrandLoading label="Opening your trip…" />;
   if (tripQuery.isError || !trip) {
     return (
       <Card variant="soft">

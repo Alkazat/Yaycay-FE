@@ -20,6 +20,7 @@ import {
 } from "@/lib/features";
 import { addDayOp, addMomentOp, MOMENT_SLOTS } from "@/lib/planOps";
 import type { ChildProfile, Moment, PackingList, PatchOp, Tier, TripContent } from "@/lib/contract-mock/types";
+import { TripMemberManager } from "@/components/trips/TripMemberManager";
 
 interface PlanningPanelProps {
   tripId: string;
@@ -260,6 +261,9 @@ export function PlanningPanel({
               </div>
             </details>
           </Card>
+
+          {/* Trip membership roster: who's on this trip + add/remove control. */}
+          <TripMemberManager tripId={tripId} tripStartDate={trip.trip.start_date} />
 
           {/* Hands-on: tailor each explorer's experience (collapsed by default). */}
           {explorers.length > 0 ? (

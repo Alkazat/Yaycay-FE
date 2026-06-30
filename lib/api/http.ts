@@ -118,4 +118,8 @@ export const SERVED = {
   budget: true,
   costs: true,
   rewards: true,
+  // Per-trip membership roster (`GET|POST /trips/:id/members`,
+  // `DELETE /trips/:id/members/:profileId`). Live as of BE migration 0037; the
+  // mock routes remain as the offline / no-API-base fallback.
+  members: true,
 } as const;

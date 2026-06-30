@@ -34,6 +34,9 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
 
   const [name, setName] = useState(profile?.name ?? "");
   const [age, setAge] = useState(profile?.age != null ? String(profile.age) : "");
+  const [dob, setDob] = useState(
+    (profile as (typeof profile) & { date_of_birth?: string | null })?.date_of_birth ?? "",
+  );
   const [avatar, setAvatar] = useState(profile?.avatar ?? "");
   const [type] = useState<ProfileType>(lockedType ?? profile?.type ?? "child");
   const [band, setBand] = useState<ExplorerMode>(
@@ -44,7 +47,7 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
 
   const save = useMutation({
     mutationFn: () => {
-      const input: ChildProfileInput = {
+      const input: ChildProfileInput & { date_of_birth?: string | null } = {
         name: name.trim(),
         age: age.trim() ? Number(age) : null,
         avatar: avatar || null,
@@ -52,6 +55,9 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
         // Children store their band; a grown-up stores no band (the DB
         // explorer_mode enum is children-only) - "standard" is derived on read.
         mode: isChild ? band : null,
+        // date_of_birth is an extension not yet in the published ChildProfileInput;
+        // we carry it as a local extra field the mock store accepts.
+        date_of_birth: dob.trim() || null,
       };
       return editing ? updateProfile(profile.id, input) : createProfile(input);
     },
@@ -118,6 +124,14 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
         max={120}
         value={age}
         onChange={(e) => setAge(e.target.value)}
+      />
+
+      <Input
+        label="Date of birth (optional)"
+        type="date"
+        value={dob}
+        onChange={(e) => setDob(e.target.value)}
+        data-testid="profile-dob"
       />
 
       {isChild ? (
