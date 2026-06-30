@@ -2,7 +2,7 @@
  * ============================================================================
  * @alkazat/contracts adoption barrel (FE)
  * ============================================================================
- * The FE now pins `@alkazat/contracts@^0.8.0` (GitHub Packages). The wire DTOs
+ * The FE now pins `@alkazat/contracts@^0.35.0` (GitHub Packages). The wire DTOs
  * that match the published contract are re-exported straight from the package
  * below, so there is a single source of truth for the request/response shapes
  * the FE exchanges with BE.
@@ -117,6 +117,17 @@ export type {
   CompanionRainPlan,
   CompanionCard,
   CompanionResponse,
+  // Explorer own-login (contract v0.29): mirror of the local types below; local
+  // versions removed now that 0.35.0 is published.
+  ExplorerLoginStatus,
+  ExplorerLoginRequest,
+  ExplorerLoginEnableResponse,
+  // Per-trip membership (contract v0.34): TripMembersResponse + AddTripMemberRequest.
+  // ChildProfile now carries date_of_birth, so ProfileWithDob shim is removed.
+  TripMembersResponse,
+  AddTripMemberRequest,
+  // MomentSlot widened to include midday + night (contract v0.34).
+  MomentSlot,
 } from "@alkazat/contracts";
 
 // ===========================================================================
@@ -135,30 +146,10 @@ export type ProfileMode = ExplorerMode;
 // `ProfileType`, `PinRequest`, `PinVerifyResponse`) are now adopted from
 // `@alkazat/contracts@0.15` - re-exported in the contract block above.
 
-/**
- * A profile's optional own login (`GET|POST|DELETE /profiles/:id/login`). Kept
- * local until the FE adopts `@alkazat/contracts@0.29` (these mirror its
- * `ExplorerLogin*` DTOs). A linked explorer gets read-only access to the family's
- * trips and their own profile; no login => the parent account + profile switch.
- */
-export interface ExplorerLoginStatus {
-  enabled: boolean;
-  email: string | null;
-  invited_at: string | null;
-  disabled_at: string | null;
-}
+// ExplorerLoginStatus, ExplorerLoginRequest, ExplorerLoginEnableResponse — now
+// re-exported from @alkazat/contracts above (v0.29+).
 
-export interface ExplorerLoginRequest {
-  email: string;
-}
-
-export interface ExplorerLoginEnableResponse extends ExplorerLoginStatus {
-  /** One-time magic-link sign-in URL to hand to the explorer; present on fresh provisioning. */
-  action_link?: string | null;
-}
-
-/** Time-of-day slot for a moment. */
-export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";
+// MomentSlot — now re-exported from @alkazat/contracts above (includes midday + night).
 
 export interface GeoLocation {
   name: string;
@@ -451,30 +442,11 @@ export interface FeaturesUpdateRequest {
 }
 
 /* --------------------------------------------------------------------------
- * Per-trip membership (kept local - not yet in the published contract).
+ * Per-trip membership — now served by the published contract (v0.34+).
  *
- * Each trip has its own roster of explorers + grown-ups (`GET /trips/:id/members`).
- * Profiles are reusable: a profile can be added to multiple trips but membership
- * is per-trip (add/remove via `POST|DELETE /trips/:id/members`).
- *
- * `date_of_birth` is an extra field the BE now emits on ChildProfile when present.
- * The published contract does not yet model it, so we declare it as an augmentation
- * here (the same pattern the economics layer uses for local-only shapes).
+ * TripMembersResponse, AddTripMemberRequest re-exported from @alkazat/contracts
+ * above. ChildProfile now carries date_of_birth natively; ProfileWithDob removed.
  * ------------------------------------------------------------------------ */
-
-/**
- * Local augmentation of the contract `ChildProfile` with the new `date_of_birth`
- * field. Use this type wherever a profile may carry a DOB (trip member endpoints).
- * The base `ChildProfile` re-exported from the contract remains unchanged.
- */
-export interface ProfileWithDob {
-  date_of_birth?: string | null;
-}
-
-/** Response shape for `GET /trips/:id/members` and `POST /trips/:id/members`. */
-export interface TripMembersResponse {
-  members: Array<import("@alkazat/contracts").ChildProfile & ProfileWithDob>;
-}
 
 /* --------------------------------------------------------------------------
  * Trip economics (kept local - not yet in the published contract).
