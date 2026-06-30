@@ -135,6 +135,28 @@ export type ProfileMode = ExplorerMode;
 // `ProfileType`, `PinRequest`, `PinVerifyResponse`) are now adopted from
 // `@alkazat/contracts@0.15` - re-exported in the contract block above.
 
+/**
+ * A profile's optional own login (`GET|POST|DELETE /profiles/:id/login`). Kept
+ * local until the FE adopts `@alkazat/contracts@0.29` (these mirror its
+ * `ExplorerLogin*` DTOs). A linked explorer gets read-only access to the family's
+ * trips and their own profile; no login => the parent account + profile switch.
+ */
+export interface ExplorerLoginStatus {
+  enabled: boolean;
+  email: string | null;
+  invited_at: string | null;
+  disabled_at: string | null;
+}
+
+export interface ExplorerLoginRequest {
+  email: string;
+}
+
+export interface ExplorerLoginEnableResponse extends ExplorerLoginStatus {
+  /** One-time magic-link sign-in URL to hand to the explorer; present on fresh provisioning. */
+  action_link?: string | null;
+}
+
 /** Time-of-day slot for a moment. */
 export type MomentSlot = "morning" | "afternoon" | "evening" | "anytime";
 

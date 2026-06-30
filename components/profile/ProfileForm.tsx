@@ -44,7 +44,6 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
   );
 
   const isChild = type === "child";
-  const mode: ExplorerMode = isChild ? band : "standard";
 
   const save = useMutation({
     mutationFn: () => {
@@ -53,7 +52,9 @@ export function ProfileForm({ profile, lockedType, onDone, onCancel }: ProfileFo
         age: age.trim() ? Number(age) : null,
         avatar: avatar || null,
         type,
-        mode,
+        // Children store their band; a grown-up stores no band (the DB
+        // explorer_mode enum is children-only) - "standard" is derived on read.
+        mode: isChild ? band : null,
         // date_of_birth is an extension not yet in the published ChildProfileInput;
         // we carry it as a local extra field the mock store accepts.
         date_of_birth: dob.trim() || null,

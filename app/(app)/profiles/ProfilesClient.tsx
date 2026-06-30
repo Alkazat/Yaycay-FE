@@ -7,6 +7,7 @@ import { deleteProfile } from "@/lib/api/profiles";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { SetPinDialog } from "@/components/profile/SetPinDialog";
+import { ExplorerLoginDialog } from "@/components/profile/ExplorerLoginDialog";
 import { Modal } from "@/components/ui/Modal";
 import { useActiveProfile } from "@/components/profile/ActiveProfileProvider";
 import { MODE_LABEL, MODE_AGES, MODE_EMOJI, modeForProfile, isParentCarer, isChild } from "@/lib/profile/access";
@@ -24,6 +25,7 @@ export function ProfilesClient() {
   const [createType, setCreateType] = useState<ProfileType | null>(null);
   const [editProfile, setEditProfile] = useState<ChildProfile | null>(null);
   const [pinFor, setPinFor] = useState<ChildProfile | null>(null);
+  const [loginFor, setLoginFor] = useState<ChildProfile | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const remove = useMutation({
@@ -80,6 +82,9 @@ export function ProfilesClient() {
           <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginTop: "var(--space-3)" }}>
             <Button variant="secondary" size="sm" onClick={() => setEditProfile(p)}>
               Edit
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setLoginFor(p)} data-testid="explorer-login-open">
+              Login
             </Button>
             {isParentCarer(p) ? (
               <Button variant="secondary" size="sm" onClick={() => setPinFor(p)} data-testid="set-pin-open">
@@ -189,6 +194,14 @@ export function ProfilesClient() {
           hasPin={!!pinFor.pin_set}
           onDone={() => setPinFor(null)}
           onCancel={() => setPinFor(null)}
+        />
+      ) : null}
+
+      {loginFor ? (
+        <ExplorerLoginDialog
+          profileId={loginFor.id}
+          profileName={loginFor.name}
+          onClose={() => setLoginFor(null)}
         />
       ) : null}
     </div>

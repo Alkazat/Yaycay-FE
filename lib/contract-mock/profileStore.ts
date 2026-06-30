@@ -91,3 +91,47 @@ export function verifyPin(id: string, pin: string): boolean {
   const expected = pins.get(id);
   return expected !== undefined && expected === pin;
 }
+
+/**
+ * MOCK explorer-login store (`/profiles/:id/login`). Maps profile id -> the
+ * login's email + timestamps. The real BE mints a Supabase auth user; this mock
+ * just records the link so the manage UI works in mock/e2e mode. Module memory.
+ */
+interface LoginRecord {
+  email: string;
+  invited_at: string;
+  disabled_at: string | null;
+}
+const logins = new Map<string, LoginRecord>();
+
+export function profileExists(id: string): boolean {
+  return profiles.some((p) => p.id === id);
+}
+
+export function getLogin(id: string) {
+  const l = logins.get(id);
+  const active = !!l && !l.disabled_at;
+  return {
+    enabled: active,
+    email: l?.email ?? null,
+    invited_at: l?.invited_at ?? null,
+    disabled_at: l?.disabled_at ?? null,
+  };
+}
+
+/** Provision a login (idempotent). `created` is false when one was already active. */
+export function enableLogin(id: string, email: string) {
+  const existing = logins.get(id);
+  if (existing && !existing.disabled_at) {
+    return { status: getLogin(id), action_link: null, created: false };
+  }
+  logins.set(id, { email, invited_at: new Date().toISOString(), disabled_at: null });
+  return { status: getLogin(id), action_link: `https://mock.yaycay.local/login#${id}`, created: true };
+}
+
+export function disableLogin(id: string) {
+  const l = logins.get(id);
+  if (!l || l.disabled_at) return null;
+  logins.set(id, { ...l, disabled_at: new Date().toISOString() });
+  return getLogin(id);
+}
