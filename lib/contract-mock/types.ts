@@ -31,6 +31,7 @@ import type {
   Weather,
   Hotel,
   ExplorerMode,
+  MomentSlot,
 } from "@alkazat/contracts";
 
 // ---------------------------------------------------------------------------
